@@ -10,7 +10,7 @@ This template leverages **Deno 2** and **Fresh**.
 
 ## Overview
 
-This template helps you build web applications efficiently by providing:
+This template is designed to build web applications efficiently with Claude Code. The following features are provided:
 
 - **7 Specialized Sub-Agents** for different development phases
 - **8 Slash Commands** for common workflows
@@ -18,6 +18,8 @@ This template helps you build web applications efficiently by providing:
 - **TDD-First Approach** with automated testing workflows
 - **Token-Efficient Design** that minimizes context usage
 - **Simple & Maintainable** code practices
+
+The application is designed to deploy applications using [Deno Deploy](https://deno.com/deploy).
 
 ## Quick Start
 
@@ -38,14 +40,12 @@ irm https://deno.land/install.ps1 | iex
 
 ### 2. Use This Template
 
-Click "Use this template" on GitHub or:
+Click "Use this template" on GitHub to create a new repository with the template.
 
 ```bash
 git clone <your-repo-url>
 cd <your-project>
 ```
-
-No `npm install` needed - Deno manages dependencies automatically!
 
 ### 3. Start Your Project
 
