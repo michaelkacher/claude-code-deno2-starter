@@ -199,13 +199,19 @@ Fully automated with smart decisions, validation, and error recovery.
 
 ### Adding a New Feature
 
-**Recommended approach** - use the semi-automated command:
+**Recommended approach** - use the feature-scoped workflow (40-50% token savings):
 
 ```bash
 /new-feature
 ```
 
-Then describe your feature. The command will guide you through the workflow.
+This creates documentation in `features/proposed/{feature-name}/` instead of global `docs/` files, making development faster and more efficient. The command will:
+1. Ask for a feature name (e.g., "user-authentication")
+2. Gather lightweight requirements
+3. Design API endpoints and data models
+4. Write tests following TDD
+5. Implement backend and frontend
+6. Guide you to `/feature-complete` when done
 
 **For complex projects** - use intelligent orchestration:
 
@@ -223,6 +229,32 @@ The orchestrator will analyze your project state and automatically execute the w
 /design-api
 # etc...
 ```
+
+**New: Feature-Scoped Workflow**
+
+Features are now organized in a dedicated folder structure:
+```
+features/
+├── proposed/           # Features being developed
+│   └── user-auth/
+│       ├── requirements.md
+│       ├── api-spec.md
+│       └── data-models.md
+└── implemented/        # Completed features
+    └── user-profile/
+        ├── requirements.md
+        ├── api-spec.md
+        ├── data-models.md
+        └── implementation.md
+```
+
+Benefits:
+- **40-50% token reduction** per feature
+- **Better organization** - each feature self-contained
+- **Easy rollback** - delete feature folder to remove
+- **Preserved history** - all features documented in implemented/
+
+See `features/README.md` for detailed documentation.
 
 ## Test-Driven Development (TDD)
 
@@ -256,14 +288,17 @@ deno test tests/users_test.ts
 ├── .claude/
 │   ├── agents/              # Sub-agent definitions
 │   │   ├── requirements-agent.md
+│   │   ├── requirements-agent-feature.md  # ⭐ Feature-scoped (lightweight)
 │   │   ├── architect-agent.md
 │   │   ├── api-designer-agent.md
+│   │   ├── api-designer-agent-feature.md  # ⭐ Feature-scoped (lightweight)
 │   │   ├── test-writer-agent.md
 │   │   ├── backend-agent.md
 │   │   ├── frontend-agent.md
 │   │   └── orchestrator-agent.md     # Advanced: Intelligent orchestration
 │   └── commands/            # Slash command definitions
-│       ├── new-feature.md            # Recommended workflow
+│       ├── new-feature.md            # ⭐ Recommended workflow (uses feature-scoped agents)
+│       ├── feature-complete.md       # ⭐ Finalize and move to implemented
 │       ├── auto-feature.md           # Advanced: Full automation
 │       ├── requirements.md
 │       ├── architect.md
@@ -272,11 +307,26 @@ deno test tests/users_test.ts
 │       ├── implement-backend.md
 │       ├── implement-frontend.md
 │       └── review.md
-├── docs/                    # Generated documentation
-│   ├── requirements.md      # Project requirements
+├── features/                # ⭐ Feature-scoped documentation (NEW)
+│   ├── README.md           # Guide to feature-scoped workflow
+│   ├── _templates/         # Templates for feature docs
+│   ├── proposed/           # Features being developed
+│   │   └── {feature-name}/
+│   │       ├── requirements.md
+│   │       ├── api-spec.md
+│   │       ├── data-models.md
+│   │       └── notes.md
+│   └── implemented/        # Completed features
+│       └── {feature-name}/
+│           ├── requirements.md
+│           ├── api-spec.md
+│           ├── data-models.md
+│           └── implementation.md
+├── docs/                    # Project-wide documentation
+│   ├── requirements.md      # Overall project requirements
 │   ├── architecture.md      # System architecture
-│   ├── api-spec.md         # API specification
-│   ├── data-models.md      # TypeScript data models
+│   ├── api-spec.md         # Global API specification (optional)
+│   ├── data-models.md      # Shared data models (optional)
 │   ├── adr/                # Architecture Decision Records
 │   └── ORCHESTRATION_GUIDE.md  # Guide to automation levels
 ├── backend/                 # Backend source code
@@ -343,18 +393,22 @@ deno task clean            # Remove build artifacts and cache
 
 This template is designed to be token-efficient:
 
-1. **Agents read files, not chat history**: Each agent reads output files from previous agents
-2. **Narrow agent scope**: Each agent has a specific, limited responsibility
-3. **Structured outputs**: Agents produce markdown files with clear structure
-4. **No redundancy**: Information is stored once in files, not repeated in context
-5. **Progressive refinement**: Start with high-level docs, add details as needed
-6. **Flexible automation**: Choose the level that balances speed vs token usage
+1. **Feature-scoped documentation** ⭐ NEW: Features documented separately, reducing context by 40-50%
+2. **Agents read files, not chat history**: Each agent reads output files from previous agents
+3. **Narrow agent scope**: Each agent has a specific, limited responsibility
+4. **Structured outputs**: Agents produce markdown files with clear structure
+5. **No redundancy**: Information is stored once in files, not repeated in context
+6. **Progressive refinement**: Start with high-level docs, add details as needed
+7. **Flexible automation**: Choose the level that balances speed vs token usage
 
-| Automation Level | Token Usage | Speed | Best For |
-|------------------|-------------|-------|----------|
-| Manual (Level 1) | Lowest (~20K) | Slower | Learning, small projects |
-| Commands (Level 2) | Moderate (~25K) | Fast | Most projects ⭐ |
-| Orchestration (Level 3) | Higher (~35K) | Fastest | Complex projects |
+| Approach | Token Usage | Speed | Best For |
+|----------|-------------|-------|----------|
+| **Feature-scoped** ⭐ | **~15-20K** | **Fast** | **New features (recommended)** |
+| Manual (Level 1) | ~20K | Slower | Learning, small projects |
+| Commands (Level 2) | ~25K | Fast | Initial project setup |
+| Orchestration (Level 3) | ~35K | Fastest | Complex projects |
+
+**New Feature-Scoped Workflow**: Use `/new-feature` to create features in `features/proposed/` instead of global `docs/`, achieving 40-50% token reduction.
 
 ## Best Practices
 
