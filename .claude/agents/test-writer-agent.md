@@ -42,8 +42,9 @@ Create test files following this structure:
 
 **`tests/unit/[feature].test.ts`**
 ```typescript
-import { describe, it, expect, beforeEach } from 'vitest'; // or jest
-import { functionToTest } from '@/lib/[feature]';
+import { assertEquals, assertThrows } from "@std/assert";
+import { describe, it, beforeEach } from "@std/testing/bdd";
+import { functionToTest } from "../src/lib/[feature].ts";
 
 describe('[Feature Name]', () => {
   describe('functionToTest', () => {
@@ -55,7 +56,7 @@ describe('[Feature Name]', () => {
       const result = functionToTest(input);
 
       // Assert
-      expect(result).toEqual({ /* expected output */ });
+      assertEquals(result, { /* expected output */ });
     });
 
     it('should throw error for invalid input', () => {
@@ -63,7 +64,11 @@ describe('[Feature Name]', () => {
       const invalidInput = { /* bad data */ };
 
       // Act & Assert
-      expect(() => functionToTest(invalidInput)).toThrow('Expected error message');
+      assertThrows(
+        () => functionToTest(invalidInput),
+        Error,
+        'Expected error message'
+      );
     });
 
     it('should handle edge case: empty input', () => {
@@ -75,9 +80,10 @@ describe('[Feature Name]', () => {
 
 **`tests/integration/api/[endpoint].test.ts`**
 ```typescript
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { createTestServer } from '@/tests/helpers/server';
-import { setupTestDatabase, cleanupTestDatabase } from '@/tests/helpers/db';
+import { assertEquals } from "@std/assert";
+import { describe, it, beforeAll, afterAll } from "@std/testing/bdd";
+import { createTestServer } from "../tests/helpers/server.ts";
+import { setupTestDatabase, cleanupTestDatabase } from "../tests/helpers/db.ts";
 
 describe('POST /api/users', () => {
   let server: TestServer;
@@ -138,59 +144,65 @@ describe('POST /api/users', () => {
 });
 ```
 
-### Frontend Tests
+### Frontend Tests (Fresh/Preact)
 
-**`src/components/[Component].test.tsx`**
+**`frontend/tests/islands/[Island].test.tsx`**
 ```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Component } from './Component';
+import { assertEquals } from "@std/assert";
+import { describe, it } from "@std/testing/bdd";
+import { render } from "@testing-library/preact";
+import WorkoutForm from "../../islands/WorkoutForm.tsx";
 
-describe('Component', () => {
+describe('WorkoutForm Island', () => {
   it('should render with required props', () => {
-    render(<Component prop1="value" />);
-    expect(screen.getByText('Expected Text')).toBeInTheDocument();
+    const { container } = render(<WorkoutForm />);
+
+    const form = container.querySelector('form');
+    assertEquals(form !== null, true);
   });
 
-  it('should handle user interaction', async () => {
-    const onClickMock = vi.fn();
-    render(<Component onClick={onClickMock} />);
+  it('should handle user interaction', () => {
+    const onSuccess = () => { /* mock callback */ };
+    const { container } = render(<WorkoutForm onSuccess={onSuccess} />);
 
-    fireEvent.click(screen.getByRole('button'));
-
-    await waitFor(() => {
-      expect(onClickMock).toHaveBeenCalledTimes(1);
-    });
+    const button = container.querySelector('button[type="submit"]');
+    assertEquals(button !== null, true);
   });
 
   it('should display error state', () => {
-    render(<Component error="Error message" />);
-    expect(screen.getByText('Error message')).toBeInTheDocument();
+    const { container } = render(<WorkoutForm />);
+
+    // Trigger error state
+    const errorDiv = container.querySelector('[role="alert"]');
+    // Test error handling
   });
 });
 ```
 
-**`src/hooks/[useHook].test.ts`**
+**`frontend/tests/lib/store.test.ts`** (Signals, not hooks)
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { useCustomHook } from './useCustomHook';
+import { assertEquals } from "@std/assert";
+import { describe, it, beforeEach } from "@std/testing/bdd";
+import { user, token, isAuthenticated } from "../../lib/store.ts";
 
-describe('useCustomHook', () => {
-  it('should return initial state', () => {
-    const { result } = renderHook(() => useCustomHook());
-
-    expect(result.current.data).toBeNull();
-    expect(result.current.loading).toBe(false);
+describe('Auth Store (Signals)', () => {
+  beforeEach(() => {
+    // Reset signals
+    user.value = null;
+    token.value = null;
   });
 
-  it('should fetch data on mount', async () => {
-    const { result } = renderHook(() => useCustomHook());
+  it('should have initial null state', () => {
+    assertEquals(user.value, null);
+    assertEquals(token.value, null);
+    assertEquals(isAuthenticated.value, false);
+  });
 
-    await waitFor(() => {
-      expect(result.current.data).toBeDefined();
-      expect(result.current.loading).toBe(false);
-    });
+  it('should update when user logs in', () => {
+    user.value = { id: '1', email: 'test@example.com' };
+    token.value = 'test-token';
+
+    assertEquals(isAuthenticated.value, true);
   });
 });
 ```

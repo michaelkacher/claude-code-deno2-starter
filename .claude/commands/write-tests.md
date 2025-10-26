@@ -18,5 +18,5 @@ This follows Test-Driven Development (TDD):
 3. **Refactor**: Improve code while keeping tests green
 
 After completion, run:
-- `npm test` to verify tests fail (Red phase)
+- `deno test --allow-all` to verify tests fail (Red phase)
 - `/implement-backend` or `/implement-frontend` to implement the code

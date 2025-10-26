@@ -133,13 +133,13 @@ After each agent, check:
 
 **backend-agent:**
 - [ ] Implementation files created
-- [ ] Tests pass: `npm test`
-- [ ] No linting errors
+- [ ] Tests pass: `deno test --allow-all`
+- [ ] No linting errors: `deno lint`
 
 **frontend-agent:**
-- [ ] Component files created
-- [ ] Tests pass: `npm test`
-- [ ] No type errors: `npm run type-check`
+- [ ] Component files created (Fresh routes/islands)
+- [ ] Tests pass: `deno test --allow-all`
+- [ ] No type errors: `deno check **/*.ts **/*.tsx`
 
 ### 4. Error Handling
 
@@ -210,9 +210,10 @@ Maintain project context across invocations:
 
 ```markdown
 **Project Context:**
-- Name: [from package.json]
-- Tech Stack: [from architecture.md]
-- Current Features: [from requirements.md]
+- Name: [from deno.json]
+- Tech Stack: [from .docs/architecture.md or docs/architecture.md]
+- Runtime: Deno 2 with Fresh (frontend) and Hono (backend)
+- Current Features: [from .docs/requirements.md or docs/requirements.md]
 - Open TODOs: [from previous runs]
 ```
 

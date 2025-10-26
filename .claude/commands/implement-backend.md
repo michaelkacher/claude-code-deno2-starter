@@ -22,6 +22,6 @@ This implements:
 - Utility functions
 
 After implementation:
-- Run `npm test` to verify all tests pass
+- Run `deno test --allow-all` to verify all tests pass
 - Consider refactoring to improve code quality
 - Run `/implement-frontend` to build the UI

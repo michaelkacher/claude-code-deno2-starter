@@ -12,8 +12,8 @@ Perform a comprehensive code review focusing on:
 - [ ] Appropriate comments for complex logic
 
 ## Testing
-- [ ] Run all tests: `npm test`
-- [ ] Check test coverage: `npm test -- --coverage`
+- [ ] Run all tests: `deno test --allow-all`
+- [ ] Check test coverage: `deno task test:coverage && deno task coverage`
 - [ ] All tests passing
 - [ ] Coverage meets targets (80%+ for unit tests)
 - [ ] Edge cases are tested
@@ -28,10 +28,11 @@ Perform a comprehensive code review focusing on:
 - [ ] Sensitive data is encrypted
 
 ## Performance
-- [ ] No unnecessary re-renders (React)
+- [ ] Minimal client JavaScript (Fresh islands architecture)
+- [ ] Server-side rendering used where appropriate (Fresh routes)
 - [ ] Efficient database queries (no N+1 problems)
 - [ ] Images optimized
-- [ ] Code splitting implemented where beneficial
+- [ ] Islands are lazy-loaded when possible
 - [ ] No memory leaks
 
 ## Accessibility
@@ -48,10 +49,12 @@ Perform a comprehensive code review focusing on:
 - [ ] ADRs document major decisions
 
 ## Architecture
-- [ ] Follows architecture decisions in `docs/architecture.md`
-- [ ] Separation of concerns maintained
+- [ ] Follows architecture decisions in `.docs/architecture.md` or `docs/architecture.md`
+- [ ] Separation of concerns maintained (Controller → Service → Repository)
+- [ ] Fresh routes used for SSR pages, islands for interactivity
+- [ ] Preact Signals used for state (not React hooks)
 - [ ] No violations of established patterns
-- [ ] Dependencies are appropriate
+- [ ] Dependencies are appropriate (prefer Deno/JSR over npm)
 
 After review, provide a summary of:
 1. What's working well
