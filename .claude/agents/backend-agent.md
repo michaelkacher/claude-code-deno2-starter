@@ -340,24 +340,51 @@ import type { User } from '../types/index.ts';
 
 Deno KV is the recommended starting point for most applications. It's zero-config, serverless-ready, and perfect for Deno Deploy.
 
+**IMPORTANT**: See `docs/DENO_KV_GUIDE.md` for comprehensive best practices.
+
+**Local Development Storage**:
+- **Local**: SQLite file at `./data/local.db` (or `.deno_kv_store/` by default)
+- **Testing**: `:memory:` (in-memory, no file writes)
+- **Production**: FoundationDB on Deno Deploy (globally distributed)
+
+**Best Practice: Single Instance Pattern** ⭐ CRITICAL
+
 ```typescript
-// Initialize KV (typically in a singleton or dependency injection)
+// backend/lib/kv.ts - Create this file!
 let kvInstance: Deno.Kv | null = null;
 
 export async function getKv(): Promise<Deno.Kv> {
   if (!kvInstance) {
-    kvInstance = await Deno.openKv();
+    const env = Deno.env.get('DENO_ENV') || 'development';
+
+    const path = env === 'production'
+      ? undefined  // Deno Deploy handles this
+      : env === 'test'
+      ? ':memory:'  // In-memory for tests
+      : './data/local.db';  // Local SQLite file
+
+    kvInstance = await Deno.openKv(path);
   }
   return kvInstance;
 }
 
-// Service example with Deno KV
-export class UserService {
-  private kv: Deno.Kv;
-
-  constructor(kv: Deno.Kv) {
-    this.kv = kv;
+export async function closeKv() {
+  if (kvInstance) {
+    await kvInstance.close();
+    kvInstance = null;
   }
+}
+
+// Service example with Deno KV (Dependency Injection)
+export class UserService {
+  constructor(private kv: Deno.Kv) {}
+
+  // Alternative: Get KV from singleton
+  // import { getKv } from '../lib/kv.ts';
+  // async create() {
+  //   const kv = await getKv();
+  //   // use kv
+  // }
 
   async create(input: CreateUserInput): Promise<User> {
     const userId = crypto.randomUUID();
@@ -502,7 +529,7 @@ import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { UserService } from '../services/users.ts';
 
 Deno.test('UserService - create user with valid data', async () => {
-  // Use in-memory KV for isolated testing
+  // IMPORTANT: Always use :memory: for tests (isolated, fast, no file writes)
   const kv = await Deno.openKv(':memory:');
   try {
     const service = new UserService(kv);
@@ -522,6 +549,7 @@ Deno.test('UserService - create user with valid data', async () => {
     const stored = await service.findById(user.id);
     assertEquals(stored?.email, input.email);
   } finally {
+    // Always close to prevent resource leaks
     await kv.close();
   }
 });

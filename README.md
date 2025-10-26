@@ -1,6 +1,12 @@
 # Web Project Starter with Claude Code + Deno 2
 
-A GitHub template for web projects powered by **Deno 2**, configured with Claude Code sub-agents and commands that follow Test-Driven Development (TDD) principles.
+This template has the following goals: 
+* Go from idea to deployed project quickly
+* Leverage Claude Code for new feature development
+* Have a solid foundation to reduce the number of tokens used to create new applications
+* Be robust enough and follow Test Driven Development (TDD) that if the project matures, you lesson the risks of new features breaking existing features due to tests
+
+This template leverages **Deno 2** and **Fresh**.
 
 ## Overview
 
@@ -389,6 +395,17 @@ deno task type-check       # Type check all TypeScript files
 deno task clean            # Remove build artifacts and cache
 ```
 
+### Deno KV Management
+```bash
+deno task kv:seed          # Populate local KV database with sample data
+deno task kv:reset         # Delete local KV database (fresh start)
+deno task kv:inspect       # List all entries in local KV database
+
+# With options
+deno task kv:inspect -- --prefix=users  # Show only 'users' keys
+deno task kv:inspect -- --limit=10      # Limit to 10 entries
+```
+
 ## Token Efficiency
 
 This template is designed to be token-efficient:
@@ -682,6 +699,43 @@ On Deno Deploy, Deno KV is:
 - **Globally distributed** - Replicated across edge locations
 - **Eventually consistent** - Optimized for low latency reads
 - **Managed** - No setup or maintenance required
+
+### Local Development with Deno KV
+
+Deno KV uses SQLite locally and FoundationDB in production. See `docs/DENO_KV_GUIDE.md` for comprehensive best practices.
+
+**Quick Setup**:
+```typescript
+// backend/lib/kv.ts - Single instance pattern
+let kvInstance: Deno.Kv | null = null;
+
+export async function getKv(): Promise<Deno.Kv> {
+  if (!kvInstance) {
+    const env = Deno.env.get('DENO_ENV') || 'development';
+    const path = env === 'production' ? undefined : './data/local.db';
+    kvInstance = await Deno.openKv(path);
+  }
+  return kvInstance;
+}
+```
+
+**Storage Locations**:
+- **Local**: `./data/local.db` (SQLite file)
+- **Testing**: `:memory:` (in-memory, no files)
+- **Production**: FoundationDB (Deno Deploy)
+
+**Management Commands**:
+```bash
+deno task kv:seed      # Add sample data
+deno task kv:reset     # Clear all data
+deno task kv:inspect   # View stored data
+```
+
+**Best Practices**:
+- ✅ Use single instance pattern (don't call `Deno.openKv()` on every request)
+- ✅ Use `:memory:` for tests (fast, isolated)
+- ✅ Add `data/*.db` to `.gitignore` (already configured)
+- ✅ See `docs/DENO_KV_GUIDE.md` for complete guide
 
 ## Deno 2 Quick Reference
 

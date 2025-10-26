@@ -1,6 +1,15 @@
 # Deno
 .deno/
 
+# Deno KV local storage (SQLite databases)
+.deno_kv_store/
+data/*.db
+data/*.db-shm
+data/*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
 # Claude Code
 .claude/settings.local.json
 

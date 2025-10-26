@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased] - 2025-01-26
 
+### Added - Deno KV Best Practices & Tools
+
+#### Comprehensive Documentation
+- `docs/DENO_KV_GUIDE.md` - Complete guide to Deno KV local development best practices
+  - Local storage using SQLite (vs production FoundationDB)
+  - Single instance pattern (critical for performance)
+  - Environment-based configuration
+  - Testing with `:memory:` databases
+  - Dependency injection patterns
+  - Graceful shutdown handling
+
+#### Development Scripts
+- `scripts/seed-local-kv.ts` - Populate local database with sample data
+- `scripts/reset-local-kv.ts` - Delete local database for fresh start
+- `scripts/inspect-local-kv.ts` - View all entries in local database
+
+#### New Tasks (deno.json)
+- `deno task kv:seed` - Seed local database
+- `deno task kv:reset` - Reset local database
+- `deno task kv:inspect` - Inspect database contents
+
+#### Infrastructure
+- `data/` directory for local KV storage
+- `.gitignore` updated to exclude `.deno_kv_store/`, `data/*.db`, SQLite files
+- Updated all tasks to include `--allow-write` permission for KV access
+
+#### Updated Agents
+- `backend-agent.md` - Added Deno KV best practices and examples
+  - Single instance pattern
+  - Environment-based paths
+  - Testing with `:memory:`
+
+#### README Updates
+- Added "Deno KV Management" commands section
+- Added "Local Development with Deno KV" section with quick setup
+- Documented storage locations (local vs testing vs production)
+
 ### Added - Feature-Scoped Workflow (40-50% Token Reduction)
 
 #### New Folder Structure

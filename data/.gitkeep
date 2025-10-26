@@ -1,0 +1,2 @@
+# This directory stores local Deno KV database files
+# The directory is tracked, but database files are ignored in .gitignore
