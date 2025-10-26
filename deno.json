@@ -1,0 +1,82 @@
+{
+  "name": "@your-org/web-project-starter",
+  "version": "0.1.0",
+  "exports": "./backend/main.ts",
+  "tasks": {
+    "dev": "deno run --allow-net --allow-read --allow-env --allow-run --watch --unstable-kv dev.ts",
+    "dev:backend": "deno run --allow-net --allow-read --allow-env --watch backend/main.ts",
+    "dev:frontend": "cd frontend && deno task start",
+    "start": "deno run --allow-net --allow-read --allow-env backend/main.ts",
+    "start:frontend": "cd frontend && deno task preview",
+    "build": "deno task build:backend && deno task build:frontend",
+    "build:backend": "deno compile --allow-net --allow-read --allow-env --output=./dist/backend backend/main.ts",
+    "build:frontend": "cd frontend && deno task build",
+    "preview": "deno run --allow-net --allow-read ./dist/backend",
+    "test": "deno test --allow-read --allow-env --allow-net",
+    "test:watch": "deno test --allow-read --allow-env --allow-net --watch",
+    "test:coverage": "deno test --allow-read --allow-env --allow-net --coverage=coverage",
+    "coverage": "deno coverage coverage --lcov --output=coverage.lcov",
+    "check": "deno task lint && deno task fmt:check && deno task type-check",
+    "lint": "deno lint",
+    "lint:fix": "deno lint --fix",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "type-check": "deno check backend/**/*.ts && cd frontend && deno check **/*.ts **/*.tsx",
+    "clean": "rm -rf dist coverage .fresh frontend/_fresh"
+  },
+  "imports": {
+    "@/": "./backend/",
+    "@std/": "jsr:@std/",
+    "hono": "jsr:@hono/hono@^4",
+    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "lib": ["deno.window", "dom", "dom.iterable"],
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"]
+    },
+    "exclude": [
+      "dist",
+      "coverage"
+    ]
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": true,
+    "proseWrap": "preserve",
+    "exclude": [
+      "dist",
+      "coverage"
+    ]
+  },
+  "test": {
+    "include": [
+      "backend/**/*_test.ts",
+      "tests/**/*.test.ts"
+    ],
+    "exclude": [
+      "dist",
+      "coverage"
+    ]
+  },
+  "exclude": [
+    "dist",
+    "coverage"
+  ],
+  "nodeModulesDir": "none",
+  "lock": true
+}
