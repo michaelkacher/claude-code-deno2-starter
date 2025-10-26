@@ -51,8 +51,14 @@ jobs:
           flags: unittests
           name: codecov-umbrella
 
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -62,18 +68,11 @@ jobs:
         with:
           deno-version: 2.x
 
-      - name: Cache Deno dependencies
-        uses: actions/cache@v3
+      - name: Deploy to Deno Deploy
+        uses: denoland/deployctl@v1
         with:
-          path: ~/.cache/deno
-          key: deno-${{ hashFiles('deno.lock') }}
-
-      - name: Build server
-        run: deno task build:server
+          project: your-project-name
+          entrypoint: backend/main.ts
+          root: .
         env:
-          API_URL: http://localhost:8000/api
-
-      - name: Test build artifacts
-        run: |
-          ls -lh dist/
-          file dist/server
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}

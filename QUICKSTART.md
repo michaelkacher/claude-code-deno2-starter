@@ -114,10 +114,11 @@ Tell the agent:
 ```
 
 The agent will design:
-- Tech stack (Next.js + API routes)
-- Database schema
+- Tech stack (Deno 2 + Hono + Fresh)
+- Database design (Deno KV key patterns)
 - API endpoints
 - Project structure
+- Deployment strategy (Deno Deploy)
 
 ### 3. First Feature: Create Todo
 
@@ -131,9 +132,10 @@ Tell the agent:
 The agent will:
 1. Gather specific requirements
 2. Design API endpoint (POST /api/todos)
-3. Write tests
-4. Implement backend
-5. Implement frontend form
+3. Design Deno KV key structure for todos
+4. Write tests (using in-memory KV)
+5. Implement backend (Hono + Deno KV)
+6. Implement frontend form (Fresh)
 
 ### 4. Verify It Works
 
@@ -160,22 +162,25 @@ The workflow created:
    - `docs/adr/` - Architecture decisions
 
 2. **Tests**:
-   - `tests/todos_test.ts` - API tests (Deno test format)
+   - `tests/todos_test.ts` - API tests with in-memory Deno KV
 
 3. **Backend Code**:
-   - `src/routes/todos.ts` - API routes (Hono)
-   - `src/services/todos.ts` - Business logic
+   - `backend/routes/todos.ts` - API routes (Hono)
+   - `backend/services/todos.ts` - Business logic with Deno KV
 
-4. **Optional Frontend**:
-   - Can be added with Fresh (Deno-native) or any framework
+4. **Frontend** (optional with Fresh):
+   - `frontend/routes/` - SSR pages
+   - `frontend/islands/` - Interactive components
 
 All following TDD - tests were written first, then implementation!
 
 **Deno Advantages You'll Notice**:
 - ✅ No build step - TypeScript runs directly
 - ✅ No `node_modules` folder - cleaner project
+- ✅ Built-in database (Deno KV) - no setup needed
 - ✅ Fast startup - efficient caching
 - ✅ Secure - explicit permissions required
+- ✅ Edge-ready - deploy to Deno Deploy in seconds
 
 ## Next Steps
 
@@ -209,21 +214,26 @@ Get a comprehensive code review checklist.
 
 ```bash
 # Development (Deno)
-deno task dev           # Start dev server
-deno test               # Run tests
+deno task dev           # Start dev server (backend + frontend)
+deno test               # Run tests (with in-memory KV)
 deno task test:coverage # Check test coverage
 deno lint               # Lint code
 deno fmt                # Format code
-deno check src/**/*.ts  # Type checking
+deno task type-check    # Type checking
+
+# Deployment
+deno task deploy        # Deploy to Deno Deploy (production)
+git push origin main    # Auto-deploy via GitHub Actions
 
 # Claude Code Commands
 /requirements           # Gather requirements
-/architect              # Design architecture
-/design-api            # Design API
-/write-tests           # Write tests (TDD)
-/implement-backend     # Implement backend (Deno + Hono)
-/implement-frontend    # Implement frontend (optional)
-/new-feature           # Full feature workflow
+/architect              # Design architecture (recommends Deno KV + Deploy)
+/design-database       # Design Deno KV schema or PostgreSQL
+/design-api            # Design API contracts
+/write-tests           # Write tests with in-memory KV
+/implement-backend     # Implement backend (Hono + Deno KV)
+/implement-frontend    # Implement frontend (Fresh + Preact)
+/new-feature           # Full feature workflow (recommended)
 /review                # Code review
 ```
 
@@ -278,17 +288,26 @@ deno run --allow-net --allow-read --allow-env src/main.ts
 ### 3. Dependencies Are Cached
 First run downloads dependencies. Subsequent runs are instant.
 
-### 4. Use Deno Deploy
-Deploy in seconds:
+### 4. Use Deno Deploy (Recommended)
+Deploy to global edge network in seconds:
 ```bash
-deno install -Arf jsr:@deno/deployctl
-deployctl deploy
+# Install deployctl
+deno install -A jsr:@deno/deployctl
+
+# Deploy to production
+deno task deploy
+
+# Or use automatic GitHub deployment
+git push origin main
 ```
 
-### 5. Compile to Binary
-Create standalone executable:
+Your Deno KV data is automatically distributed globally!
+
+### 5. Compile to Binary (Optional)
+For Docker/VPS deployment:
 ```bash
-deno compile --allow-net --allow-read src/main.ts
+deno task build:backend
+# Creates ./dist/backend executable
 ```
 
 ## Get Help

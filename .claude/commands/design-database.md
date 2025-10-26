@@ -11,19 +11,23 @@ Prerequisites:
 
 The agent will create:
 - `docs/database-schema.md` - Complete database schema documentation
+- **Deno KV key design** (recommended starting point) or PostgreSQL schema
 - Entity-Relationship Diagrams (text-based)
-- Table definitions with columns, types, and constraints
-- Index strategy and performance considerations
-- Migration file structure and guidance
-- Security and testing strategies
+- Key patterns and secondary indexes (Deno KV) or table definitions (PostgreSQL)
+- Query patterns and performance considerations
+- Testing strategies with in-memory KV or test database
+- Migration guidance (if using PostgreSQL)
+
+**Default Approach**: The agent prioritizes Deno KV design unless complex JOINs or aggregations are needed.
 
 This command is useful for:
-- Designing database schema for new applications
+- Designing Deno KV key structures for new applications
 - Planning data models and relationships
-- Defining constraints and data integrity rules
-- Creating migration strategy
-- Optimizing database performance before implementation
+- Defining query patterns and secondary indexes
+- Creating testing strategy with in-memory KV
+- Optimizing for Deno Deploy edge deployment
+- Planning PostgreSQL schema when KV limitations are reached
 
 After completion, consider running:
-- `/write-tests` - Write database integration tests
+- `/write-tests` - Write database integration tests (with in-memory KV)
 - `/implement-backend` - Implement database access layer

@@ -304,12 +304,16 @@ deno task dev:backend      # Backend only (port 8000)
 deno task dev:frontend     # Frontend only (port 3000)
 ```
 
-### Production
+### Production & Deployment
 ```bash
-deno task build            # Build both backend + frontend
+deno task build            # Build both backend + frontend (for Docker/VPS)
 deno task build:backend    # Compile backend to executable
 deno task build:frontend   # Build frontend for production
 deno task preview          # Preview production backend build
+
+# Deno Deploy (Recommended)
+deno task deploy           # Deploy to Deno Deploy (production)
+deno task deploy:preview   # Deploy preview environment
 ```
 
 ### Testing
@@ -377,21 +381,61 @@ This template is designed to be token-efficient:
 
 ## Technology Stack
 
-This template is built on **Deno 2** with modern, production-ready tools:
+This template is built on **Deno 2** with modern, production-ready tools optimized for **serverless edge deployment**.
 
 ### Backend (Deno 2)
 - **Runtime**: Deno 2.0+ (secure, TypeScript-first)
-- **Framework**: Hono (ultra-fast, edge-ready)
+- **Framework**: Hono (ultra-fast, edge-ready, works on Deno Deploy)
 - **Language**: TypeScript (built-in, no build step)
-- **Database**: Deno KV (built-in) or PostgreSQL
-- **Testing**: Deno's built-in test runner
+- **Database**: **Deno KV (recommended)** - zero-config, distributed, edge-ready
+  - PostgreSQL available when complex queries needed
+- **Testing**: Deno's built-in test runner with in-memory KV
 - **Validation**: Zod
+- **Deployment**: **Deno Deploy (recommended)** - zero-config serverless
 
-### Frontend (Optional)
-- Preact (lightweight React alternative)
-- Fresh (Deno-native framework)
-- Twind (Tailwind-in-JS)
-- Or integrate any framework you prefer
+### Frontend (Fresh + Preact)
+- **Framework**: Fresh 1.7+ (Deno-native, SSR, Islands architecture)
+- **UI Library**: Preact (lightweight React alternative)
+- **State**: Preact Signals (reactive state management)
+- **Styling**: Tailwind CSS (built-in with Fresh)
+- **Deployment**: Works seamlessly on Deno Deploy
+
+### Database: Deno KV (Default)
+
+**Why Deno KV is the recommended default:**
+
+✅ **Zero Configuration** - No setup, connection strings, or migrations needed
+✅ **Built-in** - Ships with Deno runtime, no external database required
+✅ **Edge-Ready** - Globally distributed on Deno Deploy
+✅ **ACID Transactions** - Atomic operations for data consistency
+✅ **Fast** - Optimized for key-value and simple queries
+✅ **Easy Testing** - In-memory mode (`:memory:`) for isolated tests
+✅ **Serverless-Native** - Perfect for edge deployment
+
+**When to use PostgreSQL instead:**
+- Need complex multi-table JOINs
+- Require advanced aggregations (GROUP BY with HAVING)
+- Full-text search at database level
+- Existing PostgreSQL infrastructure
+- Complex reporting and analytics
+
+### Deployment: Deno Deploy (Default)
+
+**Why Deno Deploy is the recommended deployment target:**
+
+✅ **Zero Configuration** - No Docker, no infrastructure, just deploy
+✅ **Global Edge Network** - Low latency worldwide (35+ regions)
+✅ **Built-in Deno KV** - Distributed key-value store at the edge
+✅ **Auto-Scaling** - Serverless, scales automatically
+✅ **GitHub Integration** - Deploy on push with GitHub Actions
+✅ **Free Tier** - Generous free tier for small projects
+✅ **HTTPS Included** - Automatic SSL certificates
+
+**When to use alternative deployment:**
+- Need containerization (Docker/Kubernetes)
+- Existing cloud infrastructure (AWS/GCP/Azure)
+- On-premise requirements
+- Heavy CPU/memory workloads
 
 ### Why Deno 2?
 
@@ -399,8 +443,9 @@ This template is built on **Deno 2** with modern, production-ready tools:
 ✅ **Secure by Default** - Explicit permissions for file, network, env access
 ✅ **Modern Web APIs** - fetch, crypto, Web Streams natively supported
 ✅ **Fast Package Resolution** - JSR registry, npm compatibility
-✅ **Single Executable** - Compile to standalone binary
-✅ **Edge-Ready** - Deploy to Deno Deploy, Cloudflare, etc.
+✅ **Built-in Deno KV** - Key-value database included
+✅ **Single Executable** - Compile to standalone binary (optional)
+✅ **Edge-Ready** - Perfect for Deno Deploy and serverless
 
 You can still use npm packages when needed via `npm:` specifier.
 
@@ -530,18 +575,77 @@ MIT License - feel free to use for any purpose.
 - [Fresh Documentation](https://fresh.deno.dev/docs/getting-started)
 - [Deno Documentation](https://deno.com/)
 
+## Deployment to Deno Deploy
+
+### Initial Setup (One-time)
+
+1. **Create a Deno Deploy account**
+   - Visit https://dash.deno.com
+   - Sign in with GitHub
+
+2. **Create a new project**
+   - Click "New Project"
+   - Choose your GitHub repository
+   - Set project name (e.g., `my-app`)
+
+3. **Configure GitHub secrets**
+   - Go to your GitHub repo → Settings → Secrets
+   - Add `DENO_DEPLOY_TOKEN` from Deno Deploy dashboard
+
+4. **Update configuration**
+   - Edit `deno.json` → change `your-project-name` to your actual project name
+   - Edit `.github/workflows/ci.yml` → change `your-project-name`
+
+### Deploying
+
+**Automatic deployment** (recommended):
+```bash
+git push origin main
+# GitHub Actions automatically deploys to Deno Deploy
+```
+
+**Manual deployment**:
+```bash
+# Install deployctl
+deno install -A jsr:@deno/deployctl
+
+# Deploy to production
+deno task deploy
+
+# Deploy preview
+deno task deploy:preview
+```
+
+### Database on Deno Deploy
+
+Deno KV is automatically available on Deno Deploy:
+```typescript
+// Works locally and on Deno Deploy - no config needed!
+const kv = await Deno.openKv();
+```
+
+On Deno Deploy, Deno KV is:
+- **Globally distributed** - Replicated across edge locations
+- **Eventually consistent** - Optimized for low latency reads
+- **Managed** - No setup or maintenance required
+
 ## Deno 2 Quick Reference
 
 ```bash
 # Development
-deno task dev              # Start dev server
+deno task dev              # Start dev server (both backend + frontend)
 deno test                  # Run tests
 deno task test:coverage    # Test coverage
 deno lint                  # Lint code
 deno fmt                   # Format code
 deno task type-check       # Type checking
 
-# Build & Deploy
+# Deployment (Deno Deploy - Recommended)
+deno task deploy           # Deploy to production
+deno task deploy:preview   # Deploy preview environment
+git push origin main       # Auto-deploy via GitHub Actions
+
+# Build (for Docker/VPS deployment)
 deno task build            # Build for production
 deno compile               # Create standalone executable
 deno task start            # Run production build

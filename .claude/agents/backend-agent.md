@@ -323,7 +323,138 @@ import type { User } from '../types/index.ts';
 
 ## Database Integration
 
-**Using Deno Postgres:**
+**Using Deno KV (Recommended - Built-in):**
+
+Deno KV is the recommended starting point for most applications. It's zero-config, serverless-ready, and perfect for Deno Deploy.
+
+```typescript
+// Initialize KV (typically in a singleton or dependency injection)
+let kvInstance: Deno.Kv | null = null;
+
+export async function getKv(): Promise<Deno.Kv> {
+  if (!kvInstance) {
+    kvInstance = await Deno.openKv();
+  }
+  return kvInstance;
+}
+
+// Service example with Deno KV
+export class UserService {
+  private kv: Deno.Kv;
+
+  constructor(kv: Deno.Kv) {
+    this.kv = kv;
+  }
+
+  async create(input: CreateUserInput): Promise<User> {
+    const userId = crypto.randomUUID();
+    const user: User = {
+      id: userId,
+      email: input.email,
+      name: input.name,
+      role: input.role || 'user',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Check for duplicate email using secondary index
+    const existingUserIdEntry = await this.kv.get<string>([
+      'users_by_email',
+      input.email,
+    ]);
+    if (existingUserIdEntry.value) {
+      throw new ValidationError('Email already exists');
+    }
+
+    // Atomic write with secondary index
+    const result = await this.kv
+      .atomic()
+      .set(['users', userId], user)
+      .set(['users_by_email', input.email], userId)
+      .commit();
+
+    if (!result.ok) {
+      throw new Error('Failed to create user');
+    }
+
+    return user;
+  }
+
+  async findById(id: string): Promise<User | null> {
+    const entry = await this.kv.get<User>(['users', id]);
+    return entry.value;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    const userIdEntry = await this.kv.get<string>(['users_by_email', email]);
+    if (!userIdEntry.value) return null;
+
+    const userEntry = await this.kv.get<User>(['users', userIdEntry.value]);
+    return userEntry.value;
+  }
+
+  async findAll(options: {
+    limit?: number;
+    cursor?: string;
+  } = {}): Promise<{ users: User[]; cursor?: string }> {
+    const limit = options.limit || 10;
+    const users: User[] = [];
+
+    const entries = this.kv.list<User>({
+      prefix: ['users'],
+      limit: limit + 1,
+      cursor: options.cursor,
+    });
+
+    let nextCursor: string | undefined;
+    let count = 0;
+
+    for await (const entry of entries) {
+      if (count < limit) {
+        users.push(entry.value);
+        count++;
+      } else {
+        nextCursor = entry.cursor;
+      }
+    }
+
+    return { users, cursor: nextCursor };
+  }
+
+  async update(id: string, updates: Partial<User>): Promise<User | null> {
+    const existing = await this.findById(id);
+    if (!existing) return null;
+
+    const updated: User = {
+      ...existing,
+      ...updates,
+      id, // Ensure ID doesn't change
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.kv.set(['users', id], updated);
+    return updated;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const user = await this.findById(id);
+    if (!user) return false;
+
+    const result = await this.kv
+      .atomic()
+      .delete(['users', id])
+      .delete(['users_by_email', user.email])
+      .commit();
+
+    return result.ok;
+  }
+}
+```
+
+**Using PostgreSQL (When You Need Complex Queries):**
+
+Use PostgreSQL when Deno KV limitations become a blocker (complex JOINs, aggregations, etc.).
+
 ```typescript
 import { Pool } from 'https://deno.land/x/postgres@v0.17.0/mod.ts';
 
@@ -348,61 +479,106 @@ export async function getUsers(): Promise<User[]> {
 }
 ```
 
-**Using Deno KV (built-in):**
-```typescript
-const kv = await Deno.openKv();
-
-// Set
-await kv.set(['users', userId], user);
-
-// Get
-const entry = await kv.get<User>(['users', userId]);
-const user = entry.value;
-
-// List
-const entries = kv.list<User>({ prefix: ['users'] });
-for await (const entry of entries) {
-  console.log(entry.value);
-}
-```
-
 ## Testing with Deno
 
 **Test file naming:** `[name]_test.ts` or in `tests/` directory
 
-**Example test:**
+**Example test with Deno KV:**
 ```typescript
-import { assertEquals } from 'jsr:@std/assert';
+import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { UserService } from '../services/users.ts';
 
 Deno.test('UserService - create user with valid data', async () => {
-  const service = new UserService();
+  // Use in-memory KV for isolated testing
+  const kv = await Deno.openKv(':memory:');
+  try {
+    const service = new UserService(kv);
 
-  const input = {
-    email: 'test@example.com',
-    name: 'Test User',
-  };
+    const input = {
+      email: 'test@example.com',
+      name: 'Test User',
+    };
 
-  const user = await service.create(input);
+    const user = await service.create(input);
 
-  assertEquals(user.email, input.email);
-  assertEquals(user.name, input.name);
-  assertEquals(user.role, 'user');
+    assertEquals(user.email, input.email);
+    assertEquals(user.name, input.name);
+    assertEquals(user.role, 'user');
+
+    // Verify it was stored in KV
+    const stored = await service.findById(user.id);
+    assertEquals(stored?.email, input.email);
+  } finally {
+    await kv.close();
+  }
 });
 
-Deno.test('UserService - throws error for invalid email', async () => {
-  const service = new UserService();
-
-  const input = {
-    email: 'invalid-email',
-    name: 'Test User',
-  };
-
+Deno.test('UserService - throws error for duplicate email', async () => {
+  const kv = await Deno.openKv(':memory:');
   try {
+    const service = new UserService(kv);
+
+    const input = {
+      email: 'test@example.com',
+      name: 'Test User',
+    };
+
     await service.create(input);
-    throw new Error('Should have thrown');
-  } catch (error) {
-    assertEquals(error.message, 'Invalid email format');
+
+    // Try to create another user with same email
+    await assertRejects(
+      () => service.create(input),
+      Error,
+      'Email already exists'
+    );
+  } finally {
+    await kv.close();
+  }
+});
+
+Deno.test('UserService - find by email uses secondary index', async () => {
+  const kv = await Deno.openKv(':memory:');
+  try {
+    const service = new UserService(kv);
+
+    const input = {
+      email: 'test@example.com',
+      name: 'Test User',
+    };
+
+    const created = await service.create(input);
+    const found = await service.findByEmail(input.email);
+
+    assertEquals(found?.id, created.id);
+    assertEquals(found?.email, created.email);
+  } finally {
+    await kv.close();
+  }
+});
+
+Deno.test('UserService - list users with pagination', async () => {
+  const kv = await Deno.openKv(':memory:');
+  try {
+    const service = new UserService(kv);
+
+    // Create multiple users
+    for (let i = 0; i < 15; i++) {
+      await service.create({
+        email: `user${i}@example.com`,
+        name: `User ${i}`,
+      });
+    }
+
+    // Get first page
+    const page1 = await service.findAll({ limit: 10 });
+    assertEquals(page1.users.length, 10);
+    assertEquals(page1.cursor !== undefined, true);
+
+    // Get second page
+    const page2 = await service.findAll({ limit: 10, cursor: page1.cursor });
+    assertEquals(page2.users.length, 5);
+  } finally {
+    await kv.close();
   }
 });
 ```

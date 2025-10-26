@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "exports": "./backend/main.ts",
   "tasks": {
-    "dev": "deno run --allow-net --allow-read --allow-env --allow-run --watch --unstable-kv dev.ts",
+    "dev": "deno run --allow-net --allow-read --allow-env --allow-run --watch dev.ts",
     "dev:backend": "deno run --allow-net --allow-read --allow-env --watch backend/main.ts",
     "dev:frontend": "cd frontend && deno task start",
     "start": "deno run --allow-net --allow-read --allow-env backend/main.ts",
@@ -12,6 +12,8 @@
     "build:backend": "deno compile --allow-net --allow-read --allow-env --output=./dist/backend backend/main.ts",
     "build:frontend": "cd frontend && deno task build",
     "preview": "deno run --allow-net --allow-read ./dist/backend",
+    "deploy": "deployctl deploy --project=your-project-name --prod backend/main.ts",
+    "deploy:preview": "deployctl deploy --project=your-project-name backend/main.ts",
     "test": "deno test --allow-read --allow-env --allow-net",
     "test:watch": "deno test --allow-read --allow-env --allow-net --watch",
     "test:coverage": "deno test --allow-read --allow-env --allow-net --coverage=coverage",
@@ -23,6 +25,18 @@
     "fmt:check": "deno fmt --check",
     "type-check": "deno check backend/**/*.ts && cd frontend && deno check **/*.ts **/*.tsx",
     "clean": "rm -rf dist coverage .fresh frontend/_fresh"
+  },
+  "deploy": {
+    "project": "your-project-name",
+    "entrypoint": "backend/main.ts",
+    "exclude": [
+      "dist",
+      "coverage",
+      ".fresh",
+      "frontend/_fresh",
+      "tests",
+      ".git"
+    ]
   },
   "imports": {
     "@/": "./backend/",

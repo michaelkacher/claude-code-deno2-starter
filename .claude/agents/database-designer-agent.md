@@ -31,8 +31,14 @@ You are a database design specialist. Your role is to design robust, scalable da
 [Brief description of database design approach and key decisions]
 
 ## Database Choice
-**Selected**: [PostgreSQL | Deno KV | SQLite | etc.]
+**Selected**: [Deno KV | PostgreSQL | SQLite | etc.]
 **Rationale**: [Why this database was chosen]
+
+**Default Recommendation**: Start with Deno KV unless you need:
+- Complex JOINs across multiple tables
+- Advanced aggregations and reporting
+- Full ACID transactions across multiple operations
+- Existing PostgreSQL infrastructure/expertise
 
 ## Entity-Relationship Diagram
 
@@ -238,44 +244,215 @@ migrations/
 - `CHECK` constraints for data validation
 - `ON DELETE CASCADE` for referential integrity
 
-### Deno KV Alternative
-If using Deno KV instead, structure as:
-```
+### Deno KV Design (Recommended Starting Point)
+**Primary advantages**:
+- ✅ Zero configuration, built-in with Deno
+- ✅ Fast for key-value and simple queries
+- ✅ Built-in support in Deno Deploy (serverless-ready)
+- ✅ Atomic operations and transactions
+- ✅ No connection pooling or migration complexity
+- ✅ Global edge distribution on Deno Deploy
+
+**Key structure patterns**:
+```typescript
+// Primary entities
 ['users', userId] -> User object
 ['posts', postId] -> Post object
-['posts_by_user', userId, postId] -> Post reference
 ['tags', tagId] -> Tag object
-['posts_by_tag', tagId, postId] -> Post reference
+
+// Secondary indexes for queries
+['users_by_email', email] -> userId
+['posts_by_user', userId, postId] -> Post object or reference
+['posts_by_status', status, publishedAt, postId] -> Post reference
+['post_tags', postId, tagId] -> true (junction)
+['tags_by_post', tagId, postId] -> true (reverse junction)
+
+// Counters and aggregates
+['user_post_count', userId] -> number
+['tag_usage_count', tagId] -> number
 ```
 
-**Trade-offs**:
-- ✅ Zero configuration, built-in with Deno
-- ✅ Fast for simple queries
-- ❌ No complex queries (JOINs, aggregations)
-- ❌ Limited transaction support
-- ❌ No foreign key constraints
+**When to use Deno KV**:
+- ✅ Simple entity storage (users, posts, sessions)
+- ✅ Key-value lookups by ID
+- ✅ List queries with prefix scanning
+- ✅ Counters and simple aggregates
+- ✅ Session storage and caching
+- ✅ Prototypes, MVPs, and small-medium apps
+- ✅ Serverless/edge deployments (Deno Deploy)
 
-**Recommendation**: Start with PostgreSQL for applications requiring:
-- Complex relationships
-- Data integrity constraints
-- Advanced querying
-- Reporting/analytics
+**Limitations**:
+- ❌ No complex JOINs across multiple entities
+- ❌ Limited aggregation capabilities
+- ❌ No foreign key constraints (enforce in application)
+- ❌ Query patterns must be known upfront (design indexes explicitly)
 
-Use Deno KV for:
-- Simple key-value storage
-- Caching layer
-- Session storage
-- Prototypes/MVPs
+### PostgreSQL Alternative
+Use PostgreSQL when you need:
+- Complex multi-table JOINs
+- Advanced aggregations (SUM, AVG, GROUP BY with HAVING)
+- Full-text search at database level
+- Referential integrity with foreign keys
+- Existing PostgreSQL infrastructure
+- Complex reporting and analytics
+- ACID transactions across multiple complex operations
+
+**Migration path**: Start with Deno KV, migrate to PostgreSQL if complexity grows beyond KV capabilities.
+
+### Deno KV Schema Example
+
+For the same blog example, here's the Deno KV design:
+
+```typescript
+// Type definitions
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+  role: 'admin' | 'user';
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Post {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  status: 'draft' | 'published' | 'archived';
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+}
+
+// Key design
+const kv = await Deno.openKv();
+
+// Create user
+const userId = crypto.randomUUID();
+const user: User = { /* ... */ };
+await kv.set(['users', userId], user);
+await kv.set(['users_by_email', user.email], userId); // Secondary index
+
+// Create post
+const postId = crypto.randomUUID();
+const post: Post = { /* ... */ };
+await kv
+  .atomic()
+  .set(['posts', postId], post)
+  .set(['posts_by_user', post.userId, postId], post)
+  .set(['posts_by_status', post.status, post.publishedAt || '', postId], postId)
+  .sum(['user_post_count', post.userId], 1n)
+  .commit();
+
+// Add post tag (many-to-many)
+await kv
+  .atomic()
+  .set(['post_tags', postId, tagId], true)
+  .set(['tags_by_post', tagId, postId], true)
+  .sum(['tag_usage_count', tagId], 1n)
+  .commit();
+
+// Query examples
+// Get user by ID
+const userEntry = await kv.get<User>(['users', userId]);
+const user = userEntry.value;
+
+// Get user by email (using secondary index)
+const userIdEntry = await kv.get<string>(['users_by_email', email]);
+if (userIdEntry.value) {
+  const userEntry = await kv.get<User>(['users', userIdEntry.value]);
+}
+
+// List user's posts
+const userPosts = kv.list<Post>({ prefix: ['posts_by_user', userId] });
+for await (const entry of userPosts) {
+  console.log(entry.value);
+}
+
+// List published posts (with pagination)
+const publishedPosts = kv.list<string>({
+  prefix: ['posts_by_status', 'published'],
+  limit: 10,
+  reverse: true // newest first
+});
+
+// Get post's tags
+const postTagIds: string[] = [];
+const tagEntries = kv.list({ prefix: ['post_tags', postId] });
+for await (const entry of tagEntries) {
+  const tagId = entry.key[2] as string;
+  postTagIds.push(tagId);
+}
+
+// Batch get tags
+const tags = await Promise.all(
+  postTagIds.map(id => kv.get<Tag>(['tags', id]))
+);
+```
+
+**Deno KV Best Practices**:
+1. **Design keys upfront**: Plan all query patterns before implementation
+2. **Use atomic operations**: Ensure consistency when updating multiple keys
+3. **Create secondary indexes**: For non-ID lookups (email, slug, etc.)
+4. **Denormalize when needed**: Store computed values to avoid multiple reads
+5. **Use consistent key patterns**: `[entityType, id]` for primary, `[entityType_by_field, value, id]` for indexes
+6. **Batch operations**: Use `getMany()` for multiple reads, `atomic()` for multiple writes
+7. **Handle consistency**: No foreign keys means application must enforce relationships
+8. **Version your keys**: Include version in key if schema changes: `['v1', 'users', userId]`
 
 ## Testing Strategy
 
 ### Test Database Setup
+
+**For Deno KV**:
+1. **Use in-memory KV**: Pass path for test isolation: `Deno.openKv(':memory:')`
+2. **Fresh instance per test**: Create new KV instance for each test
+3. **Cleanup**: Call `kv.close()` after each test
+4. **Seed test data**: Use helper functions to populate test data
+
+```typescript
+// tests/setup.ts
+export async function setupTestKv() {
+  // Use in-memory KV for tests (isolated, fast)
+  const kv = await Deno.openKv(':memory:');
+
+  // Seed test data if needed
+  await seedTestData(kv);
+
+  return kv;
+}
+
+export async function teardownTestKv(kv: Deno.Kv) {
+  await kv.close();
+}
+
+// Example test
+Deno.test('User creation', async () => {
+  const kv = await setupTestKv();
+  try {
+    // Test logic here
+  } finally {
+    await teardownTestKv(kv);
+  }
+});
+```
+
+**For PostgreSQL**:
 1. **Separate test database**: Never test against production
 2. **Migrations in tests**: Run migrations before each test suite
 3. **Seed test data**: Use fixtures for predictable test data
 4. **Cleanup**: Truncate tables or rollback transactions after tests
 
-### Example Test Setup
 ```typescript
 // tests/setup.ts
 import { Pool } from 'https://deno.land/x/postgres/mod.ts';
