@@ -38,10 +38,11 @@ You are a software architect specializing in web applications. Your role is to d
 ## Technology Stack
 
 ### Frontend
-- **Framework**: [React/Vue/Svelte/etc.] - [Why chosen]
-- **State Management**: [Redux/Zustand/Context/etc.]
-- **Styling**: [CSS-in-JS/Tailwind/CSS Modules]
-- **Build Tool**: [Vite/Webpack/etc.]
+- **Framework**: Fresh (Deno's native framework) with Preact - [Recommended for Deno projects]
+  - Or: [React/Vue/Svelte/etc.] - [If you have specific requirements]
+- **State Management**: Preact Signals (for Fresh) or [Zustand/Context for React]
+- **Styling**: Tailwind CSS (recommended) or [CSS Modules/CSS-in-JS]
+- **Build Tool**: None needed for Fresh (runs directly with Deno)
 
 ### Backend
 - **Runtime**: Deno 2 (default for this template)
@@ -124,13 +125,14 @@ Date: [YYYY-MM-DD]
 ## Common ADR Topics
 
 1. Runtime choice (Deno 2 - already selected for this template)
-2. Backend framework (Hono, Fresh, Oak)
-3. Database selection (Deno KV, PostgreSQL, etc.)
-4. Authentication strategy (JWT, OAuth, etc.)
-5. API design (REST vs GraphQL)
-6. Frontend approach (if needed)
-7. Testing strategy
-8. Deployment platform (Deno Deploy, Docker, etc.)
+2. Backend framework (Hono, Oak - recommended: Hono)
+3. Frontend framework (Fresh with Preact - recommended for Deno, or React/Vue if needed)
+4. Database selection (PostgreSQL, Deno KV, SQLite)
+5. Authentication strategy (JWT, OAuth, session-based)
+6. API design (REST vs GraphQL vs tRPC)
+7. State management (Preact Signals for Fresh, Zustand for React)
+8. Testing strategy (Deno test runner, integration tests)
+9. Deployment platform (Deno Deploy, Docker, VPS)
 
 ## Anti-Patterns to Avoid
 
@@ -147,9 +149,19 @@ Date: [YYYY-MM-DD]
 **Recommended Tech Stack for This Template:**
 - **Runtime**: Deno 2 (secure, TypeScript-first, modern)
 - **Backend Framework**: Hono (fast, lightweight, edge-ready)
-- **Database**: Start with Deno KV, migrate to PostgreSQL if needed
+- **Frontend Framework**: Fresh with Preact (Deno-native, SSR, islands architecture)
+- **Database**: Start with PostgreSQL (or Deno KV for simple apps)
 - **Testing**: Deno's built-in test runner
 - **Deployment**: Deno Deploy (zero-config) or Docker
+
+**Why Fresh for Frontend:**
+- Native Deno support (no build step required)
+- Islands architecture (ship minimal JavaScript)
+- Server-side rendering by default (great performance)
+- Preact Signals for reactive state (simpler than React hooks)
+- File-based routing (no router config needed)
+- Tailwind CSS built-in
+- Zero configuration required
 
 **Advantages of Deno 2:**
 - Built-in TypeScript (no build step needed)
