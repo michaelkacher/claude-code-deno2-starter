@@ -2,31 +2,61 @@
 
 This guide helps you write tests **3-5x faster** using templates and helpers.
 
+## Testing Philosophy: Business Logic Only
+
+**CRITICAL PRINCIPLE**: Test YOUR code (business logic), not the framework's code.
+
+### ✅ DO Test:
+- **Business rules**: Email validation, duplicate prevention, price calculations
+- **Domain logic**: Order totals, inventory management, permissions
+- **Data transformations**: Input sanitization, format conversions
+- **Business workflows**: Multi-step processes, state transitions
+- **Edge cases**: Boundary values, empty data, special domain states
+
+### ❌ DON'T Test:
+- HTTP status codes (Hono's responsibility)
+- Authentication middleware (framework feature)
+- JSON serialization (framework feature)
+- Routing logic (framework feature)
+- CORS, headers, etc. (framework features)
+
+**Rule**: If you didn't write the code, don't test it. Trust Hono/Fresh/Deno to work correctly.
+
+---
+
 ## Quick Start
 
-### For Unit Tests
+### For Service/Business Logic Tests (RECOMMENDED - 80% of tests)
 
 ```bash
-# Copy the template
-cp tests/templates/unit.test.template.ts tests/unit/my-feature.test.ts
+# Copy the service test template
+cp tests/templates/service.test.template.ts tests/unit/services/my-feature.test.ts
 
 # Customize:
-# 1. Replace [FeatureName] with your feature name
-# 2. Import the function to test
-# 3. Update test data
+# 1. Import your service class
+# 2. Replace [FeatureService] with your service name
+# 3. Test business rules and domain logic
 # Done!
 ```
 
-### For API Integration Tests
+### For Pure Utility Functions
 
 ```bash
-# Copy the template
-cp tests/templates/integration-api.test.template.ts tests/integration/api/my-endpoint.test.ts
+# Copy the unit test template
+cp tests/templates/unit.test.template.ts tests/unit/my-utility.test.ts
 
 # Customize:
-# 1. Replace [ENDPOINT] with your endpoint name
-# 2. Update test data
+# 1. Import the utility function
+# 2. Test the pure logic
 # Done!
+```
+
+### For API Integration Tests (USE SPARINGLY)
+
+```bash
+# Only use this if you need to test data persistence integration
+# DO NOT use this to test HTTP status codes or routing
+cp tests/templates/integration-api.test.template.ts tests/integration/api/my-endpoint.test.ts
 ```
 
 ## Available Helpers
@@ -121,25 +151,41 @@ const users = buildUsers(5); // Creates 5 users
 
 ## Test Templates
 
+### Service Test Template ⭐ RECOMMENDED
+
+**Location:** `tests/templates/service.test.template.ts`
+
+**Best for:**
+- Business logic in service classes (80% of your tests)
+- Domain-specific validation rules
+- Business workflows and calculations
+- Data transformation logic
+
+**Example business rules to test:**
+- Email format validation
+- Duplicate prevention
+- Default value assignment
+- Price calculations
+- Permission checks
+- State transitions
+
 ### Unit Test Template
 
 **Location:** `tests/templates/unit.test.template.ts`
 
 **Best for:**
-- Business logic functions
-- Utility functions
-- Service classes
-- Pure logic testing
+- Pure utility functions (formatDate, generateId, etc.)
+- Algorithms and calculations
+- Helper functions
+- No database or external dependencies
 
-### Integration API Test Template
+### Integration API Test Template (USE SPARINGLY)
 
 **Location:** `tests/templates/integration-api.test.template.ts`
 
-**Best for:**
-- REST API endpoints
-- Full request/response testing
-- Authentication testing
-- Validation testing
+**Use ONLY for:**
+- Testing data persistence with KV/database
+- **DO NOT** test HTTP status codes, routing, or authentication
 
 ## Writing Tests Fast - Workflow
 
@@ -165,20 +211,21 @@ deno test tests/[your-test].ts --allow-all
 ## Best Practices
 
 ### ✅ DO:
-- **Use templates** - 3-5x faster than writing from scratch
+- **Test business logic** - YOUR domain rules and workflows
+- **Use service template** - For 80% of your tests
 - **Use test helpers** - Reduces boilerplate by 60%
 - **Use data builders** - Consistent test data
 - **Use `:memory:` for KV** - Fast, isolated tests
-- **Clean up resources** - Close KV connections, servers
-- **Test happy path first** - Then edge cases
+- **Clean up resources** - Close KV connections
+- **Test edge cases** - Boundary values in YOUR domain
 
 ### ❌ DON'T:
-- Write tests from scratch (use templates!)
-- Repeat boilerplate code (use helpers!)
-- Share KV instances between tests
-- Forget to close KV connections
-- Test framework internals
-- Over-test trivial code
+- Test framework logic (HTTP codes, routing, auth middleware)
+- Test third-party libraries (trust Hono/Fresh/Deno)
+- Write integration tests for everything
+- Test JSON serialization (framework handles this)
+- Test authentication middleware (unless custom logic)
+- Over-test trivial getters/setters
 
 ## Examples
 
