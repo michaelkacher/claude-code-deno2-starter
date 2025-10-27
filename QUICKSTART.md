@@ -167,6 +167,7 @@ The workflow created:
 3. **Backend Code**:
    - `backend/routes/todos.ts` - API routes (Hono)
    - `backend/services/todos.ts` - Business logic with Deno KV
+   - `backend/types/` - TypeScript type definitions
 
 4. **Frontend** (optional with Fresh):
    - `frontend/routes/` - SSR pages
@@ -253,7 +254,7 @@ git push origin main    # Auto-deploy via GitHub Actions
 - Deno automatically discovers test files
 
 ### Type Errors
-- Run `deno check src/**/*.ts` to see all errors
+- Run `deno check backend/**/*.ts` to see all errors
 - Make sure file imports include `.ts` extensions
 - Check that types match API spec in `docs/api-spec.md`
 
@@ -269,7 +270,7 @@ git push origin main    # Auto-deploy via GitHub Actions
 - Use full URLs for deno.land/x packages
 
 ### API Not Working
-- Verify routes are defined in `src/routes/`
+- Verify routes are defined in `backend/routes/`
 - Check that server is running on port 8000
 - Look for errors in console
 - Test with: `curl http://localhost:8000/api/health`
@@ -282,7 +283,7 @@ TypeScript runs directly - no compilation required!
 ### 2. Permissions Are Good
 Deno's permission system protects you. If you get "permission denied":
 ```bash
-deno run --allow-net --allow-read --allow-env src/main.ts
+deno run --allow-net --allow-read --allow-env backend/main.ts
 ```
 
 ### 3. Dependencies Are Cached

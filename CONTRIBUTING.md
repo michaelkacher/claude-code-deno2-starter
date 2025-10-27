@@ -157,7 +157,7 @@ deno task type-check
 
 ### Type Errors
 1. Run `deno task type-check` to see all errors
-2. Update types in `src/types/`
+2. Update types in `backend/types/`
 3. Ensure API spec matches implementation
 
 ### Linting Errors
