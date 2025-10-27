@@ -10,7 +10,7 @@ Prerequisites:
 The agent will create test files:
 - `tests/unit/` - Unit tests for business logic
 - `tests/integration/` - Integration tests for API endpoints
-- `src/components/**/*.test.tsx` - Component tests
+- `frontend/tests/**/*.test.tsx` - Component tests
 
 This follows Test-Driven Development (TDD):
 1. **Red**: Write failing tests first (this command)
