@@ -21,34 +21,35 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 
 ## Instructions
 
-### Step 0: First-Run Detection (IMPORTANT)
+### Step 0: Architecture Check (IMPORTANT)
 
 Before starting, check if architecture documentation exists:
 
-Use the Read tool to check for `docs/architecture.md`. If it doesn't exist, inform the user:
+Use the Read tool to check for `docs/architecture.md`.
 
+**It should exist** (this template ships with a pre-defined architecture).
+
+If it exists, read it briefly to understand the tech stack:
+- Backend: Hono
+- Frontend: Fresh + Preact (optional)
+- Database: Deno KV
+- Deployment: Deno Deploy
+
+**If it doesn't exist (unusual)**, create it or tell the user:
 ```
-⚠️  I noticed this might be your first feature!
+⚠️ Architecture file missing!
 
-For the best experience, I recommend setting up your project architecture first.
-This ensures your features align with your vision and avoids rework.
+This template is opinionated and should include docs/architecture.md.
 
-Would you like to:
-a) Run /requirements + /architect first (recommended - defines your tech stack)
-b) Continue with default architecture (Hono + Fresh + Deno KV)
-c) Skip architecture setup (I'll ask about architecture decisions as needed)
+I'll proceed with the default stack:
+- Backend: Hono
+- Frontend: Fresh + Preact
+- Database: Deno KV
+
+If you want a different stack, this template may not be suitable.
 ```
 
-If the user chooses option (a), stop and suggest:
-```
-Great! Please run:
-1. /requirements - Define what you're building
-2. /architect - Design the system architecture
-3. /new-feature - Build your first feature (come back here!)
-```
-
-If the user chooses option (b), continue but note that they're using defaults.
-If the user chooses option (c), continue and ask about architecture during the workflow.
+**Then proceed with feature development** - the architecture is already defined.
 
 ### Step 1: Get Feature Name
 

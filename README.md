@@ -1,12 +1,28 @@
 # Web Project Starter with Claude Code + Deno 2
 
-This template has the following goals: 
-* Go from idea to deployed project quickly
-* Leverage Claude Code for new feature development
-* Have a solid foundation to reduce the number of tokens used to create new applications
-* Be robust enough and follow Test Driven Development (TDD) that if the project matures, you lesson the risks of new features breaking existing features due to tests
+## ⚡ Opinionated & Production-Ready
 
-This template leverages **Deno 2** and **Fresh**.
+**This is an opinionated starter template** with a pre-selected tech stack designed to work together seamlessly. The architecture is chosen for you so you can focus on building features, not debating technology choices.
+
+### The Stack (Fixed)
+
+- **Runtime:** Deno 2
+- **Backend:** Hono (REST API)
+- **Frontend:** Fresh + Preact (optional, can be removed)
+- **Database:** Deno KV
+- **Deployment:** Deno Deploy (edge)
+- **Testing:** Deno's built-in test runner
+
+**✅ Use this template if you want this exact stack.**
+**❌ If you need Node.js, Express, React, PostgreSQL, etc. - this template won't help.**
+
+### Goals
+
+* Go from idea to deployed project quickly (< 1 hour)
+* Leverage Claude Code AI agents for feature development
+* Opinionated stack reduces tokens and decision fatigue
+* Test-Driven Development (TDD) prevents regressions
+* Production-ready from day one
 
 ## Overview
 
@@ -47,9 +63,11 @@ git clone <your-repo-url>
 cd <your-project>
 ```
 
-### 3. Define Your Project
+### 3. Build Your First Feature
 
 **This is a clean slate template - no example features!**
+
+The architecture is pre-defined (see `docs/architecture.md`). You just need to build features.
 
 Choose your workflow:
 
@@ -59,19 +77,20 @@ Choose your workflow:
 # Step 1: Define what you're building
 /requirements
 
-# Step 2: Design your architecture
-/architect
+# Step 2: Review the architecture
+# Architecture is already defined in docs/architecture.md
+# Use /architect only if you need to make changes
 
 # Step 3: Build your first feature
 /new-feature
 ```
 
-#### Option B: Quick Start with Defaults
+#### Option B: Quick Start (Fastest)
 
 ```bash
-# Jump straight to building with default stack (Hono + Fresh + Deno KV)
+# Jump straight to building features
+# Architecture is already defined
 /new-feature
-# The command will prompt you about architecture choices
 ```
 
 #### Option C: Just Explore
