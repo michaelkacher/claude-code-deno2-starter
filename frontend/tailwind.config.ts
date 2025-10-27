@@ -2,10 +2,9 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
-    './backend/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './backend/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './backend/app/**/*.{js,ts,jsx,tsx,mdx}',
-    './frontend/**/*.{js,ts,jsx,tsx}',
+    './routes/**/*.{js,ts,jsx,tsx}',
+    './islands/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
@@ -22,6 +21,18 @@ const config: Config = {
           800: '#075985',
           900: '#0c4a6e',
         },
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2s infinite',
+      },
+      backdropBlur: {
+        xs: '2px',
       },
     },
   },
