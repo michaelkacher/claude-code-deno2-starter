@@ -164,6 +164,7 @@ Quick workflows for common tasks:
 |---------|-------|-------------|-------------|
 | `/requirements` | Manual | Gather requirements | Starting new project or feature |
 | `/architect` | Manual | Design architecture | Initial setup or major changes |
+| `/mockup` | **Visual** | Create UI mockup | Quick visual prototyping before building |
 | `/design-api` | Manual | Design API contracts | Before implementation |
 | `/write-tests` | Manual | Write tests (TDD) | Before coding (Red phase) |
 | `/implement-backend` | Manual | Implement backend | After tests are written |
@@ -232,39 +233,43 @@ Fully automated with smart decisions, validation, and error recovery.
    ```
    Describe your project. The agent will ask clarifying questions and create `docs/requirements.md`.
 
-2. **Design Architecture**
-   ```bash
-   /architect
-   ```
-   The agent will design the system architecture and create:
-   - `docs/architecture.md` - System overview
-   - `docs/adr/` - Architecture Decision Records
+2. **Review Architecture**
+   Architecture is pre-defined in `docs/architecture.md`. Use `/architect` only if you need changes.
 
-3. **Design API**
+3. **Optional: Create UI Mockup** (NEW! 🎨)
+   ```bash
+   /mockup
+   ```
+   Create visual prototypes to explore UI/UX before building the full feature.
+   - Fast iteration on design
+   - No backend needed
+   - Convert to feature when approved
+
+4. **Design API**
    ```bash
    /design-api
    ```
    Creates API specification and data models.
 
-4. **Write Tests** (TDD Red Phase)
+5. **Write Tests** (TDD Red Phase)
    ```bash
    /write-tests
    ```
    Creates tests that will initially fail.
 
-5. **Implement Backend** (TDD Green Phase)
+6. **Implement Backend** (TDD Green Phase)
    ```bash
    /implement-backend
    ```
    Implements code to make backend tests pass.
 
-6. **Implement Frontend**
+7. **Implement Frontend**
    ```bash
    /implement-frontend
    ```
    Builds UI components to make frontend tests pass.
 
-7. **Review**
+8. **Review**
    ```bash
    /review
    ```
@@ -272,7 +277,24 @@ Fully automated with smart decisions, validation, and error recovery.
 
 ### Adding a New Feature
 
-**Recommended approach** - use the feature-scoped workflow (40-50% token savings):
+**Option 1: Visual-First Approach** (NEW! 🎨)
+
+Great for UI-heavy features:
+
+```bash
+# 1. Create mockup first
+/mockup
+# Describe the UI you want to see
+# Review at http://localhost:3000/mockups/[name]
+
+# 2. Convert to full feature
+/new-feature
+# Reference the mockup for visual design
+```
+
+**Option 2: Recommended Approach** (Traditional)
+
+Use the feature-scoped workflow (40-50% token savings):
 
 ```bash
 /new-feature
@@ -286,7 +308,9 @@ This creates documentation in `features/proposed/{feature-name}/` instead of glo
 5. Implement backend and frontend
 6. Guide you to `/feature-complete` when done
 
-**For complex projects** - use intelligent orchestration:
+**Option 3: Complex Projects** (Advanced)
+
+Use intelligent orchestration:
 
 ```bash
 /auto-feature
@@ -294,12 +318,16 @@ This creates documentation in `features/proposed/{feature-name}/` instead of glo
 
 The orchestrator will analyze your project state and automatically execute the workflow with validation at each step.
 
-**For learning/customization** - run agents manually:
+**Option 4: Manual Control** (Learning)
+
+Run agents manually:
 
 ```bash
 /requirements
-/architect
 /design-api
+/write-tests
+/implement-backend
+/implement-frontend
 # etc...
 ```
 
