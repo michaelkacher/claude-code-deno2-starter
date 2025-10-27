@@ -47,23 +47,71 @@ git clone <your-repo-url>
 cd <your-project>
 ```
 
-### 3. Start Your Project
+### 3. Define Your Project
+
+**This is a clean slate template - no example features!**
+
+Choose your workflow:
+
+#### Option A: Full Guided Setup (Recommended for New Projects)
 
 ```bash
-# Start both backend and frontend servers
+# Step 1: Define what you're building
+/requirements
+
+# Step 2: Design your architecture
+/architect
+
+# Step 3: Build your first feature
+/new-feature
+```
+
+#### Option B: Quick Start with Defaults
+
+```bash
+# Jump straight to building with default stack (Hono + Fresh + Deno KV)
+/new-feature
+# The command will prompt you about architecture choices
+```
+
+#### Option C: Just Explore
+
+```bash
+# Start the minimal server to see it running
 deno task dev
 # Backend: http://localhost:8000
 # Frontend: http://localhost:3000
 
-# Or start them individually
-deno task dev:backend   # Backend API only
-deno task dev:frontend  # Frontend only
-
-# Or jump right into development with Claude Code
+# Then define your project when ready
 /requirements
-/architect
-/new-feature
 ```
+
+**Note**: The template includes only a minimal backend (health check) and frontend starter. No example features are included - you design everything from your requirements!
+
+### What's Included in This Template?
+
+**Infrastructure (Ready to Use):**
+- ✅ Backend server (Hono) with health check endpoint
+- ✅ Frontend framework (Fresh + Preact)
+- ✅ Test setup with Deno's built-in test runner
+- ✅ Deno KV utilities and scripts
+- ✅ Development workflow (`deno task dev`)
+- ✅ Claude Code agents and commands
+
+**Not Included (You Design):**
+- ❌ Example API routes (you define based on requirements)
+- ❌ Database schema (you design based on needs)
+- ❌ Frontend components (you build based on features)
+- ❌ Business logic (you implement via TDD)
+
+**Why This Approach?**
+
+This template is optimized for AI-driven development. Instead of example code that might not match your needs, you:
+1. Define requirements
+2. Let agents design the architecture
+3. Build features from scratch with TDD
+
+This ensures your application matches YOUR requirements, not generic examples.
 
 ## Architecture
 
@@ -549,30 +597,65 @@ Your command instructions...
 
 ## Examples
 
-### Example 1: Adding User Authentication (Recommended)
+### Example 1: Building Your First Feature (Recommended)
 
-Using Level 2 (semi-automated):
+Starting from a fresh template:
+
+```bash
+# Step 1: Define your project
+/requirements
+> "I want to build a task management app where users can create,
+   complete, and organize tasks into projects"
+
+# Step 2: Design architecture
+/architect
+# Agent evaluates requirements and recommends:
+# - Hono for REST API
+# - Deno KV for data storage (tasks + projects)
+# - Fresh for the UI
+# - Creates docs/architecture.md and ADRs
+
+# Step 3: Build first feature
+/new-feature
+> "task-creation"
+
+# The command will guide you through:
+# - Gather detailed requirements for task creation
+# - Design API endpoint (POST /api/tasks)
+# - Design Deno KV schema for tasks
+# - Write tests following TDD
+# - Implement backend logic
+# - Implement frontend form
+```
+
+### Example 2: Quick Start with Defaults
+
+Skip requirements/architecture and jump right in:
 
 ```bash
 /new-feature
-> "Add user authentication with email/password"
+> "user-authentication"
 
-# The command will guide you through:
-# - Gather detailed requirements
-# - Update architecture (add auth strategy ADR)
-# - Design auth API endpoints (login, register, logout)
-# - Write tests for auth flow
-# - Implement backend auth logic
-# - Implement frontend login/register forms
+# First-run detection triggers:
+⚠️  I noticed this might be your first feature!
+
+Would you like to:
+a) Run /requirements + /architect first (recommended)
+b) Continue with default architecture (Hono + Fresh + Deno KV)
+c) Skip architecture setup
+
+# Choose (b) for quick start with sensible defaults
+# The agent will use the template's default stack
 ```
 
-### Example 2: Adding User Authentication (Advanced)
+### Example 3: Advanced Automation (Optional)
 
 Using Level 3 (fully automated):
 
 ```bash
+# After architecture is defined, use orchestrator for complex features
 /auto-feature
-> "Add user authentication with email/password"
+> "Add user authentication with JWT tokens and role-based access control"
 
 # The orchestrator will:
 # - Analyze current project state
@@ -580,27 +663,6 @@ Using Level 3 (fully automated):
 # - Automatically invoke required agents
 # - Validate outputs at each step
 # - Report completion with test results
-```
-
-### Example 3: Adding a Dashboard (Manual)
-
-Using Level 1 (full control):
-
-```bash
-/requirements
-# Describe dashboard requirements
-
-/design-api
-# Design dashboard data endpoints
-
-/write-tests
-# Write tests for dashboard
-
-/implement-backend
-# Implement data aggregation
-
-/implement-frontend
-# Build dashboard UI
 ```
 
 ## Troubleshooting

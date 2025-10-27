@@ -10,6 +10,7 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 
 ## Workflow Steps
 
+0. **First-Run Detection**: Check if `docs/architecture.md` exists to determine if this is first feature
 1. **Get feature name**: Ask the user for a short, kebab-case feature name (e.g., "user-authentication", "workout-planner")
 2. **Requirements Gathering**: Use `requirements-agent-feature` to gather lightweight, focused requirements
 3. **API Design**: Use `api-designer-agent-feature` to design endpoints and data models
@@ -19,6 +20,35 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 7. **Verify & Complete**: Run tests, offer to run `/feature-complete` to move to implemented
 
 ## Instructions
+
+### Step 0: First-Run Detection (IMPORTANT)
+
+Before starting, check if architecture documentation exists:
+
+Use the Read tool to check for `docs/architecture.md`. If it doesn't exist, inform the user:
+
+```
+⚠️  I noticed this might be your first feature!
+
+For the best experience, I recommend setting up your project architecture first.
+This ensures your features align with your vision and avoids rework.
+
+Would you like to:
+a) Run /requirements + /architect first (recommended - defines your tech stack)
+b) Continue with default architecture (Hono + Fresh + Deno KV)
+c) Skip architecture setup (I'll ask about architecture decisions as needed)
+```
+
+If the user chooses option (a), stop and suggest:
+```
+Great! Please run:
+1. /requirements - Define what you're building
+2. /architect - Design the system architecture
+3. /new-feature - Build your first feature (come back here!)
+```
+
+If the user chooses option (b), continue but note that they're using defaults.
+If the user chooses option (c), continue and ask about architecture during the workflow.
 
 ### Step 1: Get Feature Name
 

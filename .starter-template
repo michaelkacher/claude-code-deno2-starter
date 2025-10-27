@@ -1,0 +1,44 @@
+{
+  "isTemplate": true,
+  "version": "0.1.0",
+  "templateType": "deno2-web-starter",
+  "created": "2025-01-27",
+  "defaultStack": {
+    "runtime": "deno",
+    "backend": {
+      "framework": "hono",
+      "language": "typescript",
+      "status": "minimal"
+    },
+    "frontend": {
+      "framework": "fresh",
+      "library": "preact",
+      "status": "starter",
+      "optional": true
+    },
+    "database": {
+      "recommended": "deno-kv",
+      "configured": false
+    },
+    "deployment": {
+      "recommended": "deno-deploy",
+      "configured": false
+    }
+  },
+  "features": {
+    "exampleCode": false,
+    "minimalBackend": true,
+    "cleanSlate": true
+  },
+  "instructions": {
+    "firstSteps": [
+      "Run /requirements to define your project",
+      "Run /architect to design architecture",
+      "Run /new-feature to build your first feature"
+    ],
+    "quickStart": [
+      "Run /new-feature with default stack (Hono + Fresh + Deno KV)"
+    ]
+  },
+  "notes": "This template is intentionally minimal with no example features. Agents should design from requirements, not assume existing architecture."
+}
