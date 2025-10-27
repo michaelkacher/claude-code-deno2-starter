@@ -57,7 +57,7 @@ Create test files following this structure:
 ```typescript
 import { assertEquals, assertThrows } from "@std/assert";
 import { describe, it, beforeEach } from "@std/testing/bdd";
-import { functionToTest } from "../src/lib/[feature].ts";
+import { functionToTest } from "../backend/lib/[feature].ts";
 
 describe('[Feature Name]', () => {
   describe('functionToTest', () => {

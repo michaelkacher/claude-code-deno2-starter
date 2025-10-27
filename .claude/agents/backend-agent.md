@@ -38,7 +38,7 @@ You are a backend development specialist focused on implementing server-side log
 Follow this typical structure:
 
 ```
-src/
+backend/
 ├── main.ts                  # Server entry point
 ├── config/
 │   ├── database.ts         # DB connection
@@ -54,8 +54,10 @@ src/
 │   ├── auth.ts             # Authentication
 │   ├── validation.ts       # Request validation
 │   └── error.ts            # Error handling
-└── lib/
-    └── utils.ts            # Helper functions
+├── lib/
+│   └── utils.ts            # Helper functions
+└── types/
+    └── index.ts            # TypeScript types
 ```
 
 ## Implementation Workflow
@@ -70,7 +72,7 @@ Confirm test fails (Red phase).
 
 **Example: API Endpoint Implementation**
 
-**`src/routes/users.ts`**
+**`backend/routes/users.ts`**
 ```typescript
 import { Hono } from 'hono';
 import type { Context } from 'jsr:@hono/hono';
@@ -96,7 +98,7 @@ users.get('/', authenticate, async (c: Context) => {
 export default users;
 ```
 
-**`src/services/users.ts`**
+**`backend/services/users.ts`**
 ```typescript
 import type { User, CreateUserInput } from '../types/index.ts';
 import { ValidationError } from '../lib/errors.ts';
@@ -145,7 +147,7 @@ export class UserService {
 }
 ```
 
-**`src/middleware/auth.ts`**
+**`backend/middleware/auth.ts`**
 ```typescript
 import type { Context } from 'jsr:@hono/hono';
 import { UnauthorizedError } from '../lib/errors.ts';
@@ -170,7 +172,7 @@ export async function authenticate(c: Context, next: () => Promise<void>) {
 }
 ```
 
-**`src/middleware/validation.ts`**
+**`backend/middleware/validation.ts`**
 ```typescript
 import type { Context } from 'jsr:@hono/hono';
 import { z } from 'zod';
@@ -196,7 +198,7 @@ export async function validateCreateUser(c: Context, next: () => Promise<void>) 
 }
 ```
 
-**`src/middleware/error.ts`**
+**`backend/middleware/error.ts`**
 ```typescript
 import type { Context } from 'jsr:@hono/hono';
 import { BaseError } from '../lib/errors.ts';
@@ -224,7 +226,7 @@ export function errorHandler(error: Error, c: Context) {
 }
 ```
 
-**`src/lib/errors.ts`**
+**`backend/lib/errors.ts`**
 ```typescript
 export class BaseError extends Error {
   constructor(

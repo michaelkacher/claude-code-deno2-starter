@@ -40,7 +40,7 @@ Before starting, check:
 - docs/architecture.md (architecture designed?)
 - docs/api-spec.md (API designed?)
 - tests/ directory (tests written?)
-- src/ implementation (code exists?)
+- backend/ implementation (code exists?)
 ```
 
 ### Decision Tree
@@ -255,8 +255,8 @@ After completion:
 **Completed Steps:**
 1. ✅ API spec updated - docs/api-spec.md
 2. ✅ Tests written - tests/integration/feature.test.ts
-3. ✅ Backend implemented - src/app/api/feature/
-4. ✅ Frontend implemented - src/components/Feature.tsx
+3. ✅ Backend implemented - backend/routes/feature.ts
+4. ✅ Frontend implemented - frontend/islands/Feature.tsx
 5. ✅ All tests passing (15/15)
 
 **Validation Results:**
