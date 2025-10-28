@@ -21,35 +21,143 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 
 ## Instructions
 
-### Step 0: Architecture Check (IMPORTANT)
+### Step 0: First-Run Detection and Project Context (IMPORTANT)
 
-Before starting, check if architecture documentation exists:
+Before starting, detect if this is the user's first feature by checking for existing features:
 
-Use the Read tool to check for `docs/architecture.md`.
+1. **Check for existing features:**
+   ```bash
+   ls features/proposed/ features/implemented/
+   ```
 
-**It should exist** (this template ships with a pre-defined architecture).
+2. **If no features exist (first run):**
 
-If it exists, read it briefly to understand the tech stack:
-- Backend: Hono
-- Frontend: Fresh + Preact (optional)
-- Database: Deno KV
-- Deployment: Deno Deploy
+   Tell the user:
+   ```
+   Welcome! This looks like your first feature. Let me ask a few quick questions about your project.
 
-**If it doesn't exist (unusual)**, create it or tell the user:
-```
-⚠️ Architecture file missing!
+   This will help me provide better guidance and won't require running /requirements separately.
+   ```
 
-This template is opinionated and should include docs/architecture.md.
+   **Ask these 3 lightweight questions:**
 
-I'll proceed with the default stack:
-- Backend: Hono
-- Frontend: Fresh + Preact
-- Database: Deno KV
+   a) **Project Purpose** (1-2 sentences):
+      ```
+      What are you building? (Brief description)
+      Example: "A workout tracking app for gym-goers"
+      ```
 
-If you want a different stack, this template may not be suitable.
-```
+   b) **Primary Users** (1 sentence):
+      ```
+      Who will use this?
+      Example: "Fitness enthusiasts who want to track their progress"
+      ```
+
+   c) **Key Goal** (1 sentence):
+      ```
+      What's the main problem this solves?
+      Example: "Makes it easy to log workouts and see progress over time"
+      ```
+
+   **Create lightweight project context file:**
+
+   Create `features/PROJECT_CONTEXT.md`:
+   ```markdown
+   # Project Context
+
+   **What we're building:** {answer a}
+
+   **Primary users:** {answer b}
+
+   **Key goal:** {answer c}
+
+   **Tech stack:** Hono (backend), Fresh + Preact (frontend), Deno KV (database)
+
+   ---
+
+   This file provides lightweight project context for features. For comprehensive requirements, use `/requirements` to create `docs/requirements.md`.
+   ```
+
+   Then say:
+   ```
+   ✅ Project context saved! Now let's build your first feature.
+   ```
+
+3. **If features exist (subsequent runs):**
+
+   Skip the questions and proceed directly to feature development.
+
+4. **Check architecture:**
+
+   Use the Read tool to verify `docs/architecture.md` exists.
+
+   **It should exist** (this template ships with a pre-defined architecture).
+
+   If it exists, read it briefly to understand the tech stack:
+   - Backend: Hono
+   - Frontend: Fresh + Preact (optional)
+   - Database: Deno KV
+   - Deployment: Deno Deploy
+
+   **If it doesn't exist (unusual)**, tell the user:
+   ```
+   Note: This template includes a pre-defined architecture in docs/architecture.md.
+
+   I'll proceed with the default stack:
+   - Backend: Hono
+   - Frontend: Fresh + Preact
+   - Database: Deno KV
+
+   If you need a different stack, this template may not be suitable.
+   ```
 
 **Then proceed with feature development** - the architecture is already defined.
+
+### Step 0.5: Check for Existing Mockups (NEW)
+
+Before asking for a feature name, check for existing mockups:
+
+```bash
+ls frontend/routes/mockups/*.tsx 2>/dev/null | grep -v "index.tsx"
+```
+
+**If mockups exist:**
+
+List them for the user:
+```
+I found these UI mockups:
+1. /mockups/user-profile
+2. /mockups/task-list
+
+Would you like to convert one of these mockups to a full feature?
+- Yes: I'll use the mockup as a design reference
+- No: I'll create a new feature from scratch
+
+Your choice (yes/no):
+```
+
+**If user says yes:**
+
+Ask which mockup:
+```
+Which mockup would you like to convert? (enter the name, e.g., "user-profile")
+```
+
+Then read the mockup file to extract context:
+```bash
+cat frontend/routes/mockups/[mockup-name].tsx
+```
+
+Extract the header comment block and use it as:
+- Visual reference for requirements
+- Layout inspiration for API design
+- UI structure for frontend implementation
+
+Proceed to Step 2 (skip Step 1 - use mockup name as feature name basis).
+
+**If user says no or no mockups exist:**
+
+Proceed to Step 1 normally.
 
 ### Step 1: Get Feature Name
 
@@ -138,12 +246,32 @@ Run tests:
 deno test
 ```
 
-Then offer:
+**If this feature was converted from a mockup:**
+
+Ask about mockup cleanup:
 ```
 ✅ Feature "{feature-name}" is complete!
 
+This feature was based on the mockup at /mockups/{mockup-name}.
+
+Would you like to delete the mockup file? (yes/no)
+```
+
+If yes:
+```bash
+rm -f frontend/routes/mockups/{mockup-name}.tsx
+```
+
+Then say:
+```
+✅ Mockup deleted. The full feature is now in production routes.
+```
+
+**Then offer next steps:**
+
+```
 Would you like to:
-1. Run /feature-complete to move this to features/implemented/
+1. Run /feature-complete to move docs to features/implemented/
 2. Continue iterating on the feature
 3. Test the feature manually first
 ```

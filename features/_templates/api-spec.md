@@ -1,5 +1,9 @@
 # API Specification: {Feature Name}
 
+> **Note**: For simple CRUD features, consider using `api-spec-shorthand.md` instead for better token efficiency.
+
+> **Token Efficiency**: Reference `API_PATTERNS.md` instead of repeating standard error responses. Use `STANDARD_ERRORS` for common error codes.
+
 ## Base URL
 ```
 Development: http://localhost:8000/api/v1
@@ -50,48 +54,13 @@ Authorization: Bearer {token}  // If required
 }
 ```
 
-**Response 400** (Bad Request):
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid input",
-    "details": {
-      "field1": "Field is required"
-    }
-  }
-}
-```
+**Errors**: `STANDARD_ERRORS` (see `API_PATTERNS.md`)
+- 400: Validation errors (field-specific details)
+- 401: Unauthorized (if auth required)
+- 404: Resource not found (for :id endpoints)
+- 500: Internal server error
 
-**Response 401** (Unauthorized):
-```json
-{
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Authentication required"
-  }
-}
-```
-
-**Response 404** (Not Found):
-```json
-{
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "Resource not found"
-  }
-}
-```
-
-**Response 500** (Server Error):
-```json
-{
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "An unexpected error occurred"
-  }
-}
-```
+{Only document error responses if they differ from standard patterns}
 
 ---
 

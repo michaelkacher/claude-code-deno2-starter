@@ -42,42 +42,43 @@ Edit `.env` with your configuration.
 
 ## Step 2: Start Development
 
-Two options:
-
-### Option A: Complete New Project
-
-Start from scratch with full workflow:
+### Recommended: Just Start Building! (90% of users)
 
 ```bash
-# 1. Gather requirements
+/new-feature
+```
+
+That's it! On first run, the command will:
+1. Ask 3 quick questions about your project (30 seconds)
+2. Use the pre-defined architecture (Hono + Fresh + Deno KV)
+3. Guide you through building your first feature
+
+**Why this works:**
+- No need to run `/requirements` separately
+- 40-50% more token efficient
+- Faster time to first feature
+- Architecture already defined in template
+
+### Alternative: Detailed Planning (Complex projects)
+
+If you need comprehensive documentation for stakeholders or planning 10+ features:
+
+```bash
+# 1. Document project vision (optional)
 /requirements
-```
 
-Describe your project, answer questions from the agent.
-
-```bash
-# 2. Design architecture
+# 2. Customize architecture (optional)
 /architect
-```
 
-Reviews requirements and creates architecture.
-
-```bash
-# 3. Continue with feature development
+# 3. Build features
 /new-feature
 ```
 
-Describe your first feature.
-
-### Option B: Quick Feature Addition
-
-If you already have requirements and architecture:
-
-```bash
-/new-feature
-```
-
-Describe the feature you want to build.
+**When to use this:**
+- Large projects requiring detailed documentation
+- Multiple stakeholders need alignment
+- Complex integration requirements
+- Many user personas to consider
 
 ## Step 3: See It in Action
 
@@ -98,41 +99,36 @@ The server will start with the permissions defined in `deno.json`. You'll see ou
 
 Let's build a simple todo app as an example:
 
-### 1. Requirements
-
-```bash
-/requirements
-```
-
-Tell the agent:
-> "I want to build a todo app where users can create, read, update, and delete todos. Each todo has a title, description, status (pending/completed), and timestamp."
-
-### 2. Architecture
-
-```bash
-/architect
-```
-
-The agent will design:
-- Tech stack (Deno 2 + Hono + Fresh)
-- Database design (Deno KV key patterns)
-- API endpoints
-- Project structure
-- Deployment strategy (Deno Deploy)
-
-### 3. First Feature: Create Todo
+### Start Building Your First Feature
 
 ```bash
 /new-feature
 ```
 
-Tell the agent:
-> "Add functionality to create a new todo"
+**First-run questions** (asked once):
+1. **What are you building?**
+   > "A todo app for managing tasks"
 
-The agent will:
-1. Gather specific requirements
-2. Design API endpoint (POST /api/todos)
-3. Design Deno KV key structure for todos
+2. **Who will use this?**
+   > "People who want to organize their daily tasks"
+
+3. **What's the main problem this solves?**
+   > "Helps users track and complete their tasks efficiently"
+
+✅ Project context saved to `features/PROJECT_CONTEXT.md`
+
+**Feature development** (happens every time):
+
+The command asks:
+> "What would you like to name this feature?"
+
+You answer:
+> "task-creation"
+
+The agent will then:
+1. Gather specific requirements for task creation
+2. Design API endpoint (POST /api/tasks)
+3. Design Deno KV key structure for tasks
 4. Write tests (using in-memory KV)
 5. Implement backend (Hono + Deno KV)
 6. Implement frontend form (Fresh)
@@ -155,25 +151,31 @@ deno task dev
 
 The workflow created:
 
-1. **Documentation**:
-   - `docs/requirements.md` - Project requirements
-   - `docs/architecture.md` - System architecture
-   - `docs/api-spec.md` - API specification
-   - `docs/adr/` - Architecture decisions
+1. **Documentation** (feature-scoped):
+   - `features/PROJECT_CONTEXT.md` - Lightweight project context (first run only)
+   - `features/proposed/task-creation/requirements.md` - Feature requirements
+   - `features/proposed/task-creation/api-spec.md` - API specification
+   - `features/proposed/task-creation/data-models.md` - Data models
 
 2. **Tests**:
-   - `tests/todos_test.ts` - API tests with in-memory Deno KV
+   - `tests/unit/tasks_test.ts` - API tests with in-memory Deno KV
 
 3. **Backend Code**:
-   - `backend/routes/todos.ts` - API routes (Hono)
-   - `backend/services/todos.ts` - Business logic with Deno KV
+   - `backend/routes/tasks.ts` - API routes (Hono)
+   - `backend/services/tasks.ts` - Business logic with Deno KV
    - `backend/types/` - TypeScript type definitions
 
 4. **Frontend** (optional with Fresh):
-   - `frontend/routes/` - SSR pages
+   - `frontend/routes/tasks/` - SSR pages
    - `frontend/islands/` - Interactive components
 
 All following TDD - tests were written first, then implementation!
+
+**Why feature-scoped?**
+- 40-50% more token efficient than global docs
+- Each feature is self-contained
+- Easy to rollback (just delete the feature folder)
+- Better for incremental development
 
 **Deno Advantages You'll Notice**:
 - ✅ No build step - TypeScript runs directly
@@ -240,11 +242,12 @@ git push origin main    # Auto-deploy via GitHub Actions
 
 ## Tips
 
-1. **Always start with requirements** - Don't skip `/requirements`
+1. **Start with `/new-feature`** - No need to run `/requirements` separately (it asks on first run)
 2. **Let agents work sequentially** - Each agent builds on previous work
-3. **Run tests frequently** - `npm test` after each implementation
-4. **Keep architecture updated** - Update docs when making changes
+3. **Run tests frequently** - `deno test` after each implementation
+4. **Architecture is pre-defined** - Hono + Fresh + Deno KV (customize only if needed)
 5. **Use `/review` before merging** - Catch issues early
+6. **Feature-scoped = efficient** - Each feature has its own folder, saving 40-50% tokens
 
 ## Troubleshooting
 

@@ -8,9 +8,49 @@ You are a frontend development specialist focused on building user interfaces wi
    - **Feature-scoped**: `features/proposed/{feature-name}/api-spec.md` (preferred for new features)
    - **Project-wide**: `docs/api-spec.md` (for initial project setup)
 2. **Read** existing tests from component test files
-3. **Implement** frontend components using Fresh routes, islands, and components
-4. **Follow** architecture decisions from `docs/architecture.md`
-5. **Build** accessible, responsive, and performant UIs
+3. **Analyze** UI complexity to choose optimal template
+4. **Use templates** from `frontend/templates/` to accelerate implementation
+5. **Use design system** from `frontend/components/design-system/`
+6. **Reference patterns** from `frontend/templates/FRONTEND_PATTERNS.md`
+7. **Implement** frontend components using Fresh routes, islands, and components
+8. **Follow** architecture decisions from `docs/architecture.md`
+9. **Build** accessible, responsive, and performant UIs
+
+## Token Efficiency: Smart Template Selection
+
+**IMPORTANT**: Choose the most efficient template based on UI complexity:
+
+### Use templates + design system (PREFERRED) when:
+- ✅ Standard CRUD UI (list, detail, create, edit)
+- ✅ Forms with validation
+- ✅ Standard layouts
+- ✅ No complex custom interactions
+- **Token savings: ~1400-1900 per CRUD UI**
+
+### Use templates as starting point (CUSTOM) when:
+- ✅ Complex interactive features
+- ✅ Custom animations/transitions
+- ✅ Non-standard layouts
+- ✅ Advanced state management
+- **Start with templates, customize as needed**
+
+**Default to templates + design system** unless requirements clearly indicate complexity.
+
+### Always Use Design System Components
+From `frontend/components/design-system/`:
+- Button, Card, Input, Modal, Panel
+- Badge, Avatar, Progress, Layout
+
+**Import and use** instead of creating custom components! Saves ~100 tokens per component.
+
+### Always Reference `FRONTEND_PATTERNS.md`
+- List route patterns
+- Detail route patterns
+- Form island patterns
+- API client patterns
+- State management patterns
+
+This saves ~400-600 tokens by referencing patterns instead of writing from scratch.
 
 ## Finding API Specifications
 
@@ -519,12 +559,60 @@ frontend/
     └── utils.ts                   # Utilities
 ```
 
-## Token Efficiency
+## Token Efficiency Best Practices
 
-- Reuse server components when possible
-- Keep islands small and focused
-- Reference API spec for data structures
-- Follow Fresh's conventions (file-based routing)
+### 1. Use Templates for Standard UIs
+**BAD** (wastes ~1800 tokens):
+```typescript
+// Writing list page, form island, detail page from scratch
+// Routes, handlers, state, validation, API calls...
+```
+
+**GOOD** (saves ~1800 tokens):
+```typescript
+// Copy route-list.template.tsx
+// Reference FRONTEND_PATTERNS.md for form island
+// Reference FRONTEND_PATTERNS.md for detail page
+```
+
+### 2. Use Design System Components
+**BAD** (wastes ~400 tokens):
+```typescript
+// Create custom Button, Card, Input, Modal...
+// Custom styling, custom props, custom variants...
+```
+
+**GOOD** (saves ~400 tokens):
+```typescript
+import { Button, Card, Input, Modal } from "@/components/design-system/...";
+// Pre-built, styled, accessible components
+```
+
+### 3. Reference Frontend Patterns
+**BAD** (wastes ~500 tokens):
+```typescript
+// Manually implement API client
+// Manually implement form validation
+// Manually implement pagination
+```
+
+**GOOD** (saves ~500 tokens):
+```typescript
+// Reference FRONTEND_PATTERNS.md:
+// - API_CLIENT pattern
+// - CRUD_FORM_ISLAND pattern
+// - PAGINATION pattern
+```
+
+### Summary of Token Savings
+
+| Optimization | Tokens Saved | When to Use |
+|--------------|--------------|-------------|
+| List route template | ~500-700/page | Resource listing |
+| Form island patterns | ~600-800/form | Create/edit forms |
+| Design system usage | ~100/component | All UI components |
+| Pattern references | ~400-600/feature | All features |
+| **Total potential** | **~1600-2200/feature** | **Always apply** |
 
 ## Next Steps
 

@@ -8,10 +8,49 @@ You are a backend development specialist focused on implementing server-side log
    - **Feature-scoped**: `features/proposed/{feature-name}/api-spec.md` (preferred for new features)
    - **Project-wide**: `docs/api-spec.md` (for initial project setup)
 2. **Read** existing tests from `tests/` directory
-3. **Implement** backend code to make tests pass (Green phase of TDD)
-4. **Follow** the architecture decisions in `docs/architecture.md`
-5. **Keep code simple** and maintainable
-6. **Leverage Deno 2 features**: built-in TypeScript, Web APIs, security model
+3. **Analyze** feature complexity to choose optimal template
+4. **Use templates** from `backend/templates/` to accelerate implementation
+5. **Reference patterns** from `backend/templates/BACKEND_PATTERNS.md`
+6. **Implement** backend code to make tests pass (Green phase of TDD)
+7. **Follow** the architecture decisions in `docs/architecture.md`
+8. **Keep code simple** and maintainable
+9. **Leverage Deno 2 features**: built-in TypeScript, Web APIs, security model
+
+## Token Efficiency: Smart Template Selection
+
+**IMPORTANT**: Choose the most efficient template based on service complexity:
+
+### Use `service-crud.template.ts` + `routes-shorthand.template.ts` (MOST EFFICIENT) when:
+- ✅ Service has standard CRUD operations
+- ✅ Minimal custom business logic
+- ✅ Standard validation from Zod schemas
+- ✅ No complex workflows
+- ✅ Global error handler middleware exists
+- **Token savings: ~1400-1600 per service**
+
+### Use `service-crud.template.ts` + `routes-crud.template.ts` (STANDARD) when:
+- ✅ Need explicit error handling per route
+- ✅ Custom error responses per endpoint
+- ✅ More control over route behavior
+- **Token savings: ~1000-1400 per service**
+
+### Use templates as starting point (CUSTOM) when:
+- ✅ Complex business logic required
+- ✅ Custom workflows/calculations
+- ✅ Non-standard operations
+- ✅ Domain-specific rules
+- **Start with templates, customize as needed**
+
+**Default to CRUD templates** unless requirements clearly indicate complexity.
+
+### Always Reference Pattern Documentation
+- `BACKEND_PATTERNS.md` - Service patterns, KV patterns, error handling
+- `ROUTE_PATTERNS.md` ⭐ NEW - Comprehensive route patterns and examples
+- Standard CRUD patterns
+- Middleware patterns
+- Response format patterns
+
+This saves ~400-800 tokens by referencing patterns instead of writing from scratch.
 
 ## Finding API Specifications
 
@@ -659,12 +698,60 @@ const port = Deno.env.get('PORT');
 - ❌ Broad permissions (use minimal required)
 - ❌ Mixing npm and JSR when JSR package exists
 
-## Token Efficiency
+## Token Efficiency Best Practices
 
-- Reference API spec and architecture docs
-- Follow established patterns in codebase
-- Reuse existing utilities and middleware
-- Focus on making tests pass
+### 1. Use CRUD Templates for Simple Services
+**BAD** (wastes ~1200 tokens):
+```typescript
+// Writing service and routes from scratch
+// 15+ methods, error handling, validation...
+```
+
+**GOOD** (saves ~1200 tokens):
+```typescript
+// Copy service-crud.template.ts and routes-crud.template.ts
+// Replace [Resource] placeholders
+// Customize validation logic
+```
+
+### 2. Reference Backend Patterns
+**BAD** (wastes ~400 tokens):
+```typescript
+// Manually implement error handling for each route
+// Manually implement pagination logic
+// Manually implement secondary indexes
+```
+
+**GOOD** (saves ~400 tokens):
+```typescript
+// Reference BACKEND_PATTERNS.md for:
+// - ERROR_RESPONSE pattern
+// - PAGINATION pattern
+// - SECONDARY_INDEX pattern
+```
+
+### 3. Import Zod Schemas from Data Models
+**BAD** (wastes ~200 tokens):
+```typescript
+// Redefine validation schemas in service
+const userSchema = z.object({ ... });
+```
+
+**GOOD** (saves ~200 tokens):
+```typescript
+// Import from feature data models
+import { UserSchema, CreateUserSchema } from '../types/user.ts';
+```
+
+### Summary of Token Savings
+
+| Optimization | Tokens Saved | When to Use |
+|--------------|--------------|-------------|
+| CRUD service template | ~600-800/service | Simple CRUD services |
+| CRUD routes template | ~400-600/service | Standard REST endpoints |
+| Pattern references | ~200-400/service | Complex services |
+| Zod schema imports | ~100-200/service | All services |
+| **Total potential** | **~1300-2000/service** | **Always apply** |
 
 ## Testing Your Implementation
 

@@ -1,8 +1,52 @@
 # Data Models: {Feature Name}
 
-## TypeScript Interfaces
+> **Token Efficiency**: Use Zod pattern imports from `features/_templates/zod-patterns.ts` for common fields. See `ZOD_PATTERNS.md` for reference.
 
-### {Model Name}
+## Zod Schemas (for validation)
+
+```typescript
+import { z } from 'zod';
+import {
+  idField,
+  nameField,
+  descriptionField,
+  statusField,
+  timestampFields,
+  generateCRUDSchemas,
+} from '../_templates/zod-patterns.ts';
+
+// Define base schema using pattern imports
+const {ModelName}Schema = z.object({
+  ...idField,           // id: UUID v4
+  ...nameField,         // name: 1-100 chars
+  ...descriptionField,  // description: optional, max 500 chars
+  ...statusField,       // status: 'active' | 'inactive' | 'deleted'
+  // Add custom fields here
+  customField: z.string().max(200),
+  ...timestampFields,   // createdAt, updatedAt: ISO 8601
+});
+
+// Generate CRUD schemas automatically
+const { base, create, update } = generateCRUDSchemas('{ModelName}', {ModelName}Schema);
+
+export { base as {ModelName}Schema };
+export { create as Create{ModelName}Schema };
+export { update as Update{ModelName}Schema };
+
+// Export types
+export type {ModelName} = z.infer<typeof {ModelName}Schema>;
+export type Create{ModelName} = z.infer<typeof Create{ModelName}Schema>;
+export type Update{ModelName} = z.infer<typeof Update{ModelName}Schema>;
+```
+
+**Validation Rules**:
+- Standard fields: See `ZOD_PATTERNS.md` for `idField`, `nameField`, etc.
+- `customField`: Required, max 200 characters
+- (Only document fields unique to this feature)
+
+---
+
+## TypeScript Interfaces (for reference)
 
 ```typescript
 interface {ModelName} {
@@ -10,63 +54,10 @@ interface {ModelName} {
   name: string;                  // 1-100 characters
   description: string | null;    // Optional, max 500 chars
   status: 'active' | 'inactive'; // Enum
+  customField: string;           // Custom to this feature
   createdAt: string;             // ISO 8601 timestamp
   updatedAt: string;             // ISO 8601 timestamp
 }
-```
-
-**Validation Rules**:
-- `id`: Auto-generated UUID, immutable
-- `name`: Required, 1-100 characters, unique
-- `description`: Optional, max 500 characters
-- `status`: Required, must be 'active' or 'inactive'
-- `createdAt`: Auto-generated on creation
-- `updatedAt`: Auto-updated on modification
-
-**Indexes** (if using database):
-- Primary: `id`
-- Unique: `name`
-- Index: `status`, `createdAt`
-
----
-
-### {Related Model Name}
-
-```typescript
-interface {RelatedModelName} {
-  id: string;
-  {modelName}Id: string;  // Foreign key
-  // ... other fields
-}
-```
-
----
-
-## Zod Schemas (for validation)
-
-```typescript
-import { z } from 'zod';
-
-export const {ModelName}Schema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1).max(100),
-  description: z.string().max(500).nullable(),
-  status: z.enum(['active', 'inactive']),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
-
-export const Create{ModelName}Schema = {ModelName}Schema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const Update{ModelName}Schema = Create{ModelName}Schema.partial();
-
-export type {ModelName} = z.infer<typeof {ModelName}Schema>;
-export type Create{ModelName} = z.infer<typeof Create{ModelName}Schema>;
-export type Update{ModelName} = z.infer<typeof Update{ModelName}Schema>;
 ```
 
 ---
