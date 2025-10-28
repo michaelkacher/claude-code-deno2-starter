@@ -20,11 +20,18 @@ You are a backend development specialist focused on implementing server-side log
 
 **IMPORTANT**: Choose the most efficient template based on service complexity:
 
-### Use `service-crud.template.ts` + `routes-crud.template.ts` (PREFERRED) when:
+### Use `service-crud.template.ts` + `routes-shorthand.template.ts` (MOST EFFICIENT) when:
 - ✅ Service has standard CRUD operations
 - ✅ Minimal custom business logic
 - ✅ Standard validation from Zod schemas
 - ✅ No complex workflows
+- ✅ Global error handler middleware exists
+- **Token savings: ~1400-1600 per service**
+
+### Use `service-crud.template.ts` + `routes-crud.template.ts` (STANDARD) when:
+- ✅ Need explicit error handling per route
+- ✅ Custom error responses per endpoint
+- ✅ More control over route behavior
 - **Token savings: ~1000-1400 per service**
 
 ### Use templates as starting point (CUSTOM) when:
@@ -36,14 +43,14 @@ You are a backend development specialist focused on implementing server-side log
 
 **Default to CRUD templates** unless requirements clearly indicate complexity.
 
-### Always Reference `BACKEND_PATTERNS.md`
-- Standard service patterns
-- Route handler patterns
-- Error handling patterns
-- Deno KV patterns
-- Validation patterns
+### Always Reference Pattern Documentation
+- `BACKEND_PATTERNS.md` - Service patterns, KV patterns, error handling
+- `ROUTE_PATTERNS.md` ⭐ NEW - Comprehensive route patterns and examples
+- Standard CRUD patterns
+- Middleware patterns
+- Response format patterns
 
-This saves ~400-600 tokens by referencing patterns instead of writing from scratch.
+This saves ~400-800 tokens by referencing patterns instead of writing from scratch.
 
 ## Finding API Specifications
 

@@ -4,23 +4,33 @@ Token-efficient templates for backend implementation.
 
 ## Quick Reference
 
-| Template | Use For | Tokens Saved |
-|----------|---------|--------------|
-| `service-crud.template.ts` | CRUD services | ~600-800 |
-| `routes-crud.template.ts` | REST endpoints | ~400-600 |
-| `BACKEND_PATTERNS.md` | Patterns reference | ~200-400 |
+| Template | Use For | Tokens Saved | Best For |
+|----------|---------|--------------|----------|
+| `service-crud.template.ts` | CRUD services | ~600-800 | All services |
+| `routes-shorthand.template.ts` ⭐ NEW | Simple REST endpoints | ~600-800 | Simple CRUD |
+| `routes-crud.template.ts` | Full REST endpoints | ~400-600 | Complex routes |
+| `ROUTE_PATTERNS.md` ⭐ NEW | Route patterns reference | ~300-500 | All routes |
+| `BACKEND_PATTERNS.md` | Backend patterns reference | ~200-400 | All backend |
 
 ## Usage
 
-### Simple CRUD Feature
+### Simple CRUD Feature (Recommended)
 
 1. **Copy service template**: `service-crud.template.ts` → `backend/services/users.ts`
-2. **Replace placeholders**: `[Resource]` → `User`, `[resources]` → `users`
-3. **Copy routes template**: `routes-crud.template.ts` → `backend/routes/users.ts`
-4. **Replace placeholders**: Same as service
-5. **Customize**: Add custom business logic
+2. **Copy shorthand routes**: `routes-shorthand.template.ts` → `backend/routes/users.ts` ⭐
+3. **Replace placeholders**: `[Resource]` → `User`, `[resources]` → `users`
+4. **Uncomment middleware**: If auth/validation needed
+5. **Customize**: Add custom business logic only
 
-**Result**: Complete CRUD implementation in ~1000 tokens (vs ~2500 from scratch)
+**Result**: Complete CRUD in ~800 tokens (vs ~2500 from scratch) - **68% savings!**
+
+### Complex Feature
+
+1. **Copy service template**: `service-crud.template.ts` → customize
+2. **Copy full routes template**: `routes-crud.template.ts` → customize
+3. **Reference patterns**: Use `ROUTE_PATTERNS.md` for complex scenarios
+
+**Result**: ~1200 tokens (vs ~3000 from scratch) - **60% savings**
 
 ### Complex Service
 
