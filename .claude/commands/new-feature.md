@@ -113,6 +113,52 @@ Before starting, detect if this is the user's first feature by checking for exis
 
 **Then proceed with feature development** - the architecture is already defined.
 
+### Step 0.5: Check for Existing Mockups (NEW)
+
+Before asking for a feature name, check for existing mockups:
+
+```bash
+ls frontend/routes/mockups/*.tsx 2>/dev/null | grep -v "index.tsx"
+```
+
+**If mockups exist:**
+
+List them for the user:
+```
+I found these UI mockups:
+1. /mockups/user-profile
+2. /mockups/task-list
+
+Would you like to convert one of these mockups to a full feature?
+- Yes: I'll use the mockup as a design reference
+- No: I'll create a new feature from scratch
+
+Your choice (yes/no):
+```
+
+**If user says yes:**
+
+Ask which mockup:
+```
+Which mockup would you like to convert? (enter the name, e.g., "user-profile")
+```
+
+Then read the mockup file to extract context:
+```bash
+cat frontend/routes/mockups/[mockup-name].tsx
+```
+
+Extract the header comment block and use it as:
+- Visual reference for requirements
+- Layout inspiration for API design
+- UI structure for frontend implementation
+
+Proceed to Step 2 (skip Step 1 - use mockup name as feature name basis).
+
+**If user says no or no mockups exist:**
+
+Proceed to Step 1 normally.
+
 ### Step 1: Get Feature Name
 
 Ask the user:
@@ -200,12 +246,32 @@ Run tests:
 deno test
 ```
 
-Then offer:
+**If this feature was converted from a mockup:**
+
+Ask about mockup cleanup:
 ```
 ✅ Feature "{feature-name}" is complete!
 
+This feature was based on the mockup at /mockups/{mockup-name}.
+
+Would you like to delete the mockup file? (yes/no)
+```
+
+If yes:
+```bash
+rm -f frontend/routes/mockups/{mockup-name}.tsx
+```
+
+Then say:
+```
+✅ Mockup deleted. The full feature is now in production routes.
+```
+
+**Then offer next steps:**
+
+```
 Would you like to:
-1. Run /feature-complete to move this to features/implemented/
+1. Run /feature-complete to move docs to features/implemented/
 2. Continue iterating on the feature
 3. Test the feature manually first
 ```

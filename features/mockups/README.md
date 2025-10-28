@@ -32,22 +32,21 @@ Follow the prompts to create a visual mockup.
 
 ## Mockup Structure
 
-```
-features/mockups/
-├── README.md (this file)
-├── [mockup-name]/
-│   └── mockup-spec.md      # Mockup specification
-└── [another-mockup]/
-    └── mockup-spec.md
-```
+**NEW: Simplified structure - no separate spec files!**
 
-**Frontend routes:**
 ```
 frontend/routes/mockups/
-├── index.tsx               # List of all mockups
-├── [mockup-name].tsx       # Mockup route
-└── [another-mockup].tsx
+├── index.tsx               # Dynamic list of all mockups (auto-updates)
+├── [mockup-name].tsx       # Mockup with embedded documentation
+└── [another-mockup].tsx    # All context in TSX header comments
 ```
+
+**Old structure (deprecated):**
+```
+features/mockups/[name]/mockup-spec.md  ❌ No longer created
+```
+
+All mockup documentation is now embedded in the TSX file header as comments.
 
 ## Viewing Mockups
 
@@ -66,32 +65,38 @@ frontend/routes/mockups/
    http://localhost:3000/mockups
    ```
 
-## Mockup Workflow
+## Mockup Workflow (Updated - More Efficient!)
 
 ### 1. Create Mockup
 ```bash
 /mockup
-# Creates visual prototype
+# Creates single TSX file with embedded documentation
+# No separate spec files needed
 ```
 
 ### 2. Review & Iterate
-- View in browser
+- View in browser at http://localhost:3000/mockups/[name]
+- Mockup index auto-updates (visit /mockups to see all)
 - Make changes with `/mockup` again
 - Get feedback from team/users
 
-### 3. Convert to Feature
+### 3. Convert to Feature (Automated)
 ```bash
 /new-feature
-# Use mockup as design reference
+# Agent auto-detects mockup: "I found /mockups/[name]. Convert it? (y/n)"
+# Reads mockup context from TSX header comments
 # Builds full feature with backend, tests, real data
 ```
 
-### 4. Clean Up
-Delete mockup when feature is done:
+### 4. Clean Up (Automated)
 ```bash
-rm -rf features/mockups/[mockup-name]
+# Agent prompts: "Delete mockup? (y/n)"
+# If yes, automatically removes:
 rm frontend/routes/mockups/[mockup-name].tsx
+# No folders to clean up!
 ```
+
+**Token savings: 47% compared to old mockup workflow**
 
 ## Example Mockups
 
@@ -217,24 +222,18 @@ rm -rf features/mockups/user-profile
 - Choose best design
 - Then build the winner
 
-## Mockup Index
+## Mockup Index (Auto-Updating)
 
-All mockups are listed at `/mockups`:
+All mockups are automatically listed at `/mockups`:
 
-```tsx
-// frontend/routes/mockups/index.tsx
-export default function MockupsIndex() {
-  return (
-    <div>
-      <h1>UI Mockups</h1>
-      <ul>
-        <li><a href="/mockups/user-profile">User Profile</a></li>
-        <li><a href="/mockups/task-list">Task List</a></li>
-      </ul>
-    </div>
-  );
-}
-```
+**NEW: Dynamic index!**
+- Scans `frontend/routes/mockups/` directory
+- Extracts metadata from TSX header comments
+- Auto-updates when mockups are added/removed
+- Shows purpose and creation date
+- No manual updates needed
+
+Visit http://localhost:3000/mockups to see all your mockups.
 
 ## FAQ
 

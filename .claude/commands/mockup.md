@@ -61,73 +61,31 @@ I'll create this mockup as: [mockup-name]
 Is this name OK? (or suggest a different name)
 ```
 
-### Step 4: Create Mockup Documentation
+### Step 4: Create Mockup Route
 
-Create the mockup folder and documentation:
-
-**Create directory:**
-```bash
-mkdir -p features/mockups/[mockup-name]
-```
-
-**Create `features/mockups/[mockup-name]/mockup-spec.md`:**
-```markdown
-# Mockup: [Mockup Name]
-
-**Created:** [Date]
-**Status:** Draft
-**Route:** /mockups/[mockup-name]
-
-## Purpose
-
-[What this screen is for]
-
-## Screen Description
-
-[High-level description of the screen]
-
-## Key Elements
-
-- [Element 1]
-- [Element 2]
-- [Element 3]
-
-## Layout
-
-[Describe the layout structure]
-
-## Components Needed
-
-- [ ] [Component 1]
-- [ ] [Component 2]
-- [ ] [Component 3]
-
-## Mock Data
-
-[Define what fake data to display]
-
-## Notes
-
-- This is a non-functional mockup
-- No backend integration
-- No real interactions (buttons don't do anything)
-- For visualization purposes only
-```
-
-### Step 5: Create Mockup Route
-
-Launch the **mockup-agent** to create the frontend mockup:
+Launch the **mockup-agent** to create the frontend mockup with embedded documentation:
 
 ```
-I'm launching the mockup agent to create the UI.
+I'm creating the mockup route with all context embedded.
 This will create: frontend/routes/mockups/[mockup-name].tsx
 
 The mockup will be accessible at: http://localhost:3000/mockups/[mockup-name]
 ```
 
-Pass the mockup specification to the agent.
+Pass the mockup details to the agent:
+- Mockup name
+- Purpose/description
+- Key elements
+- Layout type
+- Mock data needed
+- Any specific notes
 
-### Step 6: Start Dev Server (if needed)
+The agent will create a single TSX file with:
+- Documentation in header comments
+- Mock data inline
+- Visual UI components
+
+### Step 5: Start Dev Server (if needed)
 
 Check if the dev server is running:
 
@@ -140,7 +98,7 @@ deno task dev
 Then visit: http://localhost:3000/mockups/[mockup-name]
 ```
 
-### Step 7: Post-Creation Options
+### Step 6: Post-Creation Options
 
 After the mockup is created, present options:
 
@@ -195,7 +153,6 @@ Are you sure you want to delete this mockup? (yes/no)
 
 If yes:
 ```bash
-rm -rf features/mockups/[mockup-name]
 rm -f frontend/routes/mockups/[mockup-name].tsx
 ```
 
@@ -204,9 +161,10 @@ rm -f frontend/routes/mockups/[mockup-name].tsx
 Great! Review the mockup and run /mockup again when ready to iterate or convert to a feature.
 
 Mockup location:
-- Spec: features/mockups/[mockup-name]/mockup-spec.md
 - Route: frontend/routes/mockups/[mockup-name].tsx
 - URL: http://localhost:3000/mockups/[mockup-name]
+
+All mockup documentation is embedded in the TSX file header comments.
 ```
 
 ## Example Usage
@@ -247,13 +205,12 @@ Is this name OK?
 ```
 Creating mockup...
 
-✅ Created: features/mockups/user-profile/mockup-spec.md
 ✅ Created: frontend/routes/mockups/user-profile.tsx
 
 View at: http://localhost:3000/mockups/user-profile
 
 What would you like to do next?
-a) Create full feature from mockup
+a) Create full feature from mockup (/new-feature will auto-detect it)
 b) Make changes
 c) Create another mockup
 d) Delete mockup
@@ -334,18 +291,39 @@ export default function MockupsIndex() {
 
 ## Integration with /new-feature
 
-When converting a mockup to a feature:
+**NEW: Automatic mockup detection!**
 
-1. **Requirements:** Use mockup spec as visual reference
-2. **API Design:** Design endpoints to support the mockup UI
-3. **Tests:** Write tests for the interactions
-4. **Backend:** Implement API endpoints
-5. **Frontend:** Enhance mockup with real data and interactions
-6. **Move:** From `/mockups/[name]` to production route
+When you run `/new-feature`, it will:
+1. Detect existing mockups in `frontend/routes/mockups/`
+2. Ask if you want to convert one to a full feature
+3. Read the mockup TSX file header comments for context
+4. Use the mockup as a visual reference during development
+5. Offer to delete the mockup after feature completion
+
+**Workflow:**
+```bash
+# Create mockup
+/mockup
+> "user profile page"
+
+# View and iterate
+# Visit http://localhost:3000/mockups/user-profile
+
+# Convert to feature (auto-detects mockup)
+/new-feature
+> Agent: "I found /mockups/user-profile. Convert it to a feature? (y/n)"
+> You: "yes"
+> Agent reads mockup context and builds full feature
+
+# Cleanup (prompted automatically)
+> Agent: "Feature complete! Delete mockup? (y/n)"
+```
 
 ## Notes
 
-- Mockups stored separately from production code
+- All mockup context embedded in TSX header comments
+- No separate spec files needed
 - Easy to delete when no longer needed
 - Can have multiple mockups simultaneously
 - Mockups are git-committable (team can review)
+- `/new-feature` automatically detects and integrates mockups

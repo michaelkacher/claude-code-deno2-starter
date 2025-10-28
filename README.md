@@ -274,12 +274,24 @@ This handles everything: requirements → API design → tests → backend → f
 **Option 2: Visual-First Approach** (For UI-heavy features)
 
 ```bash
-# 1. Create mockup first
+# 1. Create mockup first (fast visual prototype)
 /mockup
+> Describe the UI you want to see
+> Visit http://localhost:3000/mockups/[name] to review
 
-# 2. Convert to full feature
+# 2. Convert to full feature (auto-detects mockup)
 /new-feature
+> Agent: "I found /mockups/[name]. Convert it? (y/n)"
+> You: "yes"
+> Agent builds full feature with backend, tests, real data
+> Agent: "Delete mockup? (y/n)" - automatic cleanup
 ```
+
+**Why this works:**
+- Mockup context embedded in TSX file (no separate spec files)
+- `/new-feature` auto-detects and reads mockup metadata
+- Automatic cleanup after conversion
+- 47% fewer tokens than old mockup workflow
 
 **Option 3: Manual Control** (Advanced)
 
