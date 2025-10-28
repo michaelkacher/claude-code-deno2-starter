@@ -4,20 +4,26 @@
 
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
+import * as $design_system from "./routes/design-system.tsx";
 import * as $greet_name_ from "./routes/greet/[name].tsx";
 import * as $index from "./routes/index.tsx";
+import * as $mockups_index from "./routes/mockups/index.tsx";
 import * as $Counter from "./islands/Counter.tsx";
+import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
+    "./routes/design-system.tsx": $design_system,
     "./routes/greet/[name].tsx": $greet_name_,
     "./routes/index.tsx": $index,
+    "./routes/mockups/index.tsx": $mockups_index,
   },
   islands: {
     "./islands/Counter.tsx": $Counter,
+    "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

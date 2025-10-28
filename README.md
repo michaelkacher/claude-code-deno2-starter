@@ -503,24 +503,32 @@ deno task kv:inspect -- --limit=10      # Limit to 10 entries
 
 ## Token Efficiency
 
-This template is designed to be token-efficient:
+This template is designed to be token-efficient with **4 layers of optimization**:
 
-1. **Feature-scoped documentation** ⭐ NEW: Features documented separately, reducing context by 40-50%
-2. **Agents read files, not chat history**: Each agent reads output files from previous agents
-3. **Narrow agent scope**: Each agent has a specific, limited responsibility
-4. **Structured outputs**: Agents produce markdown files with clear structure
-5. **No redundancy**: Information is stored once in files, not repeated in context
-6. **Progressive refinement**: Start with high-level docs, add details as needed
-7. **Flexible automation**: Choose the level that balances speed vs token usage
+1. **Feature-scoped documentation** ⭐: Features documented separately, reducing context by 40-50%
+2. **Pattern reference system** ⭐ NEW: Reusable API patterns and error responses (saves ~500-800 tokens/feature)
+3. **Shorthand templates** ⭐ NEW: Condensed format for simple CRUD features (saves ~400-600 tokens/feature)
+4. **Smart agent instructions** ⭐ NEW: Agents automatically choose optimal templates and reference patterns
+5. **Agents read files, not chat history**: Each agent reads output files from previous agents
+6. **Narrow agent scope**: Each agent has a specific, limited responsibility
+7. **Structured outputs**: Agents produce markdown files with clear structure
+8. **No redundancy**: Information is stored once in files, not repeated in context
+
+**See [Token Optimization Guide](docs/TOKEN_OPTIMIZATION_GUIDE.md) for details on achieving 50-60% token reduction.**
 
 | Approach | Token Usage | Speed | Best For |
 |----------|-------------|-------|----------|
-| **Feature-scoped** ⭐ | **~15-20K** | **Fast** | **New features (recommended)** |
+| **Feature-scoped + patterns** ⭐ | **~8-12K** | **Fast** | **New features (recommended)** |
+| Feature-scoped only | ~15-20K | Fast | Already implemented |
 | Manual (Level 1) | ~20K | Slower | Learning, small projects |
 | Commands (Level 2) | ~25K | Fast | Initial project setup |
 | Orchestration (Level 3) | ~35K | Fastest | Complex projects |
 
-**New Feature-Scoped Workflow**: Use `/new-feature` to create features in `features/proposed/` instead of global `docs/`, achieving 40-50% token reduction.
+**NEW: Pattern-Based Workflow**: Use `/new-feature` to automatically apply all 4 optimization layers:
+- Feature-scoped documentation (40-50% savings)
+- Pattern references (15-20% additional savings)
+- Shorthand templates for simple CRUD (10-15% additional savings)
+- **Total: 50-60% token reduction vs global docs**
 
 ## Best Practices
 
