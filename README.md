@@ -503,32 +503,55 @@ deno task kv:inspect -- --limit=10      # Limit to 10 entries
 
 ## Token Efficiency
 
-This template is designed to be token-efficient with **4 layers of optimization**:
+This template is designed to be token-efficient with **multiple optimization layers**:
 
-1. **Feature-scoped documentation** ⭐: Features documented separately, reducing context by 40-50%
-2. **Pattern reference system** ⭐ NEW: Reusable API patterns and error responses (saves ~500-800 tokens/feature)
-3. **Shorthand templates** ⭐ NEW: Condensed format for simple CRUD features (saves ~400-600 tokens/feature)
-4. **Smart agent instructions** ⭐ NEW: Agents automatically choose optimal templates and reference patterns
-5. **Agents read files, not chat history**: Each agent reads output files from previous agents
-6. **Narrow agent scope**: Each agent has a specific, limited responsibility
-7. **Structured outputs**: Agents produce markdown files with clear structure
-8. **No redundancy**: Information is stored once in files, not repeated in context
+### API Design Optimizations (NEW ⭐)
+1. **Feature-scoped documentation**: Features documented separately, reducing context by 40-50%
+2. **Pattern reference system** ⭐: Reusable API patterns and error responses (saves ~500-800 tokens/feature)
+3. **Shorthand templates** ⭐: Condensed format for simple CRUD features (saves ~400-600 tokens/feature)
+4. **Smart agent instructions** ⭐: Agents automatically choose optimal templates and reference patterns
 
-**See [Token Optimization Guide](docs/TOKEN_OPTIMIZATION_GUIDE.md) for details on achieving 50-60% token reduction.**
+**See [Token Optimization Guide](docs/TOKEN_OPTIMIZATION_GUIDE.md) for API design details.**
 
-| Approach | Token Usage | Speed | Best For |
-|----------|-------------|-------|----------|
-| **Feature-scoped + patterns** ⭐ | **~8-12K** | **Fast** | **New features (recommended)** |
-| Feature-scoped only | ~15-20K | Fast | Already implemented |
+### Test Writing Optimizations (NEW ⭐)
+5. **CRUD test templates** ⭐: Pre-built test suite for simple services (saves ~400-600 tokens/service)
+6. **Test data patterns** ⭐: Reusable test data builders (saves ~100-150 tokens/file)
+7. **Test pattern references** ⭐: Common testing scenarios (saves ~200-400 tokens/service)
+
+**See [Test Optimization Guide](docs/TEST_OPTIMIZATION_GUIDE.md) for test writing details.**
+
+### General Best Practices
+8. **Agents read files, not chat history**: Each agent reads output files from previous agents
+9. **Narrow agent scope**: Each agent has a specific, limited responsibility
+10. **Structured outputs**: Agents produce markdown files with clear structure
+11. **No redundancy**: Information is stored once in files, not repeated in context
+
+### Token Usage Comparison
+
+| Phase | Old Approach | New (Optimized) | Savings |
+|-------|--------------|-----------------|---------|
+| **API Design** | ~25,000 tokens | ~8-12,000 tokens | **50-60%** |
+| **Test Writing** | ~7,500 tokens | ~3,600 tokens | **52%** |
+| **Implementation** | ~15,000 tokens | ~15,000 tokens | N/A |
+| **Total per feature** | ~47,500 tokens | ~27,000-31,000 tokens | **35-43%** |
+
+### Workflow Comparison
+
+| Approach | Tokens/Feature | Speed | Best For |
+|----------|----------------|-------|----------|
+| **Pattern-optimized** ⭐ | **~11-15K** | **Fast** | **New features (recommended)** |
+| Feature-scoped only | ~15-20K | Fast | Basic features |
 | Manual (Level 1) | ~20K | Slower | Learning, small projects |
 | Commands (Level 2) | ~25K | Fast | Initial project setup |
 | Orchestration (Level 3) | ~35K | Fastest | Complex projects |
 
-**NEW: Pattern-Based Workflow**: Use `/new-feature` to automatically apply all 4 optimization layers:
+**NEW: Fully Optimized Workflow**: Use `/new-feature` and `/write-tests` to automatically apply all 7 optimization layers:
 - Feature-scoped documentation (40-50% savings)
-- Pattern references (15-20% additional savings)
-- Shorthand templates for simple CRUD (10-15% additional savings)
-- **Total: 50-60% token reduction vs global docs**
+- API pattern references (15-20% additional savings)
+- Shorthand API templates (10-15% additional savings)
+- CRUD test templates (50% savings on tests)
+- Test data patterns (additional test savings)
+- **Total: 35-43% reduction in full feature development**
 
 ## Best Practices
 
