@@ -18,12 +18,14 @@ app.use('*', cors());
 // Root route - API info
 app.get('/', (c) => {
   return c.json({
-    name: 'API Server',
+    name: 'Volleyball Workout Plan API',
     version: '0.1.0',
     status: 'running',
-    message: 'Add your API routes in backend/routes/',
     endpoints: {
       health: '/api/health',
+      exercises: '/api/exercises',
+      workoutPlans: '/api/workout-plans',
+      trainingSessions: '/api/training-sessions',
     },
   });
 });
@@ -36,10 +38,15 @@ app.get('/api/health', (c) => {
   });
 });
 
-// TODO: Import and mount your routes here
-// Example:
-// import userRoutes from './routes/users.ts';
-// app.route('/api/users', userRoutes);
+// Import route handlers
+import exercises from './routes/exercises.ts';
+import workoutPlans from './routes/workout-plans.ts';
+import trainingSessions from './routes/training-sessions.ts';
+
+// Mount routes
+app.route('/api/exercises', exercises);
+app.route('/api/workout-plans', workoutPlans);
+app.route('/api/training-sessions', trainingSessions);
 
 // 404 handler
 app.notFound((c) => {

@@ -4,20 +4,46 @@
 
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
+import * as $design_system from "./routes/design-system.tsx";
 import * as $greet_name_ from "./routes/greet/[name].tsx";
 import * as $index from "./routes/index.tsx";
+import * as $mockups_index from "./routes/mockups/index.tsx";
+import * as $mockups_volleyball_workout from "./routes/mockups/volleyball-workout.tsx";
+import * as $training_sessions_id_ from "./routes/training-sessions/[id].tsx";
+import * as $workout_plans_id_ from "./routes/workout-plans/[id].tsx";
+import * as $workout_plans_create from "./routes/workout-plans/create.tsx";
+import * as $workout_plans_index from "./routes/workout-plans/index.tsx";
 import * as $Counter from "./islands/Counter.tsx";
+import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
+import * as $SessionTracker from "./islands/SessionTracker.tsx";
+import * as $VolleyballWorkoutPlan from "./islands/VolleyballWorkoutPlan.tsx";
+import * as $WorkoutPlanDetail from "./islands/WorkoutPlanDetail.tsx";
+import * as $WorkoutPlanList from "./islands/WorkoutPlanList.tsx";
+import * as $WorkoutPlanWizard from "./islands/WorkoutPlanWizard.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
+    "./routes/design-system.tsx": $design_system,
     "./routes/greet/[name].tsx": $greet_name_,
     "./routes/index.tsx": $index,
+    "./routes/mockups/index.tsx": $mockups_index,
+    "./routes/mockups/volleyball-workout.tsx": $mockups_volleyball_workout,
+    "./routes/training-sessions/[id].tsx": $training_sessions_id_,
+    "./routes/workout-plans/[id].tsx": $workout_plans_id_,
+    "./routes/workout-plans/create.tsx": $workout_plans_create,
+    "./routes/workout-plans/index.tsx": $workout_plans_index,
   },
   islands: {
     "./islands/Counter.tsx": $Counter,
+    "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
+    "./islands/SessionTracker.tsx": $SessionTracker,
+    "./islands/VolleyballWorkoutPlan.tsx": $VolleyballWorkoutPlan,
+    "./islands/WorkoutPlanDetail.tsx": $WorkoutPlanDetail,
+    "./islands/WorkoutPlanList.tsx": $WorkoutPlanList,
+    "./islands/WorkoutPlanWizard.tsx": $WorkoutPlanWizard,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;
