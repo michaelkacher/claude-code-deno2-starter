@@ -61,7 +61,10 @@ Click "Use this template" on GitHub to create a new repository with the template
 ```bash
 git clone <your-repo-url>
 cd <your-project>
+claude plan
 ```
+
+**NOTE** You must have Claude Code to effectively use this template and the Claude AI commands!!
 
 ### 3. Build Your First Feature
 
@@ -71,27 +74,38 @@ The architecture is pre-defined (see `docs/architecture.md`). You just need to b
 
 Choose your workflow:
 
-#### Option A: Full Guided Setup (Recommended for New Projects)
+#### Option A: Quick Start (Recommended - 90% of users)
 
 ```bash
-# Step 1: Define what you're building
+# Jump straight to building your first feature
+# The command will ask for project context on first run
+/new-feature
+```
+
+**Why this works:** `/new-feature` handles everything you need:
+- First run: Asks about your project vision
+- Creates feature-specific documentation
+- 40-50% more token efficient than global docs
+- Best for incremental development
+
+#### Option B: Detailed Planning (Large/complex projects)
+
+```bash
+# Step 1: Document comprehensive project vision
 /requirements
 
-# Step 2: Review the architecture
-# Architecture is already defined in docs/architecture.md
-# Use /architect only if you need to make changes
+# Step 2: Review or customize architecture (optional)
+/architect
 
 # Step 3: Build your first feature
 /new-feature
 ```
 
-#### Option B: Quick Start (Fastest)
-
-```bash
-# Jump straight to building features
-# Architecture is already defined
-/new-feature
-```
+**When to use this:**
+- Planning 10+ features upfront
+- Need detailed stakeholder documentation
+- Multiple user personas to consider
+- Complex integration requirements
 
 #### Option C: Just Explore
 
@@ -101,8 +115,8 @@ deno task dev
 # Backend: http://localhost:8000
 # Frontend: http://localhost:3000
 
-# Then define your project when ready
-/requirements
+# Then build features when ready
+/new-feature
 ```
 
 **Note**: The template includes only a minimal backend (health check) and frontend starter. No example features are included - you design everything from your requirements!
@@ -227,111 +241,73 @@ Fully automated with smart decisions, validation, and error recovery.
 
 ### Starting a New Project
 
-1. **Gather Requirements**
+**Recommended for most users:**
+
+```bash
+# Just start building - the command handles everything
+/new-feature
+```
+
+On first run, `/new-feature` will:
+1. Detect this is your first feature
+2. Ask about your project vision (lightweight)
+3. Use the pre-defined architecture (Hono + Fresh + Deno KV)
+4. Guide you through feature development
+
+**For large/complex projects requiring detailed planning:**
+
+1. **Document Comprehensive Requirements** (Optional)
    ```bash
    /requirements
    ```
-   Describe your project. The agent will ask clarifying questions and create `docs/requirements.md`.
+   Use this when you need:
+   - Detailed stakeholder documentation
+   - Planning 10+ features upfront
+   - Multiple user personas to consider
+   - Complex integration requirements
 
-2. **Review Architecture**
+2. **Review Architecture** (Optional)
    Architecture is pre-defined in `docs/architecture.md`. Use `/architect` only if you need changes.
 
-3. **Optional: Create UI Mockup** (NEW! 🎨)
+3. **Build Features**
    ```bash
-   /mockup
+   /new-feature
    ```
-   Create visual prototypes to explore UI/UX before building the full feature.
-   - Fast iteration on design
-   - No backend needed
-   - Convert to feature when approved
+   Then use `/new-feature` for each feature you build.
 
-4. **Design API**
-   ```bash
-   /design-api
-   ```
-   Creates API specification and data models.
+### Adding Features (Day-to-Day Development)
 
-5. **Write Tests** (TDD Red Phase)
-   ```bash
-   /write-tests
-   ```
-   Creates tests that will initially fail.
+**Option 1: Complete Feature Workflow** (Recommended)
 
-6. **Implement Backend** (TDD Green Phase)
-   ```bash
-   /implement-backend
-   ```
-   Implements code to make backend tests pass.
+```bash
+/new-feature
+```
 
-7. **Implement Frontend**
-   ```bash
-   /implement-frontend
-   ```
-   Builds UI components to make frontend tests pass.
+This handles everything: requirements → API design → tests → backend → frontend
 
-8. **Review**
-   ```bash
-   /review
-   ```
-   Comprehensive code review checklist.
-
-### Adding a New Feature
-
-**Option 1: Visual-First Approach** (NEW! 🎨)
-
-Great for UI-heavy features:
+**Option 2: Visual-First Approach** (For UI-heavy features)
 
 ```bash
 # 1. Create mockup first
 /mockup
-# Describe the UI you want to see
-# Review at http://localhost:3000/mockups/[name]
 
 # 2. Convert to full feature
 /new-feature
-# Reference the mockup for visual design
 ```
 
-**Option 2: Recommended Approach** (Traditional)
+**Option 3: Manual Control** (Advanced)
 
-Use the feature-scoped workflow (40-50% token savings):
+Run each step individually for maximum control:
 
 ```bash
-/new-feature
+/design-api       # Design API endpoints
+/write-tests      # Write tests (TDD Red phase)
+/implement-backend # Implement backend (TDD Green phase)
+/implement-frontend # Build UI components
+/review           # Code review
 ```
 
-This creates documentation in `features/proposed/{feature-name}/` instead of global `docs/` files, making development faster and more efficient. The command will:
-1. Ask for a feature name (e.g., "user-authentication")
-2. Gather lightweight requirements
-3. Design API endpoints and data models
-4. Write tests following TDD
-5. Implement backend and frontend
-6. Guide you to `/feature-complete` when done
-
-**Option 3: Complex Projects** (Advanced)
-
-Use intelligent orchestration:
-
-```bash
-/auto-feature
-```
-
-The orchestrator will analyze your project state and automatically execute the workflow with validation at each step.
-
-**Option 4: Manual Control** (Learning)
-
-Run agents manually:
-
-```bash
-/requirements
-/design-api
-/write-tests
-/implement-backend
-/implement-frontend
-# etc...
-```
-
-**New: Feature-Scoped Workflow**
+### Understanding Feature-Scoped Workflow
 
 Features are now organized in a dedicated folder structure:
 ```
