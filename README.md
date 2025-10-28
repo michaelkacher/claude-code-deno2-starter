@@ -520,20 +520,27 @@ This template is designed to be token-efficient with **multiple optimization lay
 
 **See [Test Optimization Guide](docs/TEST_OPTIMIZATION_GUIDE.md) for test writing details.**
 
+### Backend Implementation Optimizations (NEW ⭐)
+8. **CRUD service templates** ⭐: Complete service implementation (saves ~600-800 tokens/service)
+9. **CRUD route templates** ⭐: Standard REST endpoints (saves ~400-600 tokens/service)
+10. **Backend pattern references** ⭐: Common backend patterns (saves ~200-400 tokens/service)
+
+**See [Backend Optimization Guide](docs/BACKEND_OPTIMIZATION_GUIDE.md) for implementation details.**
+
 ### General Best Practices
-8. **Agents read files, not chat history**: Each agent reads output files from previous agents
-9. **Narrow agent scope**: Each agent has a specific, limited responsibility
-10. **Structured outputs**: Agents produce markdown files with clear structure
-11. **No redundancy**: Information is stored once in files, not repeated in context
+11. **Agents read files, not chat history**: Each agent reads output files from previous agents
+12. **Narrow agent scope**: Each agent has a specific, limited responsibility
+13. **Structured outputs**: Agents produce markdown files with clear structure
+14. **No redundancy**: Information is stored once in files, not repeated in context
 
 ### Token Usage Comparison
 
 | Phase | Old Approach | New (Optimized) | Savings |
 |-------|--------------|-----------------|---------|
-| **API Design** | ~25,000 tokens | ~8-12,000 tokens | **50-60%** |
+| **API Design** | ~25,000 tokens | ~8-12,000 tokens | **52-68%** |
 | **Test Writing** | ~7,500 tokens | ~3,600 tokens | **52%** |
-| **Implementation** | ~15,000 tokens | ~15,000 tokens | N/A |
-| **Total per feature** | ~47,500 tokens | ~27,000-31,000 tokens | **35-43%** |
+| **Backend Implementation** | ~2,500 tokens | ~1,000 tokens | **60%** |
+| **Total per feature** | **~35,000 tokens** | **~12,600-16,600 tokens** | **53-64%** |
 
 ### Workflow Comparison
 
@@ -545,13 +552,15 @@ This template is designed to be token-efficient with **multiple optimization lay
 | Commands (Level 2) | ~25K | Fast | Initial project setup |
 | Orchestration (Level 3) | ~35K | Fastest | Complex projects |
 
-**NEW: Fully Optimized Workflow**: Use `/new-feature` and `/write-tests` to automatically apply all 7 optimization layers:
-- Feature-scoped documentation (40-50% savings)
+**NEW: Fully Optimized Workflow**: Use `/new-feature`, `/write-tests`, and `/implement-backend` to automatically apply all 10 optimization layers:
+- Feature-scoped documentation (40-50% savings on API design)
 - API pattern references (15-20% additional savings)
 - Shorthand API templates (10-15% additional savings)
 - CRUD test templates (50% savings on tests)
 - Test data patterns (additional test savings)
-- **Total: 35-43% reduction in full feature development**
+- CRUD service templates (50-60% savings on backend)
+- CRUD route templates (additional backend savings)
+- **Total: 53-64% reduction in full feature development (API + Tests + Backend)**
 
 ## Best Practices
 
