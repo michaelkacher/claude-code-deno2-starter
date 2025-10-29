@@ -31,7 +31,7 @@ export const handler: Handlers<{ mockups: Mockup[] }> = {
 
           // Try to read mockup file to extract metadata from header comments
           try {
-            const mockupPath = `${mockupsDir}${mockupsDir.endsWith('\\')') || mockupsDir.endsWith('/') ? '' : '/'}${entry.name}`;
+            const mockupPath = `${mockupsDir}${mockupsDir.endsWith('\\') || mockupsDir.endsWith('/') ? '' : '/'}${entry.name}`;
             const content = await Deno.readTextFile(mockupPath);
             const purposeMatch = content.match(/PURPOSE:\s*\n\s*\*\s*(.+)/);
             const createdMatch = content.match(/@created\s+(.+)/);
