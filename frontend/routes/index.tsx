@@ -1,11 +1,14 @@
 /**
  * Home Page - Project Overview
- * Provides navigation to design system and mockups
+ * Provides navigation to design system and mockups (dev only)
  */
 
 import { Head } from '$fresh/runtime.ts';
+import { PageProps } from '$fresh/server.ts';
 
-export default function Home() {
+const isDevelopment = Deno.env.get("DENO_ENV") !== "production";
+
+export default function Home(props: PageProps) {
   return (
     <>
       <Head>
@@ -38,74 +41,76 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div class="grid md:grid-cols-2 gap-6 mb-16">
-            {/* Design System Card */}
-            <a
-              href="/design-system"
-              class="block bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-8 border border-gray-200 hover:border-blue-300"
-            >
-              <div class="flex items-center mb-4">
-                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl mr-4">
-                  🎨
+          {/* Quick Actions - Development Only */}
+          {isDevelopment && (
+            <div class="grid md:grid-cols-2 gap-6 mb-16">
+              {/* Design System Card */}
+              <a
+                href="/design-system"
+                class="block bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-8 border border-gray-200 hover:border-blue-300"
+              >
+                <div class="flex items-center mb-4">
+                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl mr-4">
+                    🎨
+                  </div>
+                  <div>
+                    <h2 class="text-2xl font-bold text-gray-900">
+                      Design System
+                    </h2>
+                    <p class="text-gray-600 text-sm">
+                      Component Library & Examples
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 class="text-2xl font-bold text-gray-900">
-                    Design System
-                  </h2>
-                  <p class="text-gray-600 text-sm">
-                    Component Library & Examples
-                  </p>
-                </div>
-              </div>
-              <p class="text-gray-700 mb-4">
-                Explore the complete design system with pre-built components:
-                Buttons, Cards, Forms, Modals, and more. All components are
-                production-ready and optimized for token efficiency.
-              </p>
-              <div class="flex items-center text-blue-600 font-medium">
-                View Design Gallery
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </a>
-
-            {/* Mockups Card */}
-            <a
-              href="/mockups"
-              class="block bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-8 border border-gray-200 hover:border-purple-300"
-            >
-              <div class="flex items-center mb-4">
-                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl mr-4">
-                  🖼️
-                </div>
-                <div>
-                  <h2 class="text-2xl font-bold text-gray-900">
-                    UI Mockups
-                  </h2>
-                  <p class="text-gray-600 text-sm">
-                    Visual Prototypes & Designs
-                  </p>
-                </div>
-              </div>
-              <p class="text-gray-700 mb-4">
-                Browse UI mockups for rapid prototyping. Create visual prototypes
-                before building features with <code class="bg-gray-100 px-2 py-1 rounded text-sm">/mockup</code> command.
-              </p>
-              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <p class="text-yellow-800 text-sm">
-                  <strong>📝 No mockups yet!</strong> Run <code class="bg-yellow-100 px-2 py-0.5 rounded">/mockup</code> in Claude Code to create your first UI prototype.
+                <p class="text-gray-700 mb-4">
+                  Explore the complete design system with pre-built components:
+                  Buttons, Cards, Forms, Modals, and more. All components are
+                  production-ready and optimized for token efficiency.
                 </p>
-              </div>
-              <div class="flex items-center text-purple-600 font-medium">
-                View Mockups
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </a>
-          </div>
+                <div class="flex items-center text-blue-600 font-medium">
+                  View Design Gallery
+                  <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </a>
+
+              {/* Mockups Card */}
+              <a
+                href="/mockups"
+                class="block bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-8 border border-gray-200 hover:border-purple-300"
+              >
+                <div class="flex items-center mb-4">
+                  <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl mr-4">
+                    🖼️
+                  </div>
+                  <div>
+                    <h2 class="text-2xl font-bold text-gray-900">
+                      UI Mockups
+                    </h2>
+                    <p class="text-gray-600 text-sm">
+                      Visual Prototypes & Designs
+                    </p>
+                  </div>
+                </div>
+                <p class="text-gray-700 mb-4">
+                  Browse UI mockups for rapid prototyping. Create visual prototypes
+                  before building features with <code class="bg-gray-100 px-2 py-1 rounded text-sm">/mockup</code> command.
+                </p>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p class="text-yellow-800 text-sm">
+                    <strong>📝 No mockups yet!</strong> Run <code class="bg-yellow-100 px-2 py-0.5 rounded">/mockup</code> in Claude Code to create your first UI prototype.
+                  </p>
+                </div>
+                <div class="flex items-center text-purple-600 font-medium">
+                  View Mockups
+                  <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </a>
+            </div>
+          )}
 
           {/* Getting Started */}
           <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-200">

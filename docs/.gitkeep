@@ -1,6 +1,0 @@
-# This directory will contain:
-# - requirements.md (from /requirements command)
-# - architecture.md (from /architect command)
-# - api-spec.md (from /design-api command)
-# - data-models.md (from /design-api command)
-# - adr/ directory (Architecture Decision Records)

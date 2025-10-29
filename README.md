@@ -219,7 +219,7 @@ Fully automated with smart decisions, validation, and error recovery.
 
 **Token usage:** ~35K per feature | **Time:** ~5 min | **Control:** ⭐
 
-**See [Orchestration Guide](docs/ORCHESTRATION_GUIDE.md) for detailed comparison.**
+**See [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed comparison.**
 
 ---
 
@@ -374,6 +374,8 @@ deno test tests/users_test.ts
 │   └── commands/            # Slash command definitions
 │       ├── new-feature.md            # ⭐ Recommended workflow (uses feature-scoped agents)
 │       ├── feature-complete.md       # ⭐ Finalize and move to implemented
+│       ├── mockup.md                 # Create UI mockups/prototypes
+│       ├── design.md                 # Update design system and styling
 │       ├── auto-feature.md           # Advanced: Full automation
 │       ├── requirements.md
 │       ├── architect.md
@@ -403,7 +405,7 @@ deno test tests/users_test.ts
 │   ├── api-spec.md         # Global API specification (optional)
 │   ├── data-models.md      # Shared data models (optional)
 │   ├── adr/                # Architecture Decision Records
-│   └── ORCHESTRATION_GUIDE.md  # Guide to automation levels
+│   └── guides/                 # Detailed guides (see docs/QUICK_REFERENCE.md)
 ├── backend/                 # Backend source code
 │   ├── main.ts             # Backend entry point (Hono server)
 │   ├── routes/             # API routes
@@ -441,6 +443,8 @@ deno task deploy           # Deploy to Deno Deploy (production)
 deno task deploy:preview   # Deploy preview environment
 ```
 
+**Note:** Development-only routes (`/design-system`, `/mockups`) are automatically excluded from production builds. See [Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md) for details.
+
 ### Testing
 ```bash
 deno task test             # Run all tests
@@ -462,7 +466,10 @@ deno task type-check       # Type check all TypeScript files
 ### Utilities
 ```bash
 deno task clean            # Remove build artifacts and cache
+deno task kill-ports       # Kill processes on ports 3000 and 8000
 ```
+
+**Note:** Use `kill-ports` if you get "port already in use" errors from hidden instances of the app.
 
 ### Deno KV Management
 ```bash
@@ -485,28 +492,28 @@ This template is designed to be token-efficient with **multiple optimization lay
 3. **Shorthand templates** ⭐: Condensed format for simple CRUD features (saves ~400-600 tokens/feature)
 4. **Smart agent instructions** ⭐: Agents automatically choose optimal templates and reference patterns
 
-**See [Token Optimization Guide](docs/TOKEN_OPTIMIZATION_GUIDE.md) for API design details.**
+**See [Token Optimization Guide](docs/guides/TOKEN_OPTIMIZATION_GUIDE.md) for API design details.**
 
 ### Test Writing Optimizations (NEW ⭐)
 5. **CRUD test templates** ⭐: Pre-built test suite for simple services (saves ~400-600 tokens/service)
 6. **Test data patterns** ⭐: Reusable test data builders (saves ~100-150 tokens/file)
 7. **Test pattern references** ⭐: Common testing scenarios (saves ~200-400 tokens/service)
 
-**See [Test Optimization Guide](docs/TEST_OPTIMIZATION_GUIDE.md) for test writing details.**
+**See [Test Optimization Guide](docs/guides/TEST_OPTIMIZATION_GUIDE.md) for test writing details.**
 
 ### Backend Implementation Optimizations (NEW ⭐)
 8. **CRUD service templates** ⭐: Complete service implementation (saves ~600-800 tokens/service)
 9. **CRUD route templates** ⭐: Standard REST endpoints (saves ~400-600 tokens/service)
 10. **Backend pattern references** ⭐: Common backend patterns (saves ~200-400 tokens/service)
 
-**See [Backend Optimization Guide](docs/BACKEND_OPTIMIZATION_GUIDE.md) for implementation details.**
+**See [Backend Optimization Guide](docs/guides/BACKEND_OPTIMIZATION_GUIDE.md) for implementation details.**
 
 ### Frontend Implementation Optimizations (NEW ⭐)
 11. **Fresh route templates** ⭐: Pre-built list/detail pages (saves ~500-700 tokens/page)
 12. **Design system components** ⭐: Button, Card, Input, Modal, etc. (saves ~300-500 tokens/feature)
 13. **Frontend pattern references** ⭐: Form islands, API clients, state management (saves ~400-600 tokens/feature)
 
-**See [Frontend Optimization Guide](docs/FRONTEND_OPTIMIZATION_GUIDE.md) for UI implementation details.**
+**See [Frontend Optimization Guide](docs/guides/FRONTEND_OPTIMIZATION_GUIDE.md) for UI implementation details.**
 
 ### General Best Practices
 14. **Agents read files, not chat history**: Each agent reads output files from previous agents
@@ -771,7 +778,8 @@ MIT License - feel free to use for any purpose.
 
 ## Resources
 
-- [Orchestration Guide](docs/ORCHESTRATION_GUIDE.md) - Detailed guide to choosing automation levels
+- [Quick Reference](docs/QUICK_REFERENCE.md) - Condensed guide for common patterns
+- [Detailed Guides](docs/guides/) - Comprehensive guides for advanced topics
 - [Claude Code Documentation](https://docs.claude.com/claude-code)
 - [Test-Driven Development](https://martinfowler.com/bliki/TestDrivenDevelopment.html)
 - [Architecture Decision Records](https://adr.github.io/)
@@ -835,7 +843,7 @@ On Deno Deploy, Deno KV is:
 
 ### Local Development with Deno KV
 
-Deno KV uses SQLite locally and FoundationDB in production. See `docs/DENO_KV_GUIDE.md` for comprehensive best practices.
+Deno KV uses SQLite locally and FoundationDB in production. See `docs/guides/DENO_KV_GUIDE.md` for comprehensive best practices.
 
 **Quick Setup**:
 ```typescript
@@ -868,7 +876,7 @@ deno task kv:inspect   # View stored data
 - ✅ Use single instance pattern (don't call `Deno.openKv()` on every request)
 - ✅ Use `:memory:` for tests (fast, isolated)
 - ✅ Add `data/*.db` to `.gitignore` (already configured)
-- ✅ See `docs/DENO_KV_GUIDE.md` for complete guide
+- ✅ See `docs/guides/DENO_KV_GUIDE.md` for complete guide
 
 ## Deno 2 Quick Reference
 
@@ -911,4 +919,4 @@ For issues or questions:
 
 **Advanced:** Try `/auto-feature` for complex projects requiring maximum automation.
 
-See [Orchestration Guide](docs/ORCHESTRATION_GUIDE.md) to choose the right level for your needs.
+See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed automation levels.

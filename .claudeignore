@@ -1,0 +1,87 @@
+# Claude Code Ignore File
+# Files and directories listed here will be excluded from Claude's context
+# This reduces token usage and speeds up startup time
+
+# ==============================================================================
+# AGENT DEFINITIONS (full instructions - loaded only when agents are invoked)
+# ==============================================================================
+.claude/agents/_full/
+
+# ==============================================================================
+# OPTIMIZATION GUIDES (for human reference, not needed by Claude on startup)
+# ==============================================================================
+docs/guides/
+docs/*OPTIMIZATION*.md
+docs/*GUIDE*.md
+
+# Keep these essential docs:
+!docs/architecture.md
+
+# ==============================================================================
+# TEMPLATE PATTERNS (loaded by specific agents only when needed)
+# ==============================================================================
+backend/templates/
+frontend/templates/
+tests/templates/
+
+# ==============================================================================
+# FEATURE DOCUMENTATION (only loaded when working on specific features)
+# ==============================================================================
+features/proposed/
+features/implemented/
+features/_templates/
+
+# Keep the feature overview:
+!features/README.md
+
+# ==============================================================================
+# DESIGN SYSTEM (only when working on UI components)
+# ==============================================================================
+frontend/components/design-system/README.md
+
+# ==============================================================================
+# PROJECT META FILES (not needed for development)
+# ==============================================================================
+README.md                # User-facing setup guide (use docs/QUICK_REFERENCE.md instead)
+CHANGELOG.md
+CONTRIBUTING.md
+COMMANDS.md
+
+# ==============================================================================
+# BUILD & CACHE DIRECTORIES
+# ==============================================================================
+.fresh/
+.deno/
+dist/
+build/
+coverage/
+node_modules/
+
+# ==============================================================================
+# DATA & DATABASE FILES
+# ==============================================================================
+data/
+*.db
+*.sqlite
+
+# ==============================================================================
+# ENVIRONMENT & CONFIG
+# ==============================================================================
+.env
+.env.*
+.vscode/
+.idea/
+
+# ==============================================================================
+# MOCKUPS (loaded dynamically by /mockup and /new-feature commands)
+# ==============================================================================
+# Keep mockup README for reference:
+!features/mockups/README.md
+
+# ==============================================================================
+# GIT & OS FILES
+# ==============================================================================
+.git/
+.DS_Store
+Thumbs.db
+*.log

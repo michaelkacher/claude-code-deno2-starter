@@ -10,10 +10,10 @@
     "start:frontend": "cd frontend && deno task preview",
     "build": "deno task build:backend && deno task build:frontend",
     "build:backend": "deno compile --allow-net --allow-read --allow-env --allow-write --output=./dist/backend backend/main.ts --unstable-kv",
-    "build:frontend": "cd frontend && deno task build",
-    "preview": "deno run --allow-net --allow-read ./dist/backend",
-    "deploy": "deployctl deploy --project=your-project-name --prod backend/main.ts",
-    "deploy:preview": "deployctl deploy --project=your-project-name backend/main.ts",
+    "build:frontend": "cd frontend && DENO_ENV=production deno task build",
+    "preview": "DENO_ENV=production deno run --allow-net --allow-read ./dist/backend",
+    "deploy": "deployctl deploy --project=your-project-name --prod --env=DENO_ENV:production backend/main.ts",
+    "deploy:preview": "deployctl deploy --project=your-project-name --env=DENO_ENV:production backend/main.ts",
     "test": "deno test --allow-read --allow-env --allow-net --allow-write --unstable-kv",
     "test:watch": "deno test --allow-read --allow-env --allow-net --allow-write --unstable-kv --watch",
     "test:coverage": "deno test --allow-read --allow-env --allow-net --allow-write --unstable-kv --coverage=coverage",
@@ -27,7 +27,8 @@
     "clean": "rm -rf dist coverage .fresh frontend/_fresh",
     "kv:seed": "deno run --allow-read --allow-write --allow-env scripts/seed-local-kv.ts",
     "kv:reset": "deno run --allow-read --allow-write scripts/reset-local-kv.ts",
-    "kv:inspect": "deno run --allow-read --allow-write --allow-env scripts/inspect-local-kv.ts"
+    "kv:inspect": "deno run --allow-read --allow-write --allow-env scripts/inspect-local-kv.ts",
+    "kill-ports": "deno run --allow-run scripts/kill-ports.ts"
   },
   "deploy": {
     "project": "your-project-name",

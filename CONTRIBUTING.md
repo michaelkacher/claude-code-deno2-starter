@@ -4,41 +4,86 @@ Thank you for contributing to this project! This guide will help you understand 
 
 ## Development Workflow
 
-We follow Test-Driven Development (TDD) using Claude Code agents:
+We follow Test-Driven Development (TDD) using Claude Code agents.
 
-### 1. Requirements Phase
+### Primary Workflow: /new-feature (Recommended for 90% of work)
+
+For most development work, use the integrated workflow:
+
 ```bash
-/requirements
+/new-feature
 ```
-Document what you're building before writing code.
 
-### 2. Architecture Phase
+This command handles the entire feature lifecycle:
+1. **Requirements gathering** - Documents what you're building
+2. **API design** - Defines contracts and data models
+3. **Database design** - Creates schema with migrations
+4. **Test writing** (Red phase) - Writes failing tests
+5. **Backend implementation** (Green phase) - Makes backend tests pass
+6. **Frontend implementation** (Green phase) - Builds UI components
+7. **Review** - Validates code quality and test coverage
+
+**Benefits:**
+- 40-50% more token efficient than individual commands
+- Feature-scoped documentation (avoids global file conflicts)
+- Integrated workflow with automatic handoffs
+- Built-in mockup detection and conversion
+
+### Alternative: UI Mockup First
+
+For UI-heavy features, prototype the design first:
+
+```bash
+# 1. Create visual mockup (no backend logic)
+/mockup
+
+# 2. Review mockup at http://localhost:3000/mockups/{name}
+
+# 3. Convert to full feature (auto-detects mockup)
+/new-feature
+```
+
+### Design System Updates
+
+For customizing the app's visual design:
+
+```bash
+/design
+```
+
+Use this to:
+- Update design tokens (colors, typography, spacing)
+- Customize component styles (buttons, cards, inputs, etc.)
+- Rebrand the application
+- Add new component variants
+- Update design showcase page
+
+### Advanced: Individual Agent Commands
+
+For specific tasks or updating existing code, use individual agents:
+
+```bash
+/write-tests         # Add tests to existing code
+/implement-backend   # Implement backend logic
+/implement-frontend  # Build UI components
+/review             # Review code quality
+```
+
+**Note:** These commands work with the existing global docs approach and are less token-efficient than `/new-feature`.
+
+### When to Use /architect
+
+**Only use for major architectural changes:**
 ```bash
 /architect
 ```
-Design the system architecture and document decisions in ADRs.
 
-### 3. API Design Phase
-```bash
-/design-api
-```
-Define API contracts before implementation.
+Valid scenarios:
+- Migrating from Deno KV to PostgreSQL (outgrowing KV)
+- Splitting monolith into microservices (scaling)
+- Adding major infrastructure (Redis, message queues, CDN)
 
-### 4. Test Phase (Red)
-```bash
-/write-tests
-```
-Write tests that fail initially. This is the **Red** phase of TDD.
-
-### 5. Implementation Phase (Green)
-```bash
-/implement-backend
-/implement-frontend
-```
-Write minimal code to make tests pass. This is the **Green** phase of TDD.
-
-### 6. Refactor Phase
-After tests pass, refactor code while keeping tests green.
+**Note:** This template ships with production-ready architecture (Deno 2 + Hono + Fresh + Deno KV). Most projects won't need architectural changes.
 
 ## Code Style
 
@@ -105,29 +150,44 @@ This will check:
 
 ## Getting Help
 
-- Read the [README](./README.md) for overview
-- Check `.claude/agents/` for agent documentation
-- Review existing `docs/` for architecture decisions
+- Read the [README](./README.md) for setup and overview
+- Check `docs/QUICK_REFERENCE.md` for common patterns and commands
+- Review `docs/architecture.md` for system architecture
+- Browse `features/implemented/` to see examples of completed features
 - Ask questions in pull request discussions
 
 ## Architecture Decisions
 
-Major architectural changes require an ADR (Architecture Decision Record):
+**This template ships with production-ready architecture.** Most projects won't need architectural changes.
 
-1. Use `/architect` to help create the ADR
-2. Place in `docs/adr/NNN-title.md`
-3. Follow the ADR template
-4. Get team review before implementing
+If you need to make a major architectural change (database migration, microservices, etc.), use `/architect` to update `docs/architecture.md` and document the decision.
+
+**Note:** Minor decisions (like adding a new API endpoint or UI component) don't require architectural documentation - just use `/new-feature`.
 
 ## Documentation
 
-Keep documentation up to date:
+### Feature-Scoped Documentation (Preferred)
 
-- Update `docs/requirements.md` when requirements change
-- Update `docs/architecture.md` for architectural changes
-- Update `docs/api-spec.md` when API changes
-- Add ADRs for major decisions
-- Update README for new features
+When using `/new-feature`, documentation is automatically created in `features/proposed/{feature-name}/`:
+- `requirements.md` - Feature requirements and acceptance criteria
+- `api-spec.md` - API endpoints and data models
+- `database-schema.md` - Database tables and relationships
+
+After implementation, move the feature folder to `features/implemented/{feature-name}/`.
+
+**Benefits:**
+- No merge conflicts from global docs
+- Self-contained feature context
+- Easy to reference and maintain
+
+### Global Documentation (Only for Major Changes)
+
+Update global docs only for project-wide changes:
+- `docs/architecture.md` - Major architectural decisions (database migration, etc.)
+- `docs/QUICK_REFERENCE.md` - Common patterns and workflows
+- `README.md` - Setup and overview
+
+**Note:** Avoid updating global `docs/requirements.md` or `docs/api-spec.md` - use feature-scoped docs instead.
 
 ## Local Development
 
@@ -149,6 +209,15 @@ deno task type-check
 ```
 
 ## Common Issues
+
+### Port Already in Use
+If you get "port already in use" errors:
+```bash
+deno task kill-ports  # Kills processes on ports 3000 and 8000
+deno task dev         # Then restart
+```
+
+This is useful when hidden instances of the app are blocking the ports.
 
 ### Tests Failing
 1. Ensure you're in the correct TDD phase

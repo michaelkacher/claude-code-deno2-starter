@@ -19,14 +19,20 @@ export const handler: Handlers<{ mockups: Mockup[] }> = {
     const mockups: Mockup[] = [];
 
     try {
+      // Get the directory for this file
+      const mockupsDir = import.meta.dirname || new URL('.', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$');
+
+
+
       // Scan mockups directory for .tsx files
-      for await (const entry of Deno.readDir('./frontend/routes/mockups')) {
+      for await (const entry of Deno.readDir(mockupsDir)) {
         if (entry.isFile && entry.name.endsWith('.tsx') && entry.name !== 'index.tsx') {
           const mockupName = entry.name.replace('.tsx', '');
 
           // Try to read mockup file to extract metadata from header comments
           try {
-            const content = await Deno.readTextFile(`./frontend/routes/mockups/${entry.name}`);
+            const mockupPath = `${mockupsDir}${mockupsDir.endsWith('\\')') || mockupsDir.endsWith('/') ? '' : '/'}${entry.name}`;
+            const content = await Deno.readTextFile(mockupPath);
             const purposeMatch = content.match(/PURPOSE:\s*\n\s*\*\s*(.+)/);
             const createdMatch = content.match(/@created\s+(.+)/);
 
