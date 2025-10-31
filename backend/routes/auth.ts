@@ -1,10 +1,8 @@
-import { Hono } from 'hono';
+import { Context, Hono } from 'hono';
 import { encodeHex } from 'jsr:@std/encoding/hex';
-import { Context } from 'hono';
 import { createToken } from '../lib/jwt.ts';
-import { LoginSchema, UserSchema } from '../types/user.ts';
-import { env } from '../config/env.ts';
 import { getKv } from '../lib/kv.ts';
+import { LoginSchema } from '../types/user.ts';
 
 const auth = new Hono();
 const kv = await getKv();

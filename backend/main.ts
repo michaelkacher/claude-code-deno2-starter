@@ -8,8 +8,8 @@
 import { Hono } from 'hono';
 import { cors } from 'jsr:@hono/hono/cors';
 import { logger } from 'jsr:@hono/hono/logger';
-import openApiRoutes from './routes/openapi.ts';
 import { env, isDevelopment } from './config/env.ts';
+import openApiRoutes from './routes/openapi.ts';
 
 const app = new Hono();
 

@@ -1,6 +1,6 @@
 import { Context, Next } from 'hono';
-import { verifyToken } from '../lib/jwt.ts';
 import { env } from '../config/env.ts';
+import { verifyToken } from '../lib/jwt.ts';
 
 export async function authenticate(c: Context, next: Next) {
   // Skip auth check if disabled for local development
