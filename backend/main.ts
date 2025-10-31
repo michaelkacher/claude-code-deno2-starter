@@ -8,6 +8,8 @@
 import { Hono } from 'hono';
 import { cors } from 'jsr:@hono/hono/cors';
 import { logger } from 'jsr:@hono/hono/logger';
+import openApiRoutes from './routes/openapi.ts';
+import { env, isDevelopment } from './config/env.ts';
 
 const app = new Hono();
 
@@ -24,6 +26,9 @@ app.get('/', (c) => {
     message: 'Add your API routes in backend/routes/',
     endpoints: {
       health: '/api/health',
+      openapi: '/api/openapi.json',
+      docs: '/api/docs',
+      redoc: '/api/redoc',
     },
   });
 });
@@ -35,6 +40,9 @@ app.get('/api/health', (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Mount OpenAPI documentation routes
+app.route('/api', openApiRoutes);
 
 // TODO: Import and mount your routes here
 // Example:
@@ -65,8 +73,15 @@ app.onError((err, c) => {
   );
 });
 
-const port = Number(Deno.env.get('PORT')) || 8000;
+const port = env.PORT;
 
 console.log(`🚀 Server starting on http://localhost:${port}`);
+console.log(`📝 Environment: ${env.DENO_ENV}`);
+console.log(`📝 API URL: ${env.API_URL}`);
+console.log(`📝 Frontend URL: ${env.FRONTEND_URL}`);
+if (isDevelopment) {
+  console.log(`📚 API Docs: http://localhost:${port}/api/docs`);
+  console.log(`📖 ReDoc: http://localhost:${port}/api/redoc`);
+}
 console.log(`📝 Ready to build! Start with: /requirements then /new-feature`);
 Deno.serve({ port }, app.fetch);

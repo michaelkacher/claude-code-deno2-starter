@@ -2,7 +2,9 @@
  * API client for making HTTP requests
  */
 
-const baseURL = Deno.env.get('API_URL') || 'http://localhost:8000/api';
+import { env } from '../config/env.ts';
+
+const baseURL = env.API_URL;
 
 export interface ApiError {
   error: {

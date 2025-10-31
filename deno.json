@@ -4,12 +4,12 @@
   "exports": "./backend/main.ts",
   "tasks": {
     "dev": "deno run --allow-net --allow-read --allow-env --allow-run --allow-write --watch dev.ts",
-    "dev:backend": "deno run --allow-net --allow-read --allow-env --allow-write --watch backend/main.ts --unstable-kv",
+    "dev:backend": "deno run --unstable-kv --allow-net --allow-read --allow-env --allow-write --watch backend/main.ts",
     "dev:frontend": "cd frontend && deno task start",
-    "start": "deno run --allow-net --allow-read --allow-env --allow-write backend/main.ts --unstable-kv",
+    "start": "deno run --unstable-kv --allow-net --allow-read --allow-env --allow-write backend/main.ts",
     "start:frontend": "cd frontend && deno task preview",
     "build": "deno task build:backend && deno task build:frontend",
-    "build:backend": "deno compile --allow-net --allow-read --allow-env --allow-write --output=./dist/backend backend/main.ts --unstable-kv",
+    "build:backend": "deno compile --unstable-kv --allow-net --allow-read --allow-env --allow-write --output=./dist/backend backend/main.ts",
     "build:frontend": "cd frontend && DENO_ENV=production deno task build",
     "preview": "DENO_ENV=production deno run --allow-net --allow-read ./dist/backend",
     "deploy": "deployctl deploy --project=your-project-name --prod --env=DENO_ENV:production backend/main.ts",
@@ -46,7 +46,8 @@
     "@/": "./backend/",
     "@std/": "jsr:@std/",
     "hono": "jsr:@hono/hono@^4",
-    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts"
+    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
+    "playwright/test": "npm:@playwright/test@^1.48"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
@@ -84,6 +85,7 @@
   "test": {
     "include": [
       "backend/**/*_test.ts",
+      "backend/**/*.test.ts",
       "tests/**/*.test.ts"
     ],
     "exclude": [

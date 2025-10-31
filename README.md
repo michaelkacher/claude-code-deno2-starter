@@ -1,6 +1,8 @@
 # Web Project Starter with Claude Code + Deno 2
 
-You must have Claude Code to effectively use this template and the Claude Code Agents and Commands!!
+You must have Claude Code to effectively use this template!! 
+
+[Claude Pricing and plans](https://www.claude.com/pricing)
 
 ## ⚡ Opinionated & Production-Ready
 
@@ -21,23 +23,10 @@ You must have Claude Code to effectively use this template and the Claude Code A
 ### Goals
 
 * Go from idea to deployed project quickly (< 1 hour)
-* Leverage Claude Code AI agents for feature development
+* Leverage Claude Code AI agents for mockups, feature development, and testing
 * Opinionated stack reduces tokens and decision fatigue
-* Test-Driven Development (TDD) prevents regressions
-* Production-ready from day one
-
-## Overview
-
-This template is designed to build web applications efficiently with Claude Code. The following features are provided:
-
-- **7 Specialized Sub-Agents** for different development phases
-- **8 Slash Commands** for common workflows
-- **3 Levels of Automation** - from full control to intelligent orchestration
-- **TDD-First Approach** with automated testing workflows
-- **Token-Efficient Design** that minimizes context usage
-- **Simple & Maintainable** code practices
-
-The application is designed to deploy applications using [Deno Deploy](https://deno.com/deploy).
+* Test-Driven Development (TDD) and End to End (e2e) tests prevents regressions
+* Production-ready from day one and ready for [Deno Deploy](https://deno.com/deploy)
 
 ## Quick Start
 
@@ -87,15 +76,19 @@ Choose your workflow:
 
 #### Option A: Quick Start (Recommended - 90% of users)
 
-```bash
-# Start Claude Code
-claude plan
 
-# The command will ask for project context on first run
+```bash
+# Create a mockup and describe what you want to implement
+claude mockup 
+```
+
+```bash
+# from within Claude Code use the /new-feature command
+# Provide the mockup to implement and provide more details on the functionality
 /new-feature
 ```
 
-**WARNING**: There is the option `claude plan --dangerously-skip-permissions` to skip being prompted for running commands and changing files. THIS IS DANGEROUS as your system can be accessed. If you proceed with this command, it is recommended to execute it in a sandboxed environment.
+**WARNING**: There is the option `claude --dangerously-skip-permissions` to skip being prompted for running commands and changing files. THIS IS DANGEROUS as your system can be accessed. If you proceed with this command, it is recommended to execute it in a sandboxed environment.
 
 **Why this works:** `/new-feature` handles everything you need:
 - First run: Asks about your project vision
@@ -112,7 +105,10 @@ claude plan
 # Step 2: Review or customize architecture (optional)
 /architect
 
-# Step 3: Build your first feature
+# Step 3: Create Mockups
+/mockup
+
+# Step 4: Build your first feature with tests
 /new-feature
 ```
 
@@ -123,7 +119,7 @@ claude plan
 - Complex integration requirements
 
 **The /architect agent is also valuable for:**
-- Migrating from Deno KV to PostgreSQL when project outgrows KV
+- Migrating from Deno KV to PostgreSQL if the project outgrows KV
 - Splitting into microservices when scaling
 - Adding new infrastructure (Redis, message queues, etc.)
 - Major refactoring decisions (authentication changes, API versioning)
@@ -920,3 +916,28 @@ For issues or questions:
 **Advanced:** Try `/auto-feature` for complex projects requiring maximum automation.
 
 See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed automation levels.
+
+# Backlog
+* Set up Authentication and Authorization with the following criteria:
+  * Uncomments existing JWT authentication code
+  * A flag is implemented to disable authentication/authorization for local development
+  * Adds auth middleware
+  * Implements a user model
+  * Configures CORS for the backend
+
+* update home screen with mockup command
+* Setup integration tests to to test the api layer directly
+* Add open api link to home page info
+  - Swagger UI: http://localhost:8000/api/docs (interactive testing)
+  - ReDoc: http://localhost:8000/api/redoc (clean reading experience)
+  - OpenAPI JSON: http://localhost:8000/api/openapi.json (raw spec)
+  - API Info: http://localhost:8000/ (lists all endpoints)
+
+* Evaluate Open API implementation, is Redoc the right choice?
+* Error monitoring: Optional setting to integrate with something like Datadog?
+* Provide command for commits and ensure a commit format is used?
+
+Other:
+  * Set up rate limiting for APIs (middleware?)
+  * Add security headers for No CSP, X-Frame-Options, and others for best practices
+  * Add Request Size limits for payloads

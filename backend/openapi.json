@@ -1,0 +1,469 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "API Server",
+    "version": "0.1.0",
+    "description": "RESTful API built with Hono framework on Deno runtime. Designed for edge deployment with Deno Deploy.",
+    "contact": {
+      "name": "API Support"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development server"
+    },
+    {
+      "url": "{baseUrl}",
+      "description": "Custom server URL",
+      "variables": {
+        "baseUrl": {
+          "default": "http://localhost:8000",
+          "description": "Base URL for the API"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "system",
+      "description": "System and health check endpoints"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Get API information",
+        "description": "Returns basic API information including version, status, and available endpoints",
+        "operationId": "getApiInfo",
+        "responses": {
+          "200": {
+            "description": "API information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiInfo"
+                },
+                "example": {
+                  "name": "API Server",
+                  "version": "0.1.0",
+                  "status": "running",
+                  "message": "Add your API routes in backend/routes/",
+                  "endpoints": {
+                    "health": "/api/health"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Health check endpoint",
+        "description": "Returns the health status of the API server with current timestamp",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheck"
+                },
+                "example": {
+                  "status": "ok",
+                  "timestamp": "2025-10-30T12:00:00.000Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiInfo": {
+        "type": "object",
+        "required": ["name", "version", "status"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "API name"
+          },
+          "version": {
+            "type": "string",
+            "description": "API version",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["running", "maintenance", "degraded"],
+            "description": "Current API status"
+          },
+          "message": {
+            "type": "string",
+            "description": "Additional information message"
+          },
+          "endpoints": {
+            "type": "object",
+            "description": "Map of available endpoints",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "HealthCheck": {
+        "type": "object",
+        "required": ["status", "timestamp"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok", "degraded", "error"],
+            "description": "Health status of the service"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of the health check"
+          }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "description": "Standard API response wrapper for successful responses",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "description": "Response data of any type"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "ResponseMeta": {
+        "type": "object",
+        "description": "Metadata for paginated responses",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of items"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Current page number"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Items per page"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "description": "Standard error response",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "VALIDATION_ERROR",
+                  "UNAUTHORIZED",
+                  "FORBIDDEN",
+                  "NOT_FOUND",
+                  "CONFLICT",
+                  "INTERNAL_SERVER_ERROR"
+                ],
+                "description": "Error code"
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable error message"
+              },
+              "details": {
+                "type": "object",
+                "description": "Additional error details",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "example": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Route not found"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "description": "User entity",
+        "required": ["id", "email", "name", "role", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique user identifier"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "User full name"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "user"],
+            "description": "User role"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "User creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "User last update timestamp"
+          }
+        }
+      },
+      "CreateUserInput": {
+        "type": "object",
+        "description": "Input for creating a new user",
+        "required": ["email", "name"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "User full name"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "user"],
+            "default": "user",
+            "description": "User role"
+          }
+        }
+      },
+      "PaginationParams": {
+        "type": "object",
+        "description": "Query parameters for pagination",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10,
+            "description": "Items per page"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of items to skip"
+          }
+        }
+      },
+      "SortParams": {
+        "type": "object",
+        "description": "Query parameters for sorting",
+        "properties": {
+          "sortBy": {
+            "type": "string",
+            "description": "Field to sort by"
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": ["asc", "desc"],
+            "default": "asc",
+            "description": "Sort direction"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid input data",
+                "details": {
+                  "email": "Invalid email format"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized - authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "UNAUTHORIZED",
+                "message": "Authentication required"
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden - insufficient permissions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "FORBIDDEN",
+                "message": "Insufficient permissions"
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not found - resource does not exist",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "NOT_FOUND",
+                "message": "Route not found"
+              }
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflict - resource already exists",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "CONFLICT",
+                "message": "Resource already exists"
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected error occurred"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "PageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "Page number for pagination",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "Number of items per page",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10
+        }
+      },
+      "SortByParam": {
+        "name": "sortBy",
+        "in": "query",
+        "description": "Field to sort by",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "SortOrderParam": {
+        "name": "sortOrder",
+        "in": "query",
+        "description": "Sort direction",
+        "schema": {
+          "type": "string",
+          "enum": ["asc", "desc"],
+          "default": "asc"
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Bearer token authentication"
+      }
+    }
+  }
+}
