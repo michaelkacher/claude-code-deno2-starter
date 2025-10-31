@@ -15,7 +15,12 @@ const app = new Hono();
 
 // Middleware
 app.use('*', logger());
-app.use('*', cors());
+app.use('*', cors({
+  origin: [env.CORS_ORIGIN],
+  credentials: true,
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Authorization', 'Content-Type'],
+}));
 
 // Root route - API info
 app.get('/', (c) => {
@@ -44,10 +49,11 @@ app.get('/api/health', (c) => {
 // Mount OpenAPI documentation routes
 app.route('/api', openApiRoutes);
 
-// TODO: Import and mount your routes here
-// Example:
-// import userRoutes from './routes/users.ts';
-// app.route('/api/users', userRoutes);
+// Import routes
+import authRoutes from './routes/auth.ts';
+
+// Mount routes
+app.route('/api/auth', authRoutes);
 
 // 404 handler
 app.notFound((c) => {
