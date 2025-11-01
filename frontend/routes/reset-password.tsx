@@ -22,10 +22,8 @@ export const handler: Handlers<ResetData> = {
     }
 
     try {
-      // Derive API URL from request origin to avoid hardcoding environment-specific URLs
-      const requestUrl = new URL(req.url);
-      const apiUrl = Deno.env.get('API_URL') || 
-        `${requestUrl.protocol}//${requestUrl.hostname}:8000/api`;
+      // Derive API URL from request origin
+      const apiUrl = `${url.protocol}//${url.hostname}:8000/api`;
       const response = await fetch(`${apiUrl}/auth/validate-reset-token?token=${token}`);
       const data = await response.json();
 
