@@ -1,8 +1,9 @@
 import { Context, Hono } from 'hono';
 import { setCookie } from 'jsr:@hono/hono/cookie';
+import { z } from 'zod';
 import { bodySizeLimits } from '../lib/body-limit.ts';
 import { csrfProtection, setCsrfToken } from '../lib/csrf.ts';
-import { sendVerificationEmail } from '../lib/email.ts';
+import { sendPasswordResetEmail, sendVerificationEmail } from '../lib/email.ts';
 import { createAccessToken, createRefreshToken, verifyToken } from '../lib/jwt.ts';
 import { getKv } from '../lib/kv.ts';
 import { hashPassword, verifyPassword } from '../lib/password.ts';
@@ -602,6 +603,191 @@ auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Cont
         message: 'Failed to resend verification email'
       }
     }, 500);
+  }
+});
+
+// Forgot password - request reset email
+auth.post('/forgot-password', rateLimiters.passwordReset, async (c: Context) => {
+  try {
+    const body = await c.req.json();
+    const { email } = z.object({ email: z.string().email() }).parse(body);
+
+    // Get user by email
+    const userKey = await kv.get(['users_by_email', email]);
+    
+    // Always return success (don't reveal if email exists - security best practice)
+    if (!userKey.value) {
+      return c.json({
+        data: {
+          message: 'If an account exists with this email, a password reset link will be sent.'
+        }
+      });
+    }
+
+    const userId = userKey.value as string;
+    const userEntry = await kv.get(['users', userId]);
+    const user = userEntry.value as any;
+
+    // Generate reset token
+    const resetToken = crypto.randomUUID();
+    const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour
+
+    // Store reset token
+    await kv.set(['password_reset', resetToken], {
+      userId: user.id,
+      email: user.email,
+      expiresAt,
+      createdAt: new Date().toISOString()
+    }, {
+      expireIn: 60 * 60 * 1000 // Auto-delete after 1 hour
+    });
+
+    // Send reset email
+    try {
+      await sendPasswordResetEmail(user.email, user.name, resetToken);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Continue even if email fails - don't reveal this to user
+    }
+
+    return c.json({
+      data: {
+        message: 'If an account exists with this email, a password reset link will be sent.'
+      }
+    });
+  } catch (error) {
+    return c.json({
+      error: {
+        code: 'BAD_REQUEST',
+        message: error.message
+      }
+    }, 400);
+  }
+});
+
+// Validate reset token
+auth.get('/validate-reset-token', async (c: Context) => {
+  try {
+    const token = c.req.query('token');
+    
+    if (!token) {
+      return c.json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Token is required'
+        }
+      }, 400);
+    }
+
+    const resetEntry = await kv.get(['password_reset', token]);
+    
+    if (!resetEntry.value) {
+      return c.json({
+        data: { valid: false, reason: 'invalid' }
+      });
+    }
+
+    const { expiresAt } = resetEntry.value as any;
+    
+    if (Date.now() > expiresAt) {
+      return c.json({
+        data: { valid: false, reason: 'expired' }
+      });
+    }
+
+    return c.json({
+      data: { valid: true }
+    });
+  } catch (error) {
+    return c.json({
+      data: { valid: false, reason: 'error' }
+    });
+  }
+});
+
+// Reset password with token
+auth.post('/reset-password', bodySizeLimits.strict, async (c: Context) => {
+  try {
+    const body = await c.req.json();
+    const { token, password } = z.object({
+      token: z.string().uuid(),
+      password: z.string().min(8)
+    }).parse(body);
+
+    // Get reset token data
+    const resetKey = ['password_reset', token];
+    const resetEntry = await kv.get<{
+      userId: string;
+      email: string;
+      expiresAt: number;
+    }>(resetKey);
+
+    if (!resetEntry.value) {
+      return c.json({
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or expired reset token'
+        }
+      }, 400);
+    }
+
+    const { userId, expiresAt } = resetEntry.value;
+
+    // Check expiry
+    if (Date.now() > expiresAt) {
+      await kv.delete(resetKey);
+      return c.json({
+        error: {
+          code: 'TOKEN_EXPIRED',
+          message: 'Reset token has expired. Please request a new one.'
+        }
+      }, 400);
+    }
+
+    // Get user
+    const userEntry = await kv.get(['users', userId]);
+    if (!userEntry.value) {
+      return c.json({
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found'
+        }
+      }, 404);
+    }
+
+    const user = userEntry.value as any;
+
+    // Hash new password
+    const hashedPassword = await hashPassword(password);
+
+    // Update user with new password
+    const now = new Date().toISOString();
+    const updatedUser = {
+      ...user,
+      password: hashedPassword,
+      updatedAt: now
+    };
+
+    await kv.set(['users', userId], updatedUser);
+
+    // Delete reset token (single-use)
+    await kv.delete(resetKey);
+
+    // Revoke all refresh tokens for security
+    await revokeAllUserTokens(userId);
+
+    return c.json({
+      data: {
+        message: 'Password reset successfully. Please login with your new password.'
+      }
+    });
+  } catch (error) {
+    return c.json({
+      error: {
+        code: 'BAD_REQUEST',
+        message: error.message
+      }
+    }, 400);
   }
 });
 

@@ -130,5 +130,13 @@ export const rateLimiters = {
     maxRequests: 3,
     keyPrefix: 'email-verification',
     message: 'Too many verification email requests. Please try again later.'
+  }),
+  
+  // Strict limit for password reset (3 per hour to prevent abuse)
+  passwordReset: createRateLimiter({
+    windowMs: 60 * 60 * 1000,  // 1 hour
+    maxRequests: 3,
+    keyPrefix: 'password-reset',
+    message: 'Too many password reset requests. Please try again later.'
   })
 };

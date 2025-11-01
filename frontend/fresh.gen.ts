@@ -6,11 +6,13 @@ import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
 import * as $design_system from "./routes/design-system.tsx";
+import * as $forgot_password from "./routes/forgot-password.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $lib_token_refresh from "./routes/lib/token-refresh.ts";
 import * as $login from "./routes/login.tsx";
 import * as $mockups_index from "./routes/mockups/index.tsx";
 import * as $resend_verification from "./routes/resend-verification.tsx";
+import * as $reset_password from "./routes/reset-password.tsx";
 import * as $signup from "./routes/signup.tsx";
 import * as $verify_email from "./routes/verify-email.tsx";
 import * as $AuthBanner from "./islands/AuthBanner.tsx";
@@ -27,11 +29,13 @@ const manifest = {
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
     "./routes/design-system.tsx": $design_system,
+    "./routes/forgot-password.tsx": $forgot_password,
     "./routes/index.tsx": $index,
     "./routes/lib/token-refresh.ts": $lib_token_refresh,
     "./routes/login.tsx": $login,
     "./routes/mockups/index.tsx": $mockups_index,
     "./routes/resend-verification.tsx": $resend_verification,
+    "./routes/reset-password.tsx": $reset_password,
     "./routes/signup.tsx": $signup,
     "./routes/verify-email.tsx": $verify_email,
   },

@@ -945,10 +945,12 @@ Auth Priority Items:
 
 
 Nice to Have:
-9. Password reset flow
-10. Account lockout after failed attempts
-11. Better logging and monitoring
-12. Stronger password requirements
+
+* Password Strength Meter: Add visual feedback on password strength
+Password History: Prevent reusing last 3 passwords
+* Security Notifications: Email user when password is changed
+* Two-Factor Authentication: Add 2FA before allowing reset
+* Account Lockout: Lock account after multiple failed attempts
 
 
 The server is running at http://localhost:3000/
