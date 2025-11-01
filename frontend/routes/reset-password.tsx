@@ -22,7 +22,8 @@ export const handler: Handlers<ResetData> = {
     }
 
     try {
-      const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
+      // Derive API URL from request origin
+      const apiUrl = `${url.protocol}//${url.hostname}:8000/api`;
       const response = await fetch(`${apiUrl}/auth/validate-reset-token?token=${token}`);
       const data = await response.json();
 
