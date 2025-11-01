@@ -918,7 +918,10 @@ For issues or questions:
 See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed automation levels.
 
 # Backlog
-* the admin screen should only appear if auth enabled
+* ensure the admin screen should only appear if auth enabled
+* Can the admin screen show all models?
+* the docs will load a lot of the guides for claude code, does the claudeignore need to be updated or these docs moved?
+
 * Does the /design command also impact layout? If not, should there be a layout? Maybe add some common layouts?
 * Confirm it still works with no .env file. Should a /setup command exist to create the .env file?
 * Add a hamburger menu to the menu bar
@@ -973,6 +976,8 @@ The template includes a complete admin panel for user management.
 
 ### Accessing the Admin Panel
 
+**Local Development:**
+
 1. **Make a user an admin**:
    ```bash
    deno task users:make-admin test@example.com
@@ -983,6 +988,10 @@ The template includes a complete admin panel for user management.
 3. **Access admin panel**:
    - Click the "Admin Panel" button in the navigation bar (visible only to admins)
    - Or navigate directly to http://localhost:3000/admin/users
+
+**Production:**
+
+See [Production Admin Setup Guide](docs/PRODUCTION_ADMIN_SETUP.md) for automatic admin setup using environment variables.
 
 ### Admin Features
 
@@ -1002,12 +1011,13 @@ The template includes a complete admin panel for user management.
 # List all registered users
 deno task users:list
 
-# Promote a user to admin
+# Promote a user to admin (local development)
 deno task users:make-admin email@example.com
 ```
 
 ### Documentation
 
+- [Production Admin Setup](docs/PRODUCTION_ADMIN_SETUP.md) - **How to set up first admin in production**
 - [Admin Panel Quick Start](docs/ADMIN_QUICK_START.md) - Quick reference
 - [Admin Panel Guide](docs/ADMIN_PANEL.md) - Complete documentation
 - [Admin Implementation Summary](docs/ADMIN_IMPLEMENTATION_SUMMARY.md) - Technical details
