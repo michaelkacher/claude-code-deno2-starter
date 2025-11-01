@@ -8,7 +8,7 @@ You must have Claude Code to effectively use this template!!
 
 **This is an opinionated starter template** with a pre-selected tech stack designed to work together seamlessly. The architecture is chosen for you so you can focus on building features, not debating technology choices.
 
-### The Stack (Fixed)
+### The Stack
 
 - **Runtime:** Deno 2
 - **Backend:** Hono (REST API)

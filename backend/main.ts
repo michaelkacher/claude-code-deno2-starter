@@ -24,7 +24,7 @@ app.use('*', bodySizeLimits.json); // Limit request body size (1MB default)
 app.use('*', cors({
   origin: env.CORS_ORIGIN,
   credentials: true,
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token'],
 }));
 
@@ -76,11 +76,11 @@ import authRoutes from './routes/auth.ts';
 import dataBrowserRoutes from './routes/data-browser.ts';
 import twoFactorRoutes from './routes/two-factor.ts';
 
-// Mount routes
+// Mount routes (more specific routes first to avoid conflicts)
 app.route('/api/auth', authRoutes);
-app.route('/api/admin', adminRoutes);
 app.route('/api/2fa', twoFactorRoutes);
 app.route('/api/admin/data', dataBrowserRoutes);
+app.route('/api/admin', adminRoutes);
 
 // 404 handler
 app.notFound((c) => {
