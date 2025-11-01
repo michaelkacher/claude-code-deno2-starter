@@ -919,9 +919,13 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestra
 
 # Backlog
 * Add a hamburger menu to the menu bar
-* update home screen with mockup command
-* Setup integration tests to to test the api layer directly
-* Add open api link to home page info
+
+* Does test user always get populated first go? Command to create test user? Update docs? Logging in with test@example.com / password123
+
+
+* Setup integration tests to to test the api layer directly. Confirm that e2e and integration test added on /new-feature
+
+* update home screen with all commands and up to date info. Add open api link to home page info
   - Swagger UI: http://localhost:8000/api/docs (interactive testing)
   - ReDoc: http://localhost:8000/api/redoc (clean reading experience)
   - OpenAPI JSON: http://localhost:8000/api/openapi.json (raw spec)
@@ -931,10 +935,7 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestra
 * Error monitoring: Optional setting to integrate with something like Datadog?
 * Provide command for commits and ensure a commit format is used?
 
-
-
-
-  🎯 Priority Ranking
+Auth Priority Items:
 
 Do Soon:
 4. Add refresh token mechanism
@@ -949,9 +950,3 @@ Nice to Have:
 11. Better logging and monitoring
 12. Stronger password requirements
 
-
-The dev server is running with all improvements active. You can test by:
-
-Logging in with test@example.com / password123
-Trying multiple failed login attempts to see rate limiting
-The auth system is now significantly more secure!
