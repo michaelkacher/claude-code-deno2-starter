@@ -191,6 +191,12 @@ export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
             </div>
             <div class="flex gap-4">
               <a
+                href="/admin/data"
+                class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Data Browser
+              </a>
+              <a
                 href="/"
                 class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
               >

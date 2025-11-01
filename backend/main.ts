@@ -73,12 +73,14 @@ app.route('/api', openApiRoutes);
 // Import routes
 import adminRoutes from './routes/admin.ts';
 import authRoutes from './routes/auth.ts';
+import dataBrowserRoutes from './routes/data-browser.ts';
 import twoFactorRoutes from './routes/two-factor.ts';
 
 // Mount routes
 app.route('/api/auth', authRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/2fa', twoFactorRoutes);
+app.route('/api/admin/data', dataBrowserRoutes);
 
 // 404 handler
 app.notFound((c) => {

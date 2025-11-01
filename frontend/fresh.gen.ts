@@ -6,6 +6,7 @@ import * as $_2fa_setup from "./routes/2fa/setup.tsx";
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
+import * as $admin_data from "./routes/admin/data.tsx";
 import * as $admin_users from "./routes/admin/users.tsx";
 import * as $design_system from "./routes/design-system.tsx";
 import * as $forgot_password from "./routes/forgot-password.tsx";
@@ -17,6 +18,7 @@ import * as $resend_verification from "./routes/resend-verification.tsx";
 import * as $reset_password from "./routes/reset-password.tsx";
 import * as $signup from "./routes/signup.tsx";
 import * as $verify_email from "./routes/verify-email.tsx";
+import * as $AdminDataBrowser from "./islands/AdminDataBrowser.tsx";
 import * as $AdminUserTable from "./islands/AdminUserTable.tsx";
 import * as $AuthBanner from "./islands/AuthBanner.tsx";
 import * as $Counter from "./islands/Counter.tsx";
@@ -34,6 +36,7 @@ const manifest = {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
+    "./routes/admin/data.tsx": $admin_data,
     "./routes/admin/users.tsx": $admin_users,
     "./routes/design-system.tsx": $design_system,
     "./routes/forgot-password.tsx": $forgot_password,
@@ -47,6 +50,7 @@ const manifest = {
     "./routes/verify-email.tsx": $verify_email,
   },
   islands: {
+    "./islands/AdminDataBrowser.tsx": $AdminDataBrowser,
     "./islands/AdminUserTable.tsx": $AdminUserTable,
     "./islands/AuthBanner.tsx": $AuthBanner,
     "./islands/Counter.tsx": $Counter,
