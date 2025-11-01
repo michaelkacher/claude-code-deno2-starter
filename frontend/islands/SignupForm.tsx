@@ -17,6 +17,8 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Client-side validation
@@ -104,10 +106,18 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
         
         // Show success message about email verification
         if (data.data.message) {
-          alert(data.data.message);
+          setSuccess(true);
+          setSuccessMessage(data.data.message);
+          setIsLoading(false);
+          
+          // Redirect to intended page after 3 seconds
+          setTimeout(() => {
+            window.location.href = redirectTo;
+          }, 3000);
+          return;
         }
         
-        // Redirect to intended page or home
+        // If no message, redirect immediately
         window.location.href = redirectTo;
       }
     } catch (err) {
@@ -115,6 +125,34 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
       setIsLoading(false);
     }
   };
+
+  // If signup was successful, show success message
+  if (success) {
+    return (
+      <div class="space-y-6">
+        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+          <div class="flex items-start gap-3">
+            <svg class="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="flex-1">
+              <h3 class="text-lg font-semibold text-green-900 mb-2">Account Created Successfully!</h3>
+              <p class="text-green-800 mb-4">
+                {successMessage}
+              </p>
+              <p class="text-sm text-green-700">
+                Redirecting you to the app in 3 seconds...
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex justify-center">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} class="space-y-6">
