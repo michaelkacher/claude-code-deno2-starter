@@ -8,9 +8,10 @@ import { useState } from 'preact/hooks';
 
 interface TwoFactorSetupProps {
   onComplete?: () => void;
+  redirectUrl?: string;
 }
 
-export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
+export default function TwoFactorSetup({ onComplete, redirectUrl = '/' }: TwoFactorSetupProps) {
   const [step, setStep] = useState<'password' | 'scan' | 'verify' | 'backup'>('password');
   const [password, setPassword] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -113,7 +114,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
     if (onComplete) {
       onComplete();
     } else if (IS_BROWSER) {
-      window.location.href = '/profile';
+      window.location.href = redirectUrl;
     }
   };
 
