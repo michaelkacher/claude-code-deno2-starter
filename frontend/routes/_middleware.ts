@@ -12,6 +12,8 @@ const publicRoutes = [
   '/',
   '/login',
   '/signup',
+  '/forgot-password',
+  '/reset-password',
   '/_frsh/',
   '/api/',
 ];

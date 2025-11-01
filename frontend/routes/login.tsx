@@ -55,7 +55,11 @@ export default function Login({ data }: PageProps<LoginData>) {
             <LoginForm redirectTo={data.redirectTo} />
             
             <div class="mt-4 text-center">
-              <a href="/forgot-password" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              <a 
+                href="/forgot-password" 
+                f-client-nav={false}
+                class="text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium inline-block cursor-pointer"
+              >
                 Forgot your password?
               </a>
             </div>
