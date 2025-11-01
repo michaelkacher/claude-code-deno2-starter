@@ -65,6 +65,7 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         localStorage.setItem('access_token', data.data.accessToken);
         localStorage.setItem('user_email', data.data.user.email);
         localStorage.setItem('user_role', data.data.user.role);
+        localStorage.setItem('email_verified', data.data.user.emailVerified ? 'true' : 'false');
         
         // Also set access token in cookie for server-side auth check (15 minutes expiry)
         const expiryDate = new Date();

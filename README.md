@@ -945,7 +945,6 @@ Auth Priority Items:
 
 
 Nice to Have:
-8. Email verification
 9. Password reset flow
 10. Account lockout after failed attempts
 11. Better logging and monitoring

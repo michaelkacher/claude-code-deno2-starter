@@ -94,11 +94,17 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
         localStorage.setItem('access_token', data.data.accessToken);
         localStorage.setItem('user_email', data.data.user.email);
         localStorage.setItem('user_role', data.data.user.role);
+        localStorage.setItem('email_verified', data.data.user.emailVerified ? 'true' : 'false');
         
         // Also set access token in cookie for server-side auth check (15 minutes expiry)
         const expiryDate = new Date();
         expiryDate.setMinutes(expiryDate.getMinutes() + 15);
         document.cookie = `auth_token=${data.data.accessToken}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+        
+        // Show success message about email verification
+        if (data.data.message) {
+          alert(data.data.message);
+        }
         
         // Redirect to intended page or home
         window.location.href = redirectTo;

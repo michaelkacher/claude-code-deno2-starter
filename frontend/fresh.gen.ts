@@ -10,10 +10,13 @@ import * as $index from "./routes/index.tsx";
 import * as $lib_token_refresh from "./routes/lib/token-refresh.ts";
 import * as $login from "./routes/login.tsx";
 import * as $mockups_index from "./routes/mockups/index.tsx";
+import * as $resend_verification from "./routes/resend-verification.tsx";
 import * as $signup from "./routes/signup.tsx";
+import * as $verify_email from "./routes/verify-email.tsx";
 import * as $AuthBanner from "./islands/AuthBanner.tsx";
 import * as $Counter from "./islands/Counter.tsx";
 import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
+import * as $EmailVerificationBanner from "./islands/EmailVerificationBanner.tsx";
 import * as $LoginForm from "./islands/LoginForm.tsx";
 import * as $SignupForm from "./islands/SignupForm.tsx";
 import type { Manifest } from "$fresh/server.ts";
@@ -28,12 +31,15 @@ const manifest = {
     "./routes/lib/token-refresh.ts": $lib_token_refresh,
     "./routes/login.tsx": $login,
     "./routes/mockups/index.tsx": $mockups_index,
+    "./routes/resend-verification.tsx": $resend_verification,
     "./routes/signup.tsx": $signup,
+    "./routes/verify-email.tsx": $verify_email,
   },
   islands: {
     "./islands/AuthBanner.tsx": $AuthBanner,
     "./islands/Counter.tsx": $Counter,
     "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
+    "./islands/EmailVerificationBanner.tsx": $EmailVerificationBanner,
     "./islands/LoginForm.tsx": $LoginForm,
     "./islands/SignupForm.tsx": $SignupForm,
   },

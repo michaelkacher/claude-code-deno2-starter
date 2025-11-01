@@ -122,5 +122,13 @@ export const rateLimiters = {
     maxRequests: 100,
     keyPrefix: 'api',
     message: 'API rate limit exceeded. Please slow down your requests.'
+  }),
+  
+  // Strict limit for email verification (3 per hour to prevent spam)
+  emailVerification: createRateLimiter({
+    windowMs: 60 * 60 * 1000,  // 1 hour
+    maxRequests: 3,
+    keyPrefix: 'email-verification',
+    message: 'Too many verification email requests. Please try again later.'
   })
 };

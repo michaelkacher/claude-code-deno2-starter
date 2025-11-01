@@ -2,6 +2,7 @@ import { Context, Hono } from 'hono';
 import { setCookie } from 'jsr:@hono/hono/cookie';
 import { bodySizeLimits } from '../lib/body-limit.ts';
 import { csrfProtection, setCsrfToken } from '../lib/csrf.ts';
+import { sendVerificationEmail } from '../lib/email.ts';
 import { createAccessToken, createRefreshToken, verifyToken } from '../lib/jwt.ts';
 import { getKv } from '../lib/kv.ts';
 import { hashPassword, verifyPassword } from '../lib/password.ts';
@@ -92,7 +93,8 @@ auth.post('/login', csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, 
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role
+          role: user.role,
+          emailVerified: user.emailVerified || false
         }
       }
     });
@@ -135,6 +137,8 @@ auth.post('/signup', csrfProtection(), bodySizeLimits.strict, rateLimiters.signu
       password: hashedPassword,
       name,
       role: 'user',
+      emailVerified: false,
+      emailVerifiedAt: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -153,6 +157,27 @@ auth.post('/signup', csrfProtection(), bodySizeLimits.strict, rateLimiters.signu
           message: 'Failed to create user'
         }
       }, 500);
+    }
+
+    // Generate verification token
+    const verificationToken = crypto.randomUUID();
+    const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+
+    // Store verification token
+    await kv.set(['email_verification', verificationToken], {
+      userId: user.id,
+      email: user.email,
+      expiresAt
+    }, {
+      expireIn: 24 * 60 * 60 * 1000 // Auto-delete after 24 hours
+    });
+
+    // Send verification email (don't block signup if this fails)
+    try {
+      await sendVerificationEmail(user.email, user.name, verificationToken);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Continue with signup even if email fails
     }
 
     // Create access and refresh tokens for auto-login
@@ -188,8 +213,10 @@ auth.post('/signup', csrfProtection(), bodySizeLimits.strict, rateLimiters.signu
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role
-        }
+          role: user.role,
+          emailVerified: user.emailVerified
+        },
+        message: 'Account created successfully! Please check your email to verify your account.'
       }
     }, 201);
   } catch (error) {
@@ -403,6 +430,178 @@ auth.get('/verify', async (c: Context) => {
         message: 'Invalid or expired token'
       }
     }, 401);
+  }
+});
+
+// Verify email with token
+auth.get('/verify-email', async (c: Context) => {
+  try {
+    const token = c.req.query('token');
+    
+    if (!token) {
+      return c.json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Verification token is required'
+        }
+      }, 400);
+    }
+
+    // Get verification data from KV
+    const verificationKey = ['email_verification', token];
+    const verificationEntry = await kv.get<{
+      userId: string;
+      email: string;
+      expiresAt: number;
+    }>(verificationKey);
+
+    if (!verificationEntry.value) {
+      return c.json({
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or expired verification token'
+        }
+      }, 400);
+    }
+
+    const { userId, email, expiresAt } = verificationEntry.value;
+
+    // Check if token has expired
+    if (Date.now() > expiresAt) {
+      await kv.delete(verificationKey);
+      return c.json({
+        error: {
+          code: 'TOKEN_EXPIRED',
+          message: 'Verification token has expired. Please request a new one.'
+        }
+      }, 400);
+    }
+
+    // Get user and update verification status
+    const userEntry = await kv.get(['users', userId]);
+    if (!userEntry.value) {
+      return c.json({
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found'
+        }
+      }, 404);
+    }
+
+    const user = userEntry.value as any;
+    const now = new Date().toISOString();
+    
+    const updatedUser = {
+      ...user,
+      emailVerified: true,
+      emailVerifiedAt: now,
+      updatedAt: now
+    };
+
+    // Update user atomically
+    await kv.set(['users', userId], updatedUser);
+
+    // Delete verification token
+    await kv.delete(verificationKey);
+
+    return c.json({
+      data: {
+        message: 'Email verified successfully!',
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          name: updatedUser.name,
+          emailVerified: updatedUser.emailVerified
+        }
+      }
+    });
+  } catch (error) {
+    return c.json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to verify email'
+      }
+    }, 500);
+  }
+});
+
+// Resend verification email
+auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Context) => {
+  try {
+    const body = await c.req.json();
+    const { email } = body;
+
+    if (!email) {
+      return c.json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Email is required'
+        }
+      }, 400);
+    }
+
+    // Get user by email
+    const userKey = await kv.get(['users_by_email', email]);
+    if (!userKey.value) {
+      // Don't reveal if email exists or not
+      return c.json({
+        data: {
+          message: 'If an account exists with this email, a verification link will be sent.'
+        }
+      });
+    }
+
+    const userId = userKey.value as string;
+    const userEntry = await kv.get(['users', userId]);
+    const user = userEntry.value as any;
+
+    // Check if already verified
+    if (user.emailVerified) {
+      return c.json({
+        error: {
+          code: 'ALREADY_VERIFIED',
+          message: 'Email is already verified'
+        }
+      }, 400);
+    }
+
+    // Generate new verification token
+    const verificationToken = crypto.randomUUID();
+    const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+
+    // Store verification token
+    await kv.set(['email_verification', verificationToken], {
+      userId: user.id,
+      email: user.email,
+      expiresAt
+    }, {
+      expireIn: 24 * 60 * 60 * 1000 // Auto-delete after 24 hours
+    });
+
+    // Send verification email
+    const result = await sendVerificationEmail(user.email, user.name, verificationToken);
+
+    if (!result.success) {
+      return c.json({
+        error: {
+          code: 'EMAIL_SEND_FAILED',
+          message: 'Failed to send verification email. Please try again later.'
+        }
+      }, 500);
+    }
+
+    return c.json({
+      data: {
+        message: 'Verification email sent successfully. Please check your inbox.'
+      }
+    });
+  } catch (error) {
+    return c.json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to resend verification email'
+      }
+    }, 500);
   }
 });
 

@@ -1,5 +1,6 @@
 import { type PageProps } from "$fresh/server.ts";
 import AuthBanner from "../islands/AuthBanner.tsx";
+import EmailVerificationBanner from "../islands/EmailVerificationBanner.tsx";
 
 export default function App({ Component, url }: PageProps) {
   // Check if auth is disabled
@@ -20,6 +21,7 @@ export default function App({ Component, url }: PageProps) {
       </head>
       <body>
         {showAuthBanner && <AuthBanner />}
+        {showAuthBanner && <EmailVerificationBanner />}
         <Component />
       </body>
     </html>
