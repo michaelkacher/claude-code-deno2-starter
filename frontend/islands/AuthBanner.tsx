@@ -9,6 +9,7 @@ import { useEffect, useState } from 'preact/hooks';
 
 export default function AuthBanner() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -17,9 +18,11 @@ export default function AuthBanner() {
     // Check for access token and user email in localStorage
     const token = localStorage.getItem('access_token');
     const email = localStorage.getItem('user_email');
+    const role = localStorage.getItem('user_role');
     
     if (token && email) {
       setUserEmail(email);
+      setUserRole(role);
     }
     setIsLoading(false);
   }, []);
@@ -80,6 +83,14 @@ export default function AuthBanner() {
                 <span class="text-sm text-gray-600">
                   {userEmail}
                 </span>
+                {userRole === 'admin' && (
+                  <a
+                    href="/admin/users"
+                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Admin Panel
+                  </a>
+                )}
                 <button
                   onClick={handleLogout}
                   class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"

@@ -5,6 +5,7 @@
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
+import * as $admin_users from "./routes/admin/users.tsx";
 import * as $design_system from "./routes/design-system.tsx";
 import * as $forgot_password from "./routes/forgot-password.tsx";
 import * as $index from "./routes/index.tsx";
@@ -15,6 +16,7 @@ import * as $resend_verification from "./routes/resend-verification.tsx";
 import * as $reset_password from "./routes/reset-password.tsx";
 import * as $signup from "./routes/signup.tsx";
 import * as $verify_email from "./routes/verify-email.tsx";
+import * as $AdminUserTable from "./islands/AdminUserTable.tsx";
 import * as $AuthBanner from "./islands/AuthBanner.tsx";
 import * as $Counter from "./islands/Counter.tsx";
 import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
@@ -28,6 +30,7 @@ const manifest = {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
+    "./routes/admin/users.tsx": $admin_users,
     "./routes/design-system.tsx": $design_system,
     "./routes/forgot-password.tsx": $forgot_password,
     "./routes/index.tsx": $index,
@@ -40,6 +43,7 @@ const manifest = {
     "./routes/verify-email.tsx": $verify_email,
   },
   islands: {
+    "./islands/AdminUserTable.tsx": $AdminUserTable,
     "./islands/AuthBanner.tsx": $AuthBanner,
     "./islands/Counter.tsx": $Counter,
     "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,

@@ -791,4 +791,68 @@ auth.post('/reset-password', bodySizeLimits.strict, async (c: Context) => {
   }
 });
 
+/**
+ * GET /api/auth/me
+ * Get current user information
+ * Requires valid JWT token
+ */
+auth.get('/me', async (c: Context) => {
+  try {
+    // Get token from Authorization header
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return c.json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Missing or invalid authorization header'
+        }
+      }, 401);
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Check if token is blacklisted
+    if (await isTokenBlacklisted(token)) {
+      return c.json({
+        error: {
+          code: 'TOKEN_REVOKED',
+          message: 'Token has been revoked'
+        }
+      }, 401);
+    }
+
+    const payload = await verifyToken(token);
+
+    // Get user from database
+    const userEntry = await kv.get(['users', payload.sub]);
+    
+    if (!userEntry.value) {
+      return c.json({
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found'
+        }
+      }, 404);
+    }
+
+    const user = userEntry.value as any;
+    
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user;
+
+    return c.json({
+      data: {
+        user: userWithoutPassword
+      }
+    });
+  } catch (error) {
+    return c.json({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or expired token'
+      }
+    }, 401);
+  }
+});
+
 export default auth;

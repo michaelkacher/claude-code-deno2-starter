@@ -71,10 +71,12 @@ app.get('/api/health', (c) => {
 app.route('/api', openApiRoutes);
 
 // Import routes
+import adminRoutes from './routes/admin.ts';
 import authRoutes from './routes/auth.ts';
 
 // Mount routes
 app.route('/api/auth', authRoutes);
+app.route('/api/admin', adminRoutes);
 
 // 404 handler
 app.notFound((c) => {
