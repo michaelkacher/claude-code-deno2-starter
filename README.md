@@ -918,13 +918,7 @@ For issues or questions:
 See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed automation levels.
 
 # Backlog
-* Set up Authentication and Authorization with the following criteria:
-  * Uncomments existing JWT authentication code
-  * A flag is implemented to disable authentication/authorization for local development
-  * Adds auth middleware
-  * Implements a user model
-  * Configures CORS for the backend
-
+* Add a hamburger menu to the menu bar
 * update home screen with mockup command
 * Setup integration tests to to test the api layer directly
 * Add open api link to home page info
@@ -937,20 +931,11 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestra
 * Error monitoring: Optional setting to integrate with something like Datadog?
 * Provide command for commits and ensure a commit format is used?
 
-Other:
-  * Set up rate limiting for APIs (middleware?)
-  * Add security headers for No CSP, X-Frame-Options, and others for best practices
-  * Add Request Size limits for payloads
-
 
 
 
   🎯 Priority Ranking
-Do Immediately:
 
-⚠️ Replace SHA-256 with bcrypt/scrypt
-⚠️ Verify JWT tokens on frontend (not just check existence)
-⚠️ Add rate limiting to auth endpoints
 Do Soon:
 4. Add refresh token mechanism
 5. Implement token revocation/blacklist

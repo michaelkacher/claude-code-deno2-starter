@@ -10,18 +10,38 @@ import { cors } from 'jsr:@hono/hono/cors';
 import { logger } from 'jsr:@hono/hono/logger';
 import 'jsr:@std/dotenv/load';
 import { env, isDevelopment } from './config/env.ts';
+import { bodySizeLimits } from './lib/body-limit.ts';
+import { rateLimiters } from './lib/rate-limit.ts';
+import { securityHeaders } from './lib/security-headers.ts';
 import openApiRoutes from './routes/openapi.ts';
 
 const app = new Hono();
 
 // Middleware
 app.use('*', logger());
+app.use('*', securityHeaders()); // Add security headers to all responses
+app.use('*', bodySizeLimits.json); // Limit request body size (1MB default)
 app.use('*', cors({
   origin: env.CORS_ORIGIN,
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Authorization', 'Content-Type'],
 }));
+
+// Apply rate limiting to all API routes (except health check and docs)
+app.use('/api/*', async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  
+  // Skip rate limiting for health checks and documentation endpoints
+  const skipPaths = ['/api/health', '/api/openapi.json', '/api/docs', '/api/redoc'];
+  if (skipPaths.some(path => pathname.startsWith(path))) {
+    await next();
+    return;
+  }
+  
+  // Apply general API rate limiter
+  await rateLimiters.api(c, next);
+});
 
 // Root route - API info
 app.get('/', (c) => {

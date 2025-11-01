@@ -1,4 +1,5 @@
 import { Context, Hono } from 'hono';
+import { bodySizeLimits } from '../lib/body-limit.ts';
 import { createToken } from '../lib/jwt.ts';
 import { getKv } from '../lib/kv.ts';
 import { hashPassword, verifyPassword } from '../lib/password.ts';
@@ -8,8 +9,8 @@ import { CreateUserSchema, LoginSchema } from '../types/user.ts';
 const auth = new Hono();
 const kv = await getKv();
 
-// Apply rate limiting to login endpoint (5 attempts per 15 minutes)
-auth.post('/login', rateLimiters.auth, async (c: Context) => {
+// Apply strict body size limit and rate limiting to login endpoint
+auth.post('/login', bodySizeLimits.strict, rateLimiters.auth, async (c: Context) => {
   try {
     const body = await c.req.json();
     const { email, password } = LoginSchema.parse(body);
@@ -65,8 +66,8 @@ auth.post('/login', rateLimiters.auth, async (c: Context) => {
   }
 });
 
-// Apply rate limiting to signup endpoint (3 attempts per hour)
-auth.post('/signup', rateLimiters.signup, async (c: Context) => {
+// Apply strict body size limit and rate limiting to signup endpoint
+auth.post('/signup', bodySizeLimits.strict, rateLimiters.signup, async (c: Context) => {
   try {
     const body = await c.req.json();
     const { email, password, name } = CreateUserSchema.parse(body);
