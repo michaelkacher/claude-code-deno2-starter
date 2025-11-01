@@ -4,6 +4,7 @@
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
+import ResetPasswordForm from "../islands/ResetPasswordForm.tsx";
 
 interface ResetData {
   tokenValid: boolean;
@@ -87,50 +88,8 @@ export default function ResetPasswordPage({ data, url }: PageProps<ResetData>) {
             Enter your new password below.
           </p>
         </div>
-        
-        <div id="message" class="hidden mb-4 p-3 rounded-md"></div>
 
-        <form id="reset-form" class="space-y-4">
-          <input type="hidden" id="token" value={data.token} />
-          
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-              New Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              required
-              minLength={8}
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Enter new password"
-            />
-            <p class="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
-          </div>
-
-          <div>
-            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Confirm new password"
-            />
-          </div>
-
-          <button
-            type="submit"
-            id="submit-btn"
-            class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 px-4 rounded-md hover:from-purple-700 hover:to-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Reset Password
-          </button>
-        </form>
+        <ResetPasswordForm token={data.token!} />
 
         <div class="mt-6 text-center">
           <a
@@ -141,106 +100,6 @@ export default function ResetPasswordPage({ data, url }: PageProps<ResetData>) {
           </a>
         </div>
       </div>
-
-      <script type="module" dangerouslySetInnerHTML={{__html: `
-        const form = document.getElementById('reset-form');
-        const submitBtn = document.getElementById('submit-btn');
-        const messageDiv = document.getElementById('message');
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordInput = document.getElementById('confirmPassword');
-
-        form.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const token = document.getElementById('token').value;
-          const password = passwordInput.value;
-          const confirmPassword = confirmPasswordInput.value;
-
-          // Validate passwords match
-          if (password !== confirmPassword) {
-            messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-700';
-            messageDiv.innerHTML = \`
-              <strong class="font-medium">Passwords don't match</strong>
-              <p class="mt-1 text-sm">Please make sure both passwords are identical.</p>
-            \`;
-            messageDiv.classList.remove('hidden');
-            return;
-          }
-
-          // Validate password length
-          if (password.length < 8) {
-            messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-700';
-            messageDiv.innerHTML = \`
-              <strong class="font-medium">Password too short</strong>
-              <p class="mt-1 text-sm">Password must be at least 8 characters long.</p>
-            \`;
-            messageDiv.classList.remove('hidden');
-            return;
-          }
-
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Resetting...';
-          messageDiv.classList.add('hidden');
-
-          try {
-            const apiUrl = window.location.origin.replace(':3000', ':8000');
-            const response = await fetch(\`\${apiUrl}/api/auth/reset-password\`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ token, password }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-              messageDiv.className = 'mb-4 p-3 rounded-md bg-green-50 border border-green-200 text-green-700';
-              messageDiv.innerHTML = \`
-                <strong class="font-medium">Password reset successful!</strong>
-                <p class="mt-1 text-sm">\${data.data.message}</p>
-                <p class="mt-2 text-sm">Redirecting to login page...</p>
-              \`;
-              messageDiv.classList.remove('hidden');
-              
-              // Redirect to login after 2 seconds
-              setTimeout(() => {
-                window.location.href = '/login';
-              }, 2000);
-            } else {
-              messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-700';
-              messageDiv.innerHTML = \`
-                <strong class="font-medium">Reset failed</strong>
-                <p class="mt-1 text-sm">\${data.error?.message || 'Failed to reset password'}</p>
-              \`;
-              messageDiv.classList.remove('hidden');
-              submitBtn.disabled = false;
-              submitBtn.textContent = 'Reset Password';
-            }
-          } catch (error) {
-            messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-700';
-            messageDiv.innerHTML = \`
-              <strong class="font-medium">Network Error</strong>
-              <p class="mt-1 text-sm">Please check your connection and try again.</p>
-            \`;
-            messageDiv.classList.remove('hidden');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Reset Password';
-          }
-        });
-
-        // Real-time password match validation
-        confirmPasswordInput.addEventListener('input', () => {
-          const password = passwordInput.value;
-          const confirmPassword = confirmPasswordInput.value;
-          
-          if (confirmPassword && password !== confirmPassword) {
-            confirmPasswordInput.setCustomValidity('Passwords do not match');
-          } else {
-            confirmPasswordInput.setCustomValidity('');
-          }
-        });
-      `}} />
     </div>
   );
 }

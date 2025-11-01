@@ -5,6 +5,7 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useState } from 'preact/hooks';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
 
 interface SignupFormProps {
   redirectTo?: string;
@@ -170,7 +171,7 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
           placeholder="••••••••"
           disabled={isLoading}
         />
-        <p class="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
+        <PasswordStrengthMeter password={password} />
       </div>
 
       <div>

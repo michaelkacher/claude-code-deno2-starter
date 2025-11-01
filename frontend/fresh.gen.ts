@@ -22,6 +22,7 @@ import * as $Counter from "./islands/Counter.tsx";
 import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
 import * as $EmailVerificationBanner from "./islands/EmailVerificationBanner.tsx";
 import * as $LoginForm from "./islands/LoginForm.tsx";
+import * as $ResetPasswordForm from "./islands/ResetPasswordForm.tsx";
 import * as $SignupForm from "./islands/SignupForm.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
@@ -49,6 +50,7 @@ const manifest = {
     "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
     "./islands/EmailVerificationBanner.tsx": $EmailVerificationBanner,
     "./islands/LoginForm.tsx": $LoginForm,
+    "./islands/ResetPasswordForm.tsx": $ResetPasswordForm,
     "./islands/SignupForm.tsx": $SignupForm,
   },
   baseUrl: import.meta.url,

@@ -924,8 +924,7 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestra
 
 * Does the /design command also impact layout? If not, should there be a layout? Maybe add some common layouts?
 * Confirm it still works with no .env file. Should a /setup command exist to create the .env file?
-* Add a hamburger menu to the menu bar
-
+* Add a hamburger menu to the menu bar and option to add new screen to menu if it exists
 
 * Does test user always get populated first go? Command to create test user? Update docs? Logging in with test@example.com / password123
 
@@ -943,18 +942,13 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestra
 
 * Evaluate Open API implementation, is Redoc the right choice?
 * Error monitoring: Optional setting to integrate with something like Datadog?
-* Provide command for commits and ensure a commit format is used?
-
-Auth Priority Items:
 
 
-Nice to Have:
+Auth Priority Nice to Have:
 
-* Password Strength Meter: Add visual feedback on password strength
-Password History: Prevent reusing last 3 passwords
-* Security Notifications: Email user when password is changed
+
 * Two-Factor Authentication: Add 2FA before allowing reset
-* Account Lockout: Lock account after multiple failed attempts
+
 
 
 The server is running at http://localhost:3000/
