@@ -2,6 +2,9 @@
  * Development script to run both backend and frontend concurrently
  */
 
+// Load environment variables
+import 'jsr:@std/dotenv/load';
+
 // Colors for better console output
 const colors = {
   reset: '\x1b[0m',
@@ -30,6 +33,7 @@ const backendProcess = new Deno.Command('deno', {
   ],
   stdout: 'inherit',
   stderr: 'inherit',
+  env: Deno.env.toObject(), // Explicitly pass environment variables
 });
 
 // Start frontend server
@@ -38,6 +42,7 @@ const frontendProcess = new Deno.Command('deno', {
   cwd: './frontend',
   stdout: 'inherit',
   stderr: 'inherit',
+  env: Deno.env.toObject(), // Explicitly pass environment variables
 });
 
 console.log(

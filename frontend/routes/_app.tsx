@@ -2,8 +2,12 @@ import { type PageProps } from "$fresh/server.ts";
 import AuthBanner from "../islands/AuthBanner.tsx";
 
 export default function App({ Component, url }: PageProps) {
-  // Don't show auth banner on login or signup pages
+  // Check if auth is disabled
+  const disableAuth = Deno.env.get('DISABLE_AUTH') === 'true';
+  
+  // Don't show auth banner on login or signup pages, or when auth is disabled
   const isAuthPage = url.pathname === '/login' || url.pathname === '/signup';
+  const showAuthBanner = !isAuthPage && !disableAuth;
   
   return (
     <html>
@@ -14,7 +18,7 @@ export default function App({ Component, url }: PageProps) {
         <link rel="stylesheet" href="/styles.css" />
       </head>
       <body>
-        {!isAuthPage && <AuthBanner />}
+        {showAuthBanner && <AuthBanner />}
         <Component />
       </body>
     </html>

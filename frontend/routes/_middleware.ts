@@ -35,6 +35,16 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
     const pathname = url.pathname;
     
     console.log(`\n🔍 MIDDLEWARE CALLED for: ${pathname}`);
+    
+    // Check if auth is disabled via environment variable
+    const disableAuthValue = Deno.env.get('DISABLE_AUTH');
+    console.log(`   🔧 DEBUG - DISABLE_AUTH value: "${disableAuthValue}" (type: ${typeof disableAuthValue})`);
+    const disableAuth = disableAuthValue === 'true';
+    console.log(`   🔧 DEBUG - disableAuth boolean: ${disableAuth}`);
+    if (disableAuth) {
+      console.log(`   🔓 Auth disabled - allowing all requests`);
+      return await ctx.next();
+    }
 
     // Allow public routes
     const isPublicRoute = publicRoutes.some(route => {
