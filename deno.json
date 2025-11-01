@@ -28,6 +28,7 @@
     "kv:seed": "deno run --allow-read --allow-write --allow-env scripts/seed-local-kv.ts",
     "kv:reset": "deno run --allow-read --allow-write scripts/reset-local-kv.ts",
     "kv:inspect": "deno run --allow-read --allow-write --allow-env scripts/inspect-local-kv.ts",
+    "kv:seed-user": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/seed-test-user.ts",
     "kill-ports": "deno run --allow-run scripts/kill-ports.ts"
   },
   "deploy": {

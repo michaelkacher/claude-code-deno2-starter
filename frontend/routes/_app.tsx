@@ -1,5 +1,10 @@
 import { type PageProps } from "$fresh/server.ts";
-export default function App({ Component }: PageProps) {
+import AuthBanner from "../islands/AuthBanner.tsx";
+
+export default function App({ Component, url }: PageProps) {
+  // Don't show auth banner on login or signup pages
+  const isAuthPage = url.pathname === '/login' || url.pathname === '/signup';
+  
   return (
     <html>
       <head>
@@ -9,6 +14,7 @@ export default function App({ Component }: PageProps) {
         <link rel="stylesheet" href="/styles.css" />
       </head>
       <body>
+        {!isAuthPage && <AuthBanner />}
         <Component />
       </body>
     </html>

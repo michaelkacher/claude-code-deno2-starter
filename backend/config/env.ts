@@ -127,6 +127,14 @@ const envSchema = z.object({
     .default('7d')
     .describe('JWT token expiration time'),
 
+  DISABLE_AUTH: z
+    .union([
+      z.string().transform(val => val === 'true'),
+      z.boolean()
+    ])
+    .default(false)
+    .describe('Disable authentication for local development'),
+
   // ===== Third-Party API Keys =====
   STRIPE_SECRET_KEY: z
     .string()

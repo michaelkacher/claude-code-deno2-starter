@@ -8,6 +8,7 @@
 import { Hono } from 'hono';
 import { cors } from 'jsr:@hono/hono/cors';
 import { logger } from 'jsr:@hono/hono/logger';
+import 'jsr:@std/dotenv/load';
 import { env, isDevelopment } from './config/env.ts';
 import openApiRoutes from './routes/openapi.ts';
 

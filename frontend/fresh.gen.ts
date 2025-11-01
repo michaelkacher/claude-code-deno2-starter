@@ -4,24 +4,36 @@
 
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
+import * as $_middleware from "./routes/_middleware.ts";
 import * as $design_system from "./routes/design-system.tsx";
 import * as $index from "./routes/index.tsx";
+import * as $login from "./routes/login.tsx";
 import * as $mockups_index from "./routes/mockups/index.tsx";
+import * as $signup from "./routes/signup.tsx";
+import * as $AuthBanner from "./islands/AuthBanner.tsx";
 import * as $Counter from "./islands/Counter.tsx";
 import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
+import * as $LoginForm from "./islands/LoginForm.tsx";
+import * as $SignupForm from "./islands/SignupForm.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
+    "./routes/_middleware.ts": $_middleware,
     "./routes/design-system.tsx": $design_system,
     "./routes/index.tsx": $index,
+    "./routes/login.tsx": $login,
     "./routes/mockups/index.tsx": $mockups_index,
+    "./routes/signup.tsx": $signup,
   },
   islands: {
+    "./islands/AuthBanner.tsx": $AuthBanner,
     "./islands/Counter.tsx": $Counter,
     "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
+    "./islands/LoginForm.tsx": $LoginForm,
+    "./islands/SignupForm.tsx": $SignupForm,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

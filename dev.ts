@@ -23,6 +23,7 @@ const backendProcess = new Deno.Command('deno', {
     '--allow-net',
     '--allow-read',
     '--allow-env',
+    '--allow-write',
     '--unstable-kv',
     '--watch',
     'backend/main.ts',
