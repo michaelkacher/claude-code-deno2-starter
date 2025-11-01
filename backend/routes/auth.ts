@@ -695,8 +695,16 @@ auth.get('/validate-reset-token', async (c: Context) => {
       });
     }
 
+    // Check if user has 2FA enabled
+    const { userId } = resetEntry.value as any;
+    const userEntry = await kv.get(['users', userId]);
+    const user = userEntry.value as any;
+    
     return c.json({
-      data: { valid: true }
+      data: { 
+        valid: true,
+        requires2FA: user?.twoFactorEnabled || false
+      }
     });
   } catch (error) {
     return c.json({
@@ -709,9 +717,10 @@ auth.get('/validate-reset-token', async (c: Context) => {
 auth.post('/reset-password', bodySizeLimits.strict, async (c: Context) => {
   try {
     const body = await c.req.json();
-    const { token, password } = z.object({
+    const { token, password, twoFactorCode } = z.object({
       token: z.string().uuid(),
-      password: z.string().min(8)
+      password: z.string().min(8),
+      twoFactorCode: z.string().optional()
     }).parse(body);
 
     // Get reset token data
@@ -756,6 +765,52 @@ auth.post('/reset-password', bodySizeLimits.strict, async (c: Context) => {
     }
 
     const user = userEntry.value as any;
+
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+      if (!twoFactorCode) {
+        return c.json({
+          error: {
+            code: '2FA_REQUIRED',
+            message: 'Two-factor authentication code required'
+          }
+        }, 403);
+      }
+
+      // Verify 2FA code (TOTP or backup code)
+      const { verifyTOTP } = await import('../lib/totp.ts');
+      let isValid = false;
+
+      // Try TOTP first (6 digits)
+      if (twoFactorCode.length === 6) {
+        isValid = await verifyTOTP(twoFactorCode, user.twoFactorSecret);
+      }
+      
+      // Try backup codes (8 characters)
+      if (!isValid && twoFactorCode.length === 8 && user.twoFactorBackupCodes) {
+        const bcrypt = await import('bcrypt');
+        
+        for (let i = 0; i < user.twoFactorBackupCodes.length; i++) {
+          const hashedCode = user.twoFactorBackupCodes[i];
+          isValid = await bcrypt.compare(twoFactorCode, hashedCode);
+          
+          if (isValid) {
+            // Remove used backup code
+            user.twoFactorBackupCodes.splice(i, 1);
+            break;
+          }
+        }
+      }
+
+      if (!isValid) {
+        return c.json({
+          error: {
+            code: 'INVALID_2FA_CODE',
+            message: 'Invalid two-factor authentication code'
+          }
+        }, 401);
+      }
+    }
 
     // Hash new password
     const hashedPassword = await hashPassword(password);

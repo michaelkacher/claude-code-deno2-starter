@@ -8,6 +8,9 @@ export const UserSchema = z.object({
   role: z.enum(['admin', 'user']).default('user'),
   emailVerified: z.boolean().default(false),
   emailVerifiedAt: z.string().datetime().nullable().default(null),
+  twoFactorEnabled: z.boolean().default(false),
+  twoFactorSecret: z.string().nullable().default(null),
+  twoFactorBackupCodes: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime()
 });
@@ -19,6 +22,9 @@ export const CreateUserSchema = UserSchema.omit({
   role: true,
   emailVerified: true,
   emailVerifiedAt: true,
+  twoFactorEnabled: true,
+  twoFactorSecret: true,
+  twoFactorBackupCodes: true,
   createdAt: true, 
   updatedAt: true 
 });

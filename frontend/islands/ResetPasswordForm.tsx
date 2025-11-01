@@ -4,7 +4,7 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
 
 interface ResetPasswordFormProps {
@@ -14,9 +14,28 @@ interface ResetPasswordFormProps {
 export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [requires2FA, setRequires2FA] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingToken, setCheckingToken] = useState(true);
+
+  // Check if token is valid and if 2FA is required
+  useEffect(() => {
+    if (IS_BROWSER) {
+      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      fetch(`${apiUrl}/api/auth/validate-reset-token?token=${token}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.data?.requires2FA) {
+            setRequires2FA(true);
+          }
+          setCheckingToken(false);
+        })
+        .catch(() => setCheckingToken(false));
+    }
+  }, [token]);
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
@@ -47,7 +66,8 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         },
         body: JSON.stringify({
           token,
-          newPassword: password,
+          password,
+          twoFactorCode: requires2FA ? twoFactorCode : undefined,
         }),
       });
 
@@ -143,9 +163,36 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         )}
       </div>
 
+      {requires2FA && (
+        <div class="border-t border-gray-200 pt-4">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <p class="text-sm text-blue-800">
+              🔒 Two-factor authentication is enabled on this account. Please enter your 6-digit code or an 8-character backup code.
+            </p>
+          </div>
+          <label htmlFor="twoFactorCode" class="block text-sm font-medium text-gray-700 mb-1">
+            Two-Factor Code
+          </label>
+          <input
+            type="text"
+            id="twoFactorCode"
+            value={twoFactorCode}
+            onInput={(e) => setTwoFactorCode((e.target as HTMLInputElement).value)}
+            required={requires2FA}
+            maxLength={8}
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-xl tracking-wider"
+            placeholder="000000"
+            disabled={isLoading}
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            Enter 6-digit authenticator code or 8-character backup code
+          </p>
+        </div>
+      )}
+
       <button
         type="submit"
-        disabled={isLoading || password !== confirmPassword}
+        disabled={isLoading || password !== confirmPassword || (requires2FA && !twoFactorCode)}
         class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
       >
         {isLoading ? 'Resetting Password...' : 'Reset Password'}

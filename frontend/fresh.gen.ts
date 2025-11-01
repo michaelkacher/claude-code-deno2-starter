@@ -2,6 +2,7 @@
 // This file SHOULD be checked into source version control.
 // This file is automatically updated during development when running `dev.ts`.
 
+import * as $_2fa_setup from "./routes/2fa/setup.tsx";
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
@@ -24,10 +25,12 @@ import * as $EmailVerificationBanner from "./islands/EmailVerificationBanner.tsx
 import * as $LoginForm from "./islands/LoginForm.tsx";
 import * as $ResetPasswordForm from "./islands/ResetPasswordForm.tsx";
 import * as $SignupForm from "./islands/SignupForm.tsx";
+import * as $TwoFactorSetup from "./islands/TwoFactorSetup.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
+    "./routes/2fa/setup.tsx": $_2fa_setup,
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
@@ -52,6 +55,7 @@ const manifest = {
     "./islands/LoginForm.tsx": $LoginForm,
     "./islands/ResetPasswordForm.tsx": $ResetPasswordForm,
     "./islands/SignupForm.tsx": $SignupForm,
+    "./islands/TwoFactorSetup.tsx": $TwoFactorSetup,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

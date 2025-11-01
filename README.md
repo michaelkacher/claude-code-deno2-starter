@@ -918,6 +918,7 @@ For issues or questions:
 See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed automation levels.
 
 # Backlog
+* Create account did an alert popup, change to UI
 * ensure the admin screen should only appear if auth enabled
 * Can the admin screen show all models?
 * the docs will load a lot of the guides for claude code, does the claudeignore need to be updated or these docs moved?
@@ -945,10 +946,6 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestra
 
 
 Auth Priority Nice to Have:
-
-
-* Two-Factor Authentication: Add 2FA before allowing reset
-
 
 
 The server is running at http://localhost:3000/
