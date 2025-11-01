@@ -35,7 +35,7 @@ dataBrowser.get('/models', async (c: Context) => {
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
     
-    const userEntry = await kv.get(['users', payload.sub]);
+    const userEntry = await kv.get(['users', payload.userId]);
     if (!userEntry.value) {
       return c.json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } }, 404);
     }
