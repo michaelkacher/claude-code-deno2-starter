@@ -1,16 +1,36 @@
 import { Context, Hono } from 'hono';
+import { setCookie } from 'jsr:@hono/hono/cookie';
 import { bodySizeLimits } from '../lib/body-limit.ts';
-import { createToken } from '../lib/jwt.ts';
+import { csrfProtection, setCsrfToken } from '../lib/csrf.ts';
+import { createAccessToken, createRefreshToken, verifyToken } from '../lib/jwt.ts';
 import { getKv } from '../lib/kv.ts';
 import { hashPassword, verifyPassword } from '../lib/password.ts';
 import { rateLimiters } from '../lib/rate-limit.ts';
+import {
+  blacklistToken,
+  isTokenBlacklisted,
+  revokeAllUserTokens,
+  revokeRefreshToken,
+  storeRefreshToken,
+  verifyRefreshToken,
+} from '../lib/token-revocation.ts';
 import { CreateUserSchema, LoginSchema } from '../types/user.ts';
 
 const auth = new Hono();
 const kv = await getKv();
 
-// Apply strict body size limit and rate limiting to login endpoint
-auth.post('/login', bodySizeLimits.strict, rateLimiters.auth, async (c: Context) => {
+// Get CSRF token endpoint (for login/signup forms)
+auth.get('/csrf-token', (c: Context) => {
+  const csrfToken = setCsrfToken(c);
+  return c.json({
+    data: {
+      csrfToken,
+    }
+  });
+});
+
+// Apply CSRF protection, strict body size limit and rate limiting to login endpoint
+auth.post('/login', csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, async (c: Context) => {
   try {
     const body = await c.req.json();
     const { email, password } = LoginSchema.parse(body);
@@ -38,16 +58,36 @@ auth.post('/login', bodySizeLimits.strict, rateLimiters.auth, async (c: Context)
       }, 401);
     }
 
-    // Create JWT token
-    const token = await createToken({
+    // Create access token (short-lived, 15 minutes)
+    const accessToken = await createAccessToken({
       sub: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+    });
+
+    // Create refresh token (long-lived, 30 days)
+    const { token: refreshToken, tokenId } = await createRefreshToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    // Store refresh token in database
+    const refreshTokenExpiry = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days
+    await storeRefreshToken(user.id, tokenId, refreshTokenExpiry);
+
+    // Set refresh token in httpOnly cookie
+    setCookie(c, 'refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: Deno.env.get('DENO_ENV') === 'production',
+      sameSite: 'Strict',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: '/',
     });
 
     return c.json({
       data: {
-        token,
+        accessToken,
         user: {
           id: user.id,
           email: user.email,
@@ -66,8 +106,8 @@ auth.post('/login', bodySizeLimits.strict, rateLimiters.auth, async (c: Context)
   }
 });
 
-// Apply strict body size limit and rate limiting to signup endpoint
-auth.post('/signup', bodySizeLimits.strict, rateLimiters.signup, async (c: Context) => {
+// Apply CSRF protection, strict body size limit and rate limiting to signup endpoint
+auth.post('/signup', csrfProtection(), bodySizeLimits.strict, rateLimiters.signup, async (c: Context) => {
   try {
     const body = await c.req.json();
     const { email, password, name } = CreateUserSchema.parse(body);
@@ -115,16 +155,35 @@ auth.post('/signup', bodySizeLimits.strict, rateLimiters.signup, async (c: Conte
       }, 500);
     }
 
-    // Create JWT token for auto-login
-    const token = await createToken({
+    // Create access and refresh tokens for auto-login
+    const accessToken = await createAccessToken({
       sub: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+    });
+
+    const { token: refreshToken, tokenId } = await createRefreshToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    // Store refresh token
+    const refreshTokenExpiry = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
+    await storeRefreshToken(user.id, tokenId, refreshTokenExpiry);
+
+    // Set refresh token in httpOnly cookie
+    setCookie(c, 'refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: Deno.env.get('DENO_ENV') === 'production',
+      sameSite: 'Strict',
+      maxAge: 30 * 24 * 60 * 60,
+      path: '/',
     });
 
     return c.json({
       data: {
-        token,
+        accessToken,
         user: {
           id: user.id,
           email: user.email,
@@ -143,6 +202,163 @@ auth.post('/signup', bodySizeLimits.strict, rateLimiters.signup, async (c: Conte
   }
 });
 
+// Refresh token endpoint - get new access token using refresh token
+auth.post('/refresh', async (c: Context) => {
+  try {
+    const refreshToken = c.req.header('Cookie')
+      ?.split(';')
+      .find(c => c.trim().startsWith('refresh_token='))
+      ?.split('=')[1];
+
+    if (!refreshToken) {
+      return c.json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Refresh token not found'
+        }
+      }, 401);
+    }
+
+    // Verify refresh token
+    const payload = await verifyToken(refreshToken);
+
+    // Check token type
+    if (payload.type !== 'refresh') {
+      return c.json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Invalid token type'
+        }
+      }, 401);
+    }
+
+    // Check if token is blacklisted
+    if (payload.jti && await isTokenBlacklisted(payload.jti as string)) {
+      return c.json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Token has been revoked'
+        }
+      }, 401);
+    }
+
+    // Verify refresh token exists in database
+    if (payload.jti && !await verifyRefreshToken(payload.sub as string, payload.jti as string)) {
+      return c.json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Refresh token not found'
+        }
+      }, 401);
+    }
+
+    // Create new access token
+    const accessToken = await createAccessToken({
+      sub: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    });
+
+    return c.json({
+      data: {
+        accessToken,
+      }
+    });
+  } catch (error) {
+    return c.json({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or expired refresh token'
+      }
+    }, 401);
+  }
+});
+
+// Logout endpoint - revoke current refresh token
+auth.post('/logout', async (c: Context) => {
+  try {
+    const refreshToken = c.req.header('Cookie')
+      ?.split(';')
+      .find(c => c.trim().startsWith('refresh_token='))
+      ?.split('=')[1];
+
+    if (refreshToken) {
+      const payload = await verifyToken(refreshToken);
+      
+      // Blacklist the refresh token
+      if (payload.jti && payload.exp) {
+        await blacklistToken(payload.jti as string, payload.exp as number);
+        await revokeRefreshToken(payload.sub as string, payload.jti as string);
+      }
+    }
+
+    // Clear refresh token cookie
+    setCookie(c, 'refresh_token', '', {
+      httpOnly: true,
+      secure: Deno.env.get('DENO_ENV') === 'production',
+      sameSite: 'Strict',
+      maxAge: 0, // Delete cookie
+      path: '/',
+    });
+
+    return c.json({
+      data: {
+        message: 'Logged out successfully'
+      }
+    });
+  } catch (error) {
+    // Still return success even if token verification fails
+    return c.json({
+      data: {
+        message: 'Logged out successfully'
+      }
+    });
+  }
+});
+
+// Logout from all devices - revoke all refresh tokens
+auth.post('/logout-all', async (c: Context) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return c.json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Missing or invalid authorization header'
+        }
+      }, 401);
+    }
+
+    const accessToken = authHeader.replace('Bearer ', '');
+    const payload = await verifyToken(accessToken);
+
+    // Revoke all refresh tokens for this user
+    await revokeAllUserTokens(payload.sub as string);
+
+    // Clear refresh token cookie
+    setCookie(c, 'refresh_token', '', {
+      httpOnly: true,
+      secure: Deno.env.get('DENO_ENV') === 'production',
+      sameSite: 'Strict',
+      maxAge: 0,
+      path: '/',
+    });
+
+    return c.json({
+      data: {
+        message: 'Logged out from all devices successfully'
+      }
+    });
+  } catch (error) {
+    return c.json({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid token'
+      }
+    }, 401);
+  }
+});
+
 // Token verification endpoint
 auth.get('/verify', async (c: Context) => {
   try {
@@ -157,10 +373,17 @@ auth.get('/verify', async (c: Context) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    
-    // Import verifyToken here to avoid circular dependency
-    const { verifyToken } = await import('../lib/jwt.ts');
     const payload = await verifyToken(token);
+
+    // Check if it's an access token and if it's blacklisted
+    if (payload.jti && await isTokenBlacklisted(payload.jti as string)) {
+      return c.json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Token has been revoked'
+        }
+      }, 401);
+    }
     
     // Token is valid
     return c.json({

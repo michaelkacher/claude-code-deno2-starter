@@ -26,11 +26,20 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         ? window.location.origin.replace(':3000', ':8000')
         : 'http://localhost:8000';
       
+      // Get CSRF token first
+      const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
+      const csrfToken = csrfData.data.csrfToken;
+      
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
         },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -51,16 +60,16 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         return;
       }
 
-      // Store JWT token in localStorage and cookie
+      // Store access token in localStorage (refresh token is in httpOnly cookie)
       if (IS_BROWSER) {
-        localStorage.setItem('auth_token', data.data.token);
+        localStorage.setItem('access_token', data.data.accessToken);
         localStorage.setItem('user_email', data.data.user.email);
         localStorage.setItem('user_role', data.data.user.role);
         
-        // Also set cookie for server-side auth check (7 days expiry)
+        // Also set access token in cookie for server-side auth check (15 minutes expiry)
         const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 7);
-        document.cookie = `auth_token=${data.data.token}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+        expiryDate.setMinutes(expiryDate.getMinutes() + 15);
+        document.cookie = `auth_token=${data.data.accessToken}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
         
         // Redirect to intended page or home
         window.location.href = redirectTo;

@@ -14,8 +14,8 @@ export default function AuthBanner() {
   useEffect(() => {
     if (!IS_BROWSER) return;
     
-    // Check for auth token and user email in localStorage
-    const token = localStorage.getItem('auth_token');
+    // Check for access token and user email in localStorage
+    const token = localStorage.getItem('access_token');
     const email = localStorage.getItem('user_email');
     
     if (token && email) {
@@ -24,11 +24,23 @@ export default function AuthBanner() {
     setIsLoading(false);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (!IS_BROWSER) return;
     
-    // Clear auth data
-    localStorage.removeItem('auth_token');
+    try {
+      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      
+      // Call logout endpoint to revoke refresh token
+      await fetch(`${apiUrl}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include', // Include cookies
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
+    // Clear auth data regardless of API response
+    localStorage.removeItem('access_token');
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_role');
     

@@ -14,6 +14,7 @@ export type User = z.infer<typeof UserSchema>;
 
 export const CreateUserSchema = UserSchema.omit({ 
   id: true, 
+  role: true,
   createdAt: true, 
   updatedAt: true 
 });

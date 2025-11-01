@@ -918,14 +918,20 @@ For issues or questions:
 See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed automation levels.
 
 # Backlog
+* Does the /design command also impact layout? If not, should there be a layout? Maybe add some common layouts?
+* Confirm it still works with no .env file. Should a /setup command exist to create the .env file?
 * Add a hamburger menu to the menu bar
+
 
 * Does test user always get populated first go? Command to create test user? Update docs? Logging in with test@example.com / password123
 
 
 * Setup integration tests to to test the api layer directly. Confirm that e2e and integration test added on /new-feature
 
-* update home screen with all commands and up to date info. Add open api link to home page info
+* update home screen with:
+*  all commands and up to date info. 
+* How to set up auth
+* Add open api link to home page info
   - Swagger UI: http://localhost:8000/api/docs (interactive testing)
   - ReDoc: http://localhost:8000/api/redoc (clean reading experience)
   - OpenAPI JSON: http://localhost:8000/api/openapi.json (raw spec)
@@ -937,11 +943,6 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestra
 
 Auth Priority Items:
 
-Do Soon:
-4. Add refresh token mechanism
-5. Implement token revocation/blacklist
-6. Add CSRF protection
-7. Implement constant-time comparisons
 
 Nice to Have:
 8. Email verification
@@ -950,3 +951,15 @@ Nice to Have:
 11. Better logging and monitoring
 12. Stronger password requirements
 
+
+The server is running at http://localhost:3000/
+
+Test User Credentials:
+Email: test@example.com
+Password: password123
+Quick Tests:
+Login Flow: Try logging in - you'll get both access + refresh tokens
+Auto-Refresh: Check browser console in 13 minutes - it should auto-refresh
+CSRF Protection: Try login without the CSRF token header (should fail)
+Token Revocation: Logout and verify the refresh token is invalidated
+Security Headers: Check DevTools Network tab for CSP, HSTS, etc.

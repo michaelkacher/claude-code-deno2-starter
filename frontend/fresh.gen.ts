@@ -7,6 +7,7 @@ import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
 import * as $design_system from "./routes/design-system.tsx";
 import * as $index from "./routes/index.tsx";
+import * as $lib_token_refresh from "./routes/lib/token-refresh.ts";
 import * as $login from "./routes/login.tsx";
 import * as $mockups_index from "./routes/mockups/index.tsx";
 import * as $signup from "./routes/signup.tsx";
@@ -24,6 +25,7 @@ const manifest = {
     "./routes/_middleware.ts": $_middleware,
     "./routes/design-system.tsx": $design_system,
     "./routes/index.tsx": $index,
+    "./routes/lib/token-refresh.ts": $lib_token_refresh,
     "./routes/login.tsx": $login,
     "./routes/mockups/index.tsx": $mockups_index,
     "./routes/signup.tsx": $signup,

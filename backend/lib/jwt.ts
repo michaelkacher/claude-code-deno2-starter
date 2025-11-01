@@ -36,15 +36,35 @@ async function getHmacKey(): Promise<CryptoKey> {
   );
 }
 
-export async function createToken(payload: Record<string, unknown>) {
+export async function createToken(payload: Record<string, unknown>, customExpiry?: string) {
   const key = await getHmacKey();
-  const expSeconds = parseDurationToSeconds(env.JWT_EXPIRES_IN);
+  const expSeconds = customExpiry 
+    ? parseDurationToSeconds(customExpiry)
+    : parseDurationToSeconds(env.JWT_EXPIRES_IN);
   const jwt = await create(
     { alg: 'HS256', typ: 'JWT' },
     { ...payload, exp: getNumericDate(expSeconds) },
     key,
   );
   return jwt;
+}
+
+/**
+ * Create access token (short-lived, 15 minutes)
+ */
+export async function createAccessToken(payload: Record<string, unknown>) {
+  return await createToken({ ...payload, type: 'access' }, '15m');
+}
+
+/**
+ * Create refresh token (long-lived, 30 days)
+ */
+export async function createRefreshToken(payload: Record<string, unknown>) {
+  const tokenId = crypto.randomUUID();
+  return {
+    token: await createToken({ ...payload, type: 'refresh', jti: tokenId }, '30d'),
+    tokenId,
+  };
 }
 
 export async function verifyToken(token: string) {

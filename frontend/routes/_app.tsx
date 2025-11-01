@@ -16,6 +16,7 @@ export default function App({ Component, url }: PageProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>fresh-app</title>
         <link rel="stylesheet" href="/styles.css" />
+        {!isAuthPage && <script type="module" src="/lib/token-refresh.ts"></script>}
       </head>
       <body>
         {showAuthBanner && <AuthBanner />}

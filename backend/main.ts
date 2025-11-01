@@ -25,7 +25,7 @@ app.use('*', cors({
   origin: env.CORS_ORIGIN,
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Authorization', 'Content-Type'],
+  allowHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token'],
 }));
 
 // Apply rate limiting to all API routes (except health check and docs)
