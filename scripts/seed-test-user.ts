@@ -3,7 +3,7 @@
  * Creates a test user for login testing
  */
 
-import { encodeHex } from 'jsr:@std/encoding/hex';
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const kv = await Deno.openKv('./data/local.db');
 
@@ -12,11 +12,9 @@ const userId = crypto.randomUUID();
 const email = 'test@example.com';
 const password = 'password123';
 
-// Hash password
-const encoder = new TextEncoder();
-const data = encoder.encode(password);
-const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-const hashedPassword = encodeHex(new Uint8Array(hashBuffer));
+// Hash password using bcrypt
+console.log('🔐 Hashing password...');
+const hashedPassword = await bcrypt.hash(password);
 
 const user = {
   id: userId,

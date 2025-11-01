@@ -1,38 +1,34 @@
 import { Context, Hono } from 'hono';
-import { encodeHex } from 'jsr:@std/encoding/hex';
 import { createToken } from '../lib/jwt.ts';
 import { getKv } from '../lib/kv.ts';
+import { hashPassword, verifyPassword } from '../lib/password.ts';
+import { rateLimiters } from '../lib/rate-limit.ts';
 import { CreateUserSchema, LoginSchema } from '../types/user.ts';
 
 const auth = new Hono();
 const kv = await getKv();
 
-auth.post('/login', async (c: Context) => {
+// Apply rate limiting to login endpoint (5 attempts per 15 minutes)
+auth.post('/login', rateLimiters.auth, async (c: Context) => {
   try {
     const body = await c.req.json();
     const { email, password } = LoginSchema.parse(body);
 
     // Get user by email
     const userKey = await kv.get(['users_by_email', email]);
-    if (!userKey.value) {
-      return c.json({ 
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Invalid email or password'
-        }
-      }, 401);
-    }
+    
+    // Use constant-time approach: always verify password even if user doesn't exist
+    // This prevents timing attacks that could reveal valid email addresses
+    const userExists = !!userKey.value;
+    const userId = userKey.value as string || 'dummy_id';
+    const userEntry = await kv.get(['users', userId]);
+    const user = userEntry.value || { password: '$2a$10$dummyhashtopreventtimingattack' };
 
-    const userEntry = await kv.get(['users', userKey.value]);
-    const user = userEntry.value;
+    // Verify password using bcrypt (constant time operation)
+    const passwordMatches = await verifyPassword(password, user.password);
 
-    // Hash the provided password and compare
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashedPassword = encodeHex(new Uint8Array(hashBuffer));
-
-    if (hashedPassword !== user.password) {
+    // Check both conditions together to maintain constant timing
+    if (!userExists || !passwordMatches) {
       return c.json({ 
         error: {
           code: 'UNAUTHORIZED',
@@ -69,7 +65,8 @@ auth.post('/login', async (c: Context) => {
   }
 });
 
-auth.post('/signup', async (c: Context) => {
+// Apply rate limiting to signup endpoint (3 attempts per hour)
+auth.post('/signup', rateLimiters.signup, async (c: Context) => {
   try {
     const body = await c.req.json();
     const { email, password, name } = CreateUserSchema.parse(body);
@@ -85,11 +82,8 @@ auth.post('/signup', async (c: Context) => {
       }, 409);
     }
 
-    // Hash password
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashedPassword = encodeHex(new Uint8Array(hashBuffer));
+    // Hash password using bcrypt
+    const hashedPassword = await hashPassword(password);
 
     // Create user
     const userId = crypto.randomUUID();
@@ -145,6 +139,46 @@ auth.post('/signup', async (c: Context) => {
         message: error.message
       }
     }, 400);
+  }
+});
+
+// Token verification endpoint
+auth.get('/verify', async (c: Context) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return c.json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Missing or invalid authorization header'
+        }
+      }, 401);
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Import verifyToken here to avoid circular dependency
+    const { verifyToken } = await import('../lib/jwt.ts');
+    const payload = await verifyToken(token);
+    
+    // Token is valid
+    return c.json({
+      data: {
+        valid: true,
+        user: {
+          id: payload.sub,
+          email: payload.email,
+          role: payload.role
+        }
+      }
+    });
+  } catch (error) {
+    return c.json({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or expired token'
+      }
+    }, 401);
   }
 });
 

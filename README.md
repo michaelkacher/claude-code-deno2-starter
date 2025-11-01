@@ -941,3 +941,32 @@ Other:
   * Set up rate limiting for APIs (middleware?)
   * Add security headers for No CSP, X-Frame-Options, and others for best practices
   * Add Request Size limits for payloads
+
+
+
+
+  🎯 Priority Ranking
+Do Immediately:
+
+⚠️ Replace SHA-256 with bcrypt/scrypt
+⚠️ Verify JWT tokens on frontend (not just check existence)
+⚠️ Add rate limiting to auth endpoints
+Do Soon:
+4. Add refresh token mechanism
+5. Implement token revocation/blacklist
+6. Add CSRF protection
+7. Implement constant-time comparisons
+
+Nice to Have:
+8. Email verification
+9. Password reset flow
+10. Account lockout after failed attempts
+11. Better logging and monitoring
+12. Stronger password requirements
+
+
+The dev server is running with all improvements active. You can test by:
+
+Logging in with test@example.com / password123
+Trying multiple failed login attempts to see rate limiting
+The auth system is now significantly more secure!

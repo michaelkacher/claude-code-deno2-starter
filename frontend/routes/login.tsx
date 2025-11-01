@@ -14,11 +14,17 @@ interface LoginData {
 
 export const handler: Handlers<LoginData> = {
   GET(req, ctx) {
-    // Get redirect URL from query params
+    // Get redirect URL and reason from query params
     const url = new URL(req.url);
     const redirectTo = url.searchParams.get('redirect') || '/';
+    const reason = url.searchParams.get('reason');
     
-    return ctx.render({ redirectTo });
+    let error: string | undefined;
+    if (reason === 'expired') {
+      error = 'Your session has expired. Please log in again.';
+    }
+    
+    return ctx.render({ redirectTo, error });
   },
 };
 
@@ -38,6 +44,12 @@ export default function Login({ data }: PageProps<LoginData>) {
               Sign in to your account to continue
             </p>
           </div>
+          
+          {data.error && (
+            <div class="mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+              {data.error}
+            </div>
+          )}
           
           <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
             <LoginForm redirectTo={data.redirectTo} />

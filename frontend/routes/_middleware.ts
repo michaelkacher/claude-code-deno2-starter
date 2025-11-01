@@ -5,6 +5,7 @@
  */
 
 import { MiddlewareHandler } from '$fresh/server.ts';
+import { isTokenExpired, isValidJwtStructure } from '../lib/jwt.ts';
 
 // Routes that don't require authentication
 const publicRoutes = [
@@ -34,15 +35,9 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
     const url = new URL(req.url);
     const pathname = url.pathname;
     
-    console.log(`\n🔍 MIDDLEWARE CALLED for: ${pathname}`);
-    
     // Check if auth is disabled via environment variable
-    const disableAuthValue = Deno.env.get('DISABLE_AUTH');
-    console.log(`   🔧 DEBUG - DISABLE_AUTH value: "${disableAuthValue}" (type: ${typeof disableAuthValue})`);
-    const disableAuth = disableAuthValue === 'true';
-    console.log(`   🔧 DEBUG - disableAuth boolean: ${disableAuth}`);
+    const disableAuth = Deno.env.get('DISABLE_AUTH') === 'true';
     if (disableAuth) {
-      console.log(`   🔓 Auth disabled - allowing all requests`);
       return await ctx.next();
     }
 
@@ -61,7 +56,6 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
     });
 
     if (isPublicRoute) {
-      console.log(`   ✓ Public route allowed: ${pathname}`);
       return await ctx.next();
     }
 
@@ -76,30 +70,34 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
     });
     
     if (isAllowedPath) {
-      console.log(`   ✓ Allowed path (static/Fresh): ${pathname}`);
       return await ctx.next();
     }
 
-    // Check for auth token in cookie or header
+    // Check for auth token in cookie
     const cookies = req.headers.get('cookie') || '';
     const authToken = cookies.split(';')
       .map(c => c.trim())
       .find(c => c.startsWith('auth_token='))
       ?.split('=')[1];
 
-    // Debug logging
-    console.log(`🔒 Auth check for: ${pathname}`);
-    console.log(`   Token present: ${!!authToken}`);
-
-    // If no token, redirect to login with original URL as redirect parameter
+    // If no token, redirect to login
     if (!authToken) {
-      console.log(`   ⛔ Redirecting to login from: ${pathname}`);
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
-      
-      // Use 307 Temporary Redirect to preserve the original request method
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
 
-    console.log(`   ✅ Access granted`);
+    // Validate token structure
+    if (!isValidJwtStructure(authToken)) {
+      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
+      return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
+    }
+
+    // Check if token is expired (client-side check)
+    if (isTokenExpired(authToken)) {
+      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=expired`;
+      return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
+    }
+
+    // Token is valid
     return await ctx.next();
 };

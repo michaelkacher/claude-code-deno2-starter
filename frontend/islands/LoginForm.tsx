@@ -37,7 +37,16 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error?.message || 'Login failed');
+        // Handle rate limiting specifically
+        if (response.status === 429) {
+          const retryAfter = data.error?.retryAfter;
+          const retryMessage = retryAfter 
+            ? `Too many attempts. Please try again in ${Math.ceil(retryAfter / 60)} minutes.`
+            : data.error?.message || 'Too many attempts. Please try again later.';
+          setError(retryMessage);
+        } else {
+          setError(data.error?.message || 'Login failed');
+        }
         setIsLoading(false);
         return;
       }
