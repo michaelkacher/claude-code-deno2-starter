@@ -55,7 +55,10 @@ export const handler: Handlers<AdminUsersData> = {
       });
     }
 
-    const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
+    // Derive API URL from request origin to avoid hardcoding environment-specific URLs
+    const requestUrl = new URL(req.url);
+    const apiUrl = Deno.env.get('API_URL') || 
+      `${requestUrl.protocol}//${requestUrl.hostname}:8000/api`;
 
     try {
       // Fetch current user to verify admin status

@@ -26,7 +26,10 @@ export const handler: Handlers<VerificationData> = {
 
     try {
       // Call backend API to verify the token
-      const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
+      // Derive API URL from request origin to avoid hardcoding environment-specific URLs
+      const requestUrl = new URL(req.url);
+      const apiUrl = Deno.env.get('API_URL') || 
+        `${requestUrl.protocol}//${requestUrl.hostname}:8000/api`;
       const response = await fetch(`${apiUrl}/auth/verify-email?token=${token}`);
       const data = await response.json();
 
