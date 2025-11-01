@@ -1,5 +1,15 @@
 import { type PageProps } from "$fresh/server.ts";
-export default function App({ Component }: PageProps) {
+import AuthBanner from "../islands/AuthBanner.tsx";
+import EmailVerificationBanner from "../islands/EmailVerificationBanner.tsx";
+
+export default function App({ Component, url }: PageProps) {
+  // Check if auth is disabled
+  const disableAuth = Deno.env.get('DISABLE_AUTH') === 'true';
+  
+  // Don't show auth banner on login or signup pages, or when auth is disabled
+  const isAuthPage = url.pathname === '/login' || url.pathname === '/signup';
+  const showAuthBanner = !isAuthPage && !disableAuth;
+  
   return (
     <html>
       <head>
@@ -7,8 +17,11 @@ export default function App({ Component }: PageProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>fresh-app</title>
         <link rel="stylesheet" href="/styles.css" />
+        {!isAuthPage && <script type="module" src="/lib/token-refresh.ts"></script>}
       </head>
       <body>
+        {showAuthBanner && <AuthBanner />}
+        {showAuthBanner && <EmailVerificationBanner />}
         <Component />
       </body>
     </html>

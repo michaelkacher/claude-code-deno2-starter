@@ -127,6 +127,14 @@ const envSchema = z.object({
     .default('7d')
     .describe('JWT token expiration time'),
 
+  DISABLE_AUTH: z
+    .union([
+      z.string().transform(val => val === 'true'),
+      z.boolean()
+    ])
+    .default(false)
+    .describe('Disable authentication for local development'),
+
   // ===== Third-Party API Keys =====
   STRIPE_SECRET_KEY: z
     .string()
@@ -207,6 +215,7 @@ function validateEnv(): Env {
       DB_POOL_SIZE: Deno.env.get('DB_POOL_SIZE'),
       JWT_SECRET: Deno.env.get('JWT_SECRET'),
       JWT_EXPIRES_IN: Deno.env.get('JWT_EXPIRES_IN'),
+      DISABLE_AUTH: Deno.env.get('DISABLE_AUTH'),
       STRIPE_SECRET_KEY: Deno.env.get('STRIPE_SECRET_KEY'),
       SENDGRID_API_KEY: Deno.env.get('SENDGRID_API_KEY'),
       AWS_ACCESS_KEY_ID: Deno.env.get('AWS_ACCESS_KEY_ID'),

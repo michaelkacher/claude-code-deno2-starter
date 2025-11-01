@@ -2,26 +2,64 @@
 // This file SHOULD be checked into source version control.
 // This file is automatically updated during development when running `dev.ts`.
 
+import * as $_2fa_setup from "./routes/2fa/setup.tsx";
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
+import * as $_middleware from "./routes/_middleware.ts";
+import * as $admin_data from "./routes/admin/data.tsx";
+import * as $admin_users from "./routes/admin/users.tsx";
 import * as $design_system from "./routes/design-system.tsx";
+import * as $forgot_password from "./routes/forgot-password.tsx";
 import * as $index from "./routes/index.tsx";
+import * as $lib_token_refresh from "./routes/lib/token-refresh.ts";
+import * as $login from "./routes/login.tsx";
 import * as $mockups_index from "./routes/mockups/index.tsx";
+import * as $resend_verification from "./routes/resend-verification.tsx";
+import * as $reset_password from "./routes/reset-password.tsx";
+import * as $signup from "./routes/signup.tsx";
+import * as $verify_email from "./routes/verify-email.tsx";
+import * as $AdminDataBrowser from "./islands/AdminDataBrowser.tsx";
+import * as $AdminUserTable from "./islands/AdminUserTable.tsx";
+import * as $AuthBanner from "./islands/AuthBanner.tsx";
 import * as $Counter from "./islands/Counter.tsx";
 import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
+import * as $EmailVerificationBanner from "./islands/EmailVerificationBanner.tsx";
+import * as $LoginForm from "./islands/LoginForm.tsx";
+import * as $ResetPasswordForm from "./islands/ResetPasswordForm.tsx";
+import * as $SignupForm from "./islands/SignupForm.tsx";
+import * as $TwoFactorSetup from "./islands/TwoFactorSetup.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
+    "./routes/2fa/setup.tsx": $_2fa_setup,
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
+    "./routes/_middleware.ts": $_middleware,
+    "./routes/admin/data.tsx": $admin_data,
+    "./routes/admin/users.tsx": $admin_users,
     "./routes/design-system.tsx": $design_system,
+    "./routes/forgot-password.tsx": $forgot_password,
     "./routes/index.tsx": $index,
+    "./routes/lib/token-refresh.ts": $lib_token_refresh,
+    "./routes/login.tsx": $login,
     "./routes/mockups/index.tsx": $mockups_index,
+    "./routes/resend-verification.tsx": $resend_verification,
+    "./routes/reset-password.tsx": $reset_password,
+    "./routes/signup.tsx": $signup,
+    "./routes/verify-email.tsx": $verify_email,
   },
   islands: {
+    "./islands/AdminDataBrowser.tsx": $AdminDataBrowser,
+    "./islands/AdminUserTable.tsx": $AdminUserTable,
+    "./islands/AuthBanner.tsx": $AuthBanner,
     "./islands/Counter.tsx": $Counter,
     "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
+    "./islands/EmailVerificationBanner.tsx": $EmailVerificationBanner,
+    "./islands/LoginForm.tsx": $LoginForm,
+    "./islands/ResetPasswordForm.tsx": $ResetPasswordForm,
+    "./islands/SignupForm.tsx": $SignupForm,
+    "./islands/TwoFactorSetup.tsx": $TwoFactorSetup,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

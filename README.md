@@ -918,15 +918,23 @@ For issues or questions:
 See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed automation levels.
 
 # Backlog
-* Set up Authentication and Authorization with the following criteria:
-  * Uncomments existing JWT authentication code
-  * A flag is implemented to disable authentication/authorization for local development
-  * Adds auth middleware
-  * Implements a user model
-  * Configures CORS for the backend
+* Create account did an alert popup, change to UI
+* ensure the admin screen should only appear if auth enabled
+* Can the admin screen show all models?
+* the docs will load a lot of the guides for claude code, does the claudeignore need to be updated or these docs moved?
 
-* update home screen with mockup command
-* Setup integration tests to to test the api layer directly
+* Does the /design command also impact layout? If not, should there be a layout? Maybe add some common layouts?
+* Confirm it still works with no .env file. Should a /setup command exist to create the .env file?
+* Add a hamburger menu to the menu bar and option to add new screen to menu if it exists
+
+* Does test user always get populated first go? Command to create test user? Update docs? Logging in with test@example.com / password123
+
+
+* Setup integration tests to to test the api layer directly. Confirm that e2e and integration test added on /new-feature
+
+* update home screen with:
+*  all commands and up to date info. 
+* How to set up auth
 * Add open api link to home page info
   - Swagger UI: http://localhost:8000/api/docs (interactive testing)
   - ReDoc: http://localhost:8000/api/redoc (clean reading experience)
@@ -935,9 +943,72 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestra
 
 * Evaluate Open API implementation, is Redoc the right choice?
 * Error monitoring: Optional setting to integrate with something like Datadog?
-* Provide command for commits and ensure a commit format is used?
 
-Other:
-  * Set up rate limiting for APIs (middleware?)
-  * Add security headers for No CSP, X-Frame-Options, and others for best practices
-  * Add Request Size limits for payloads
+
+Auth Priority Nice to Have:
+
+
+The server is running at http://localhost:3000/
+
+Test User Credentials:
+Email: test@example.com
+Password: password123
+
+Quick Tests:
+Login Flow: Try logging in - you'll get both access + refresh tokens
+Auto-Refresh: Check browser console in 13 minutes - it should auto-refresh
+CSRF Protection: Try login without the CSRF token header (should fail)
+Token Revocation: Logout and verify the refresh token is invalidated
+Security Headers: Check DevTools Network tab for CSP, HSTS, etc.
+
+## Admin Panel
+
+The template includes a complete admin panel for user management.
+
+### Accessing the Admin Panel
+
+**Local Development:**
+
+1. **Make a user an admin**:
+   ```bash
+   deno task users:make-admin test@example.com
+   ```
+
+2. **Log in** with an admin account at http://localhost:3000/login
+
+3. **Access admin panel**:
+   - Click the "Admin Panel" button in the navigation bar (visible only to admins)
+   - Or navigate directly to http://localhost:3000/admin/users
+
+**Production:**
+
+See [Production Admin Setup Guide](docs/PRODUCTION_ADMIN_SETUP.md) for automatic admin setup using environment variables.
+
+### Admin Features
+
+- **Dashboard Statistics**: Total users, verification rates, admin counts, recent signups
+- **User Management Table**: View all registered users with search and filtering
+- **User Actions**:
+  - ↑/↓ Promote/demote admin roles
+  - ✓ Manually verify emails
+  - 🔒 Revoke all user sessions (force logout)
+  - ✕ Delete users permanently
+- **Filtering**: Search by name/email/ID, filter by role, filter by verification status
+- **Pagination**: Navigate through users (50 per page)
+
+### CLI Tools
+
+```bash
+# List all registered users
+deno task users:list
+
+# Promote a user to admin (local development)
+deno task users:make-admin email@example.com
+```
+
+### Documentation
+
+- [Production Admin Setup](docs/PRODUCTION_ADMIN_SETUP.md) - **How to set up first admin in production**
+- [Admin Panel Quick Start](docs/ADMIN_QUICK_START.md) - Quick reference
+- [Admin Panel Guide](docs/ADMIN_PANEL.md) - Complete documentation
+- [Admin Implementation Summary](docs/ADMIN_IMPLEMENTATION_SUMMARY.md) - Technical details

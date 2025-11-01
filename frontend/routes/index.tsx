@@ -207,18 +207,10 @@ export default function Home(props: PageProps) {
               📚 Learn more about this template
             </p>
             <div class="flex gap-4 justify-center flex-wrap">
-              <a href="https://github.com" class="text-blue-600 hover:underline">
-                README.md
+              <a href="https://github.com/michaelkacher/claude-code-deno2-starter" class="text-blue-600 hover:underline">
+                GitHub Repository
               </a>
-              <a href="https://github.com" class="text-blue-600 hover:underline">
-                QUICKSTART.md
-              </a>
-              <a href="https://github.com" class="text-blue-600 hover:underline">
-                Token Optimization Guide
-              </a>
-              <a href="https://github.com" class="text-blue-600 hover:underline">
-                Orchestration Guide
-              </a>
+              
             </div>
           </div>
         </div>

@@ -8,14 +8,40 @@
 import { Hono } from 'hono';
 import { cors } from 'jsr:@hono/hono/cors';
 import { logger } from 'jsr:@hono/hono/logger';
-import openApiRoutes from './routes/openapi.ts';
+import 'jsr:@std/dotenv/load';
 import { env, isDevelopment } from './config/env.ts';
+import { bodySizeLimits } from './lib/body-limit.ts';
+import { rateLimiters } from './lib/rate-limit.ts';
+import { securityHeaders } from './lib/security-headers.ts';
+import openApiRoutes from './routes/openapi.ts';
 
 const app = new Hono();
 
 // Middleware
 app.use('*', logger());
-app.use('*', cors());
+app.use('*', securityHeaders()); // Add security headers to all responses
+app.use('*', bodySizeLimits.json); // Limit request body size (1MB default)
+app.use('*', cors({
+  origin: env.CORS_ORIGIN,
+  credentials: true,
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token'],
+}));
+
+// Apply rate limiting to all API routes (except health check and docs)
+app.use('/api/*', async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  
+  // Skip rate limiting for health checks and documentation endpoints
+  const skipPaths = ['/api/health', '/api/openapi.json', '/api/docs', '/api/redoc'];
+  if (skipPaths.some(path => pathname.startsWith(path))) {
+    await next();
+    return;
+  }
+  
+  // Apply general API rate limiter
+  await rateLimiters.api(c, next);
+});
 
 // Root route - API info
 app.get('/', (c) => {
@@ -44,10 +70,17 @@ app.get('/api/health', (c) => {
 // Mount OpenAPI documentation routes
 app.route('/api', openApiRoutes);
 
-// TODO: Import and mount your routes here
-// Example:
-// import userRoutes from './routes/users.ts';
-// app.route('/api/users', userRoutes);
+// Import routes
+import adminRoutes from './routes/admin.ts';
+import authRoutes from './routes/auth.ts';
+import dataBrowserRoutes from './routes/data-browser.ts';
+import twoFactorRoutes from './routes/two-factor.ts';
+
+// Mount routes
+app.route('/api/auth', authRoutes);
+app.route('/api/admin', adminRoutes);
+app.route('/api/2fa', twoFactorRoutes);
+app.route('/api/admin/data', dataBrowserRoutes);
 
 // 404 handler
 app.notFound((c) => {
@@ -75,6 +108,10 @@ app.onError((err, c) => {
 
 const port = env.PORT;
 
+// Setup initial admin if specified (only runs if DISABLE_AUTH=false)
+import { setupInitialAdmin } from './lib/initial-admin-setup.ts';
+await setupInitialAdmin();
+
 console.log(`🚀 Server starting on http://localhost:${port}`);
 console.log(`📝 Environment: ${env.DENO_ENV}`);
 console.log(`📝 API URL: ${env.API_URL}`);
@@ -85,3 +122,4 @@ if (isDevelopment) {
 }
 console.log(`📝 Ready to build! Start with: /requirements then /new-feature`);
 Deno.serve({ port }, app.fetch);
+
