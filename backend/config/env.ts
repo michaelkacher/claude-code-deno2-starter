@@ -132,7 +132,7 @@ const envSchema = z.object({
       z.string().transform(val => val === 'true'),
       z.boolean()
     ])
-    .default(false)
+    .default(true)
     .describe('Disable authentication for local development'),
 
   // ===== Third-Party API Keys =====

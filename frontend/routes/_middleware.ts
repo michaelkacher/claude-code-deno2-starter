@@ -14,6 +14,8 @@ const publicRoutes = [
   '/signup',
   '/forgot-password',
   '/reset-password',
+  '/mockups/',
+  '/design-system',
   '/_frsh/',
   '/api/',
 ];
@@ -37,8 +39,9 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
     const url = new URL(req.url);
     const pathname = url.pathname;
     
-    // Check if auth is disabled via environment variable
-    const disableAuth = Deno.env.get('DISABLE_AUTH') === 'true';
+    // Check if auth is disabled via environment variable (defaults to true if not set)
+    const disableAuthEnv = Deno.env.get('DISABLE_AUTH');
+    const disableAuth = disableAuthEnv === 'true' || disableAuthEnv === undefined;
     if (disableAuth) {
       return await ctx.next();
     }

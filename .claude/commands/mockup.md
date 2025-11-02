@@ -67,7 +67,9 @@ Launch the **mockup-agent** to create the frontend mockup with embedded document
 
 ```
 I'm creating the mockup route with all context embedded.
-This will create: frontend/routes/mockups/[mockup-name].tsx
+This will create:
+- frontend/routes/mockups/[mockup-name].tsx (route wrapper)
+- frontend/islands/mockups/[MockupName].tsx (interactive island component)
 
 The mockup will be accessible at: http://localhost:3000/mockups/[mockup-name]
 ```
@@ -80,10 +82,20 @@ Pass the mockup details to the agent:
 - Mock data needed
 - Any specific notes
 
-The agent will create a single TSX file with:
+The agent will create TWO files following Fresh's island architecture:
+
+**Route file** (`frontend/routes/mockups/[mockup-name].tsx`):
 - Documentation in header comments
+- Minimal wrapper that imports and renders the island
+- No useState or interactive hooks (Fresh restriction)
+
+**Island file** (`frontend/islands/mockups/[MockupName].tsx`):
+- All interactive logic with useState/useEffect hooks
 - Mock data inline
 - Visual UI components
+- Default export of the island component
+
+**CRITICAL:** Fresh requires that any component using hooks (useState, useEffect, etc.) must be in the `islands/` directory. The route file should only import and render the island component.
 
 ### Step 5: Start Dev Server (if needed)
 
@@ -154,17 +166,19 @@ Are you sure you want to delete this mockup? (yes/no)
 If yes:
 ```bash
 rm -f frontend/routes/mockups/[mockup-name].tsx
+rm -f frontend/islands/mockups/[MockupName].tsx
 ```
 
 **Option e) Done:**
 ```
 Great! Review the mockup and run /mockup again when ready to iterate or convert to a feature.
 
-Mockup location:
+Mockup locations:
 - Route: frontend/routes/mockups/[mockup-name].tsx
+- Island: frontend/islands/mockups/[MockupName].tsx
 - URL: http://localhost:3000/mockups/[mockup-name]
 
-All mockup documentation is embedded in the TSX file header comments.
+All mockup documentation is embedded in the route file's header comments.
 ```
 
 ## Key Points

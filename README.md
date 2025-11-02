@@ -2,8 +2,6 @@
 
 **This is an opinionated starter template** with a pre-selected tech stack so you can focus on building features, not debating technology choices.
 
-You must have [Claude Code](https://www.claude.com/pricing) to effectively use this template!! 
-
 ## The Stack
 
 - **Runtime:** Deno 2
@@ -15,7 +13,7 @@ You must have [Claude Code](https://www.claude.com/pricing) to effectively use t
 
 ## Prerequisites
 
-Deno 2 Installed
+1. Deno 2 Installed
 
 ```bash
 # macOS/Linux
@@ -29,6 +27,8 @@ irm https://deno.land/install.ps1 | iex
 # Windows: choco install deno
 # Linux: snap install deno
 ```
+
+2. You must have purchased [Claude Code](https://www.claude.com/pricing) and install it `npm install -g @anthropic-ai/claude-code` (Note: this can work with GitHub Copilot, but more instruction files and agents need to be created to make it effective.)
 
 ## Quick Start
 
