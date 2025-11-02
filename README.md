@@ -28,7 +28,9 @@ irm https://deno.land/install.ps1 | iex
 # Linux: snap install deno
 ```
 
-2. You must have purchased [Claude Code](https://www.claude.com/pricing) and install it `npm install -g @anthropic-ai/claude-code` (Note: this can work with GitHub Copilot, but more instruction files and agents need to be created to make it effective.)
+2. **AI Assistant**:
+   - **Claude Code**: Install with `npm install -g @anthropic-ai/claude-code` ([pricing](https://www.claude.com/pricing))
+   - There is experimental support for **GitHub Copilot**: Use with VS Code extension ([get started](https://github.com/features/copilot)). Read about [using GitHub Copilot](docs/USING_WITH_COPILOT.md) with this project.
 
 ## Quick Start
 
@@ -59,6 +61,8 @@ deno task dev
 # The /mockup command can be used to iterate on the design
 claude mockup create a task list and create task screens for yard work. There should be fields for estimated time, effort, and a list of required supplies.
 ```
+
+For GitHub - 
 
 4. Implement the mockup with and write tests
 

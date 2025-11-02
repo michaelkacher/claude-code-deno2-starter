@@ -17,7 +17,8 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 4. **Write Tests**: Use `test-writer-agent` to create tests (TDD Red phase) - reads from feature folder
 5. **Implement Backend**: Use `backend-agent` to implement server-side logic - reads from feature folder
 6. **Implement Frontend**: Use `frontend-agent` to build UI components - reads from feature folder
-7. **Verify & Complete**: Run tests, offer to run `/feature-complete` to move to implemented
+7. **Update Data Browser**: Automatically add new Deno KV models to the Data Browser
+8. **Verify & Complete**: Run tests, offer to run `/feature-complete` to move to implemented
 
 ## Instructions
 
@@ -239,7 +240,46 @@ I'll implement the frontend UI components.
 The agent will read from: features/proposed/{feature-name}/
 ```
 
-### Step 9: Verify & Complete
+### Step 9: Update Data Browser (If New Data Models)
+
+After backend implementation, check if the feature added new Deno KV data models:
+
+1. **Read the data-models.md file:**
+   ```
+   Read features/proposed/{feature-name}/data-models.md
+   ```
+
+2. **Look for Deno KV key patterns:**
+   - Check the "Deno KV Schema" section
+   - Identify any new key prefixes (e.g., `['workout_category', ...]`)
+
+3. **If new data models were added:**
+
+   Read the Data Browser configuration:
+   ```
+   Read backend/routes/data-browser.ts
+   ```
+
+   Find the `MODEL_PREFIXES` array and add the new model prefix(es):
+   ```typescript
+   const MODEL_PREFIXES = [
+     'users',
+     'users_by_email',
+     // ... existing models ...
+     'new_model_prefix',  // Add new prefix here
+   ];
+   ```
+
+   Say:
+   ```
+   ✅ Updated Data Browser to support the new {model-name} data model.
+   Admins can now browse this data at /admin/data
+   ```
+
+4. **If no new data models:**
+   Skip this step.
+
+### Step 10: Verify & Complete
 
 Run tests:
 ```bash

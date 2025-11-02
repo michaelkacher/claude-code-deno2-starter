@@ -1,5 +1,10 @@
 # GitHub Copilot Instructions
 
+> **Custom Workflows Available**: This project includes custom workflows that mirror Claude Code commands.
+> See `.github/copilot-workflows.md` for detailed instructions on running feature development, mockup creation, and test generation workflows.
+> 
+> **Usage**: `@workspace run new-feature workflow` or `@workspace create a new feature`
+
 ## Project Overview
 
 This is a **Deno 2 + Fresh 1.7.3** full-stack application with Hono backend API, featuring:
