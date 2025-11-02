@@ -34,7 +34,7 @@ irm https://deno.land/install.ps1 | iex
 
 ### 1. Use This Template
 
-Click "Use this template" on GitHub to create a new repository with the template.
+Navigate to https://github.com/michaelkacher/claude-code-deno2-starter and click "Use this template" to create a new repository with the template.
 
 Then clone your new repository that was created. 
 
