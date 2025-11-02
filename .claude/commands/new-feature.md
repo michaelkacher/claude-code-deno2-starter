@@ -18,7 +18,8 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 5. **Implement Backend**: Use `backend-agent` to implement server-side logic - reads from feature folder
 6. **Implement Frontend**: Use `frontend-agent` to build UI components - reads from feature folder
 7. **Update Data Browser**: Automatically add new Deno KV models to the Data Browser
-8. **Verify & Complete**: Run tests, offer to run `/feature-complete` to move to implemented
+8. **Test for Runtime Errors**: Check frontend routes for common runtime errors and add safety checks
+9. **Verify & Complete**: Run tests, offer to run `/feature-complete` to move to implemented
 
 ## Instructions
 
@@ -279,7 +280,52 @@ After backend implementation, check if the feature added new Deno KV data models
 4. **If no new data models:**
    Skip this step.
 
-### Step 10: Verify & Complete
+### Step 10: Test for Runtime Errors (Frontend Routes)
+
+After frontend implementation, if the feature added new routes, test them for runtime errors:
+
+1. **Identify new routes:**
+   Look in the implementation for new route files created (e.g., `frontend/routes/workout-plans/new.tsx`)
+
+2. **Start the dev server (if not running):**
+   ```bash
+   deno task dev
+   ```
+
+3. **Check the route compiles:**
+   ```bash
+   deno check frontend/routes/[new-route-path].tsx
+   ```
+
+4. **Look for common runtime errors:**
+   - Read the route file and check for:
+     - Accessing `.length` on potentially undefined arrays
+     - Accessing properties on potentially undefined objects
+     - Missing optional chaining (`?.`) on nested properties
+     - Missing null/undefined checks before operations
+
+5. **Add defensive programming:**
+   If you find potential runtime errors, add safety checks:
+   - Use `array?.length || 0` instead of `array.length`
+   - Use `(array || []).map()` instead of `array.map()`
+   - Use `object?.property?.toLowerCase()` instead of `object.property.toLowerCase()`
+   - Add `const safeData = data || []` at component start for props
+
+6. **Document in implementation notes:**
+   Add a section to the feature's implementation notes:
+   ```markdown
+   ## Runtime Safety Checks Added
+   - Added null checks for category.exercises array
+   - Added optional chaining for nested properties
+   - Ensured all arrays have fallback to empty array
+   ```
+
+Say:
+```
+✅ Verified route for runtime errors and added safety checks.
+```
+
+### Step 11: Verify & Complete
 
 Run tests:
 ```bash
