@@ -53,6 +53,7 @@ Check `tests/templates/` for pre-built templates:
 - **`service.test.template.ts`** ⭐ RECOMMENDED - For business logic in services
 - `unit.test.template.ts` - For pure utility functions
 - `integration-api.test.template.ts` - For API endpoint tests (use sparingly)
+- `e2e.test.template.ts` - For end-to-end browser tests with Playwright
 
 **Copy the template** and customize it instead of writing from scratch!
 
@@ -133,6 +134,13 @@ Your role focuses on step 1 (Red) - writing the tests first.
 - **Only test** that your services integrate correctly with KV/database
 - **Do NOT test** HTTP routing or status codes
 - Focus on data persistence and retrieval
+
+### 4. End-to-End (E2E) Tests
+- Full user workflows in real browser
+- Use Playwright for browser automation
+- Test complete features from user perspective
+- Includes: authentication flows, form submissions, navigation, data persistence
+- **When to use**: Critical user journeys, multi-step workflows, UI interactions
 
 ## Output Structure
 
@@ -360,11 +368,93 @@ describe('Auth Store (Signals)', () => {
 });
 ```
 
+### E2E Tests (Playwright)
+
+**`tests/e2e/[feature-name].e2e.test.ts`**
+
+End-to-end tests verify complete user workflows in a real browser. Use the `e2e.test.template.ts` template.
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+const BASE_URL = 'http://localhost:3000';
+
+test.describe('User Authentication Flow', () => {
+  test('should complete signup and login workflow', async ({ page }) => {
+    // Step 1: Navigate to signup
+    await page.goto(`${BASE_URL}/signup`);
+    
+    // Step 2: Fill signup form
+    await page.fill('[data-testid="email-input"]', 'test@example.com');
+    await page.fill('[data-testid="password-input"]', 'Password123!');
+    await page.fill('[data-testid="name-input"]', 'Test User');
+    await page.click('[data-testid="signup-button"]');
+    
+    // Step 3: Verify redirect to home
+    await expect(page).toHaveURL(`${BASE_URL}/`);
+    await expect(page.locator('[data-testid="user-email"]')).toContainText('test@example.com');
+    
+    // Step 4: Log out
+    await page.click('[data-testid="logout-button"]');
+    
+    // Step 5: Log back in
+    await page.goto(`${BASE_URL}/login`);
+    await page.fill('[data-testid="email-input"]', 'test@example.com');
+    await page.fill('[data-testid="password-input"]', 'Password123!');
+    await page.click('[data-testid="login-button"]');
+    
+    // Step 6: Verify successful login
+    await expect(page).toHaveURL(`${BASE_URL}/`);
+    await expect(page.locator('[data-testid="user-email"]')).toBeVisible();
+  });
+
+  test('should handle authentication errors', async ({ page }) => {
+    await page.goto(`${BASE_URL}/login`);
+    
+    // Try invalid credentials
+    await page.fill('[data-testid="email-input"]', 'wrong@example.com');
+    await page.fill('[data-testid="password-input"]', 'wrongpass');
+    await page.click('[data-testid="login-button"]');
+    
+    // Verify error message
+    await expect(page.locator('[data-testid="error-message"]')).toBeVisible();
+    await expect(page).toHaveURL(`${BASE_URL}/login`); // Still on login page
+  });
+});
+```
+
+**E2E Best Practices:**
+- ✅ Use `data-testid` attributes for stable selectors
+- ✅ Test critical user journeys only (not every edge case)
+- ✅ Mock external APIs when possible to reduce flakiness
+- ✅ Use beforeAll/afterAll for test data setup/cleanup
+- ✅ Test responsive layouts with viewport changes
+- ✅ Verify loading states and error handling
+- ✅ Test keyboard navigation for accessibility
+- ❌ Don't test unit-level logic (that's for unit tests)
+- ❌ Don't duplicate integration test coverage
+
+**Running E2E Tests:**
+```bash
+# Install Playwright (first time only)
+npx playwright install
+
+# Run E2E tests
+deno test --allow-all tests/e2e/
+
+# Run with Playwright UI (interactive mode)
+npx playwright test --ui
+
+# Run in specific browser
+npx playwright test --project=chromium
+```
+
 ## Test Coverage Guidelines
 
 Aim for these coverage targets:
 - **Unit tests**: 80%+ coverage
 - **Integration tests**: All API endpoints
+- **E2E tests**: Critical user workflows (3-5 key journeys)
 - **Frontend components**: Critical user paths
 
 ## Test Patterns

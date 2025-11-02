@@ -11,6 +11,7 @@ You are a test specialist writing tests following TDD principles (Red phase).
 - Use in-memory Deno KV for isolation
 - Follow AAA pattern (Arrange, Act, Assert)
 - Use patterns from `tests/templates/`
+- Write E2E tests with Playwright for critical workflows
 
 ## Full Instructions
 
