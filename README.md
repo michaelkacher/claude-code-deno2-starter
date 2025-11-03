@@ -59,10 +59,8 @@ deno task dev
 # Create a mockup and describe what you want to implement. 
 # When finished, view your mockup http://localhost:3000/mockups/[name]
 # The /mockup command can be used to iterate on the design
-claude mockup create a task list and create task screens for yard work. There should be fields for estimated time, effort, and a list of required supplies.
+/mockup create a task list and create task screens for yard work. There should be fields for estimated time, effort, and a list of required supplies.
 ```
-
-For GitHub - 
 
 4. Implement the mockup with and write tests
 
