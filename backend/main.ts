@@ -72,6 +72,7 @@ app.route('/api', openApiRoutes);
 
 // Import routes
 import adminRoutes from './routes/admin.ts';
+import dataSyncRoutes from './routes/admin/data-sync.ts';
 import authRoutes from './routes/auth.ts';
 import dataBrowserRoutes from './routes/data-browser.ts';
 import twoFactorRoutes from './routes/two-factor.ts';
@@ -79,6 +80,7 @@ import twoFactorRoutes from './routes/two-factor.ts';
 // Mount routes (more specific routes first to avoid conflicts)
 app.route('/api/auth', authRoutes);
 app.route('/api/2fa', twoFactorRoutes);
+app.route('/api/admin/data-sync', dataSyncRoutes);
 app.route('/api/admin/data', dataBrowserRoutes);
 app.route('/api/admin', adminRoutes);
 

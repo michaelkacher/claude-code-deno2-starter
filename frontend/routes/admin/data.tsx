@@ -27,6 +27,12 @@ export default function AdminDataPage(props: PageProps) {
                 Users
               </a>
               <a
+                href="/admin/data-sync"
+                class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Data Sync
+              </a>
+              <a
                 href="/"
                 class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
               >

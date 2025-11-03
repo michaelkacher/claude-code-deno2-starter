@@ -1,0 +1,23 @@
+{
+  "models": {
+    "workout-categories": {
+      "kvPrefix": "workout_category",
+      "parser": "nested",
+      "parserConfig": {
+        "nestedField": "exercises",
+        "nestedHeadingLevel": 3,
+        "nestedFields": {
+          "sets": "number",
+          "repetitions": "string",
+          "difficulty": "string",
+          "order": "number",
+          "description": "string"
+        },
+        "generateIds": true,
+        "sortBy": "order"
+      },
+      "validator": "WorkoutCategorySchema",
+      "autoManageTimestamps": true
+    }
+  }
+}

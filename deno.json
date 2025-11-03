@@ -31,7 +31,9 @@
     "kv:seed-user": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/seed-test-user.ts",
     "kill-ports": "deno run --allow-run scripts/kill-ports.ts",
     "users:list": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/list-users.ts",
-    "users:make-admin": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/make-admin.ts"
+    "users:make-admin": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/make-admin.ts",
+    "sync-data": "deno run --allow-read --allow-write --allow-env --allow-net --unstable-kv scripts/sync-data.ts",
+    "validate-data": "deno run --allow-read --allow-env --unstable-kv scripts/validate-data.ts"
   },
   "deploy": {
     "project": "your-project-name",
