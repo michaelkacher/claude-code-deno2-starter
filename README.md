@@ -43,7 +43,13 @@ Then clone your new repository that was created.
 ```bash
 git clone <your-repo-url>
 cd <your-project>
+
+# Set up environment variables
+cp .env.example .env
 ```
+
+Edit `.env` with your configuration.
+
 2. Run the project
 
 ```bash

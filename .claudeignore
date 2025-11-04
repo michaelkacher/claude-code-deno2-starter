@@ -8,14 +8,14 @@
 .claude/agents/_full/
 
 # ==============================================================================
-# OPTIMIZATION GUIDES (for human reference, not needed by Claude on startup)
+# CLAUDE CODE OPTIMIZATION (guides for using Claude Code effectively)
 # ==============================================================================
-docs/guides/
-docs/*OPTIMIZATION*.md
-docs/*GUIDE*.md
+docs/claude-optimization/
 
-# Keep these essential docs:
-!docs/architecture.md
+# ==============================================================================
+# DEV NOTES (implementation summaries and historical fix documentation)
+# ==============================================================================
+docs/dev-notes/
 
 # ==============================================================================
 # TEMPLATE PATTERNS (loaded by specific agents only when needed)
