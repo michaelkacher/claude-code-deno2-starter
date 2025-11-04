@@ -21,7 +21,8 @@ Read file: .claude/agents/_full/mockup-agent.md
 ```
 
 The full document contains:
-- Complete mockup template with header comments
+- Complete mockup template with header comments (including relationship documentation)
+- How to identify and document related mockups
 - Layout patterns (cards, dashboards, forms, tables)
 - Tailwind CSS utilities
 - Mock data examples
@@ -33,6 +34,9 @@ The full document contains:
 Before starting:
 - [ ] Read full instructions from `_full/mockup-agent.md`
 - [ ] Get mockup details from `/mockup` command
+- [ ] Check for existing mockups and ask about relationships
+- [ ] Document related mockups in RELATED MOCKUPS section
+- [ ] Document proposed data models in DATA MODELS section
 - [ ] Embed all context in TSX header comments
 - [ ] Use realistic mock data
 - [ ] Include yellow mockup banner

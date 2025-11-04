@@ -72,6 +72,21 @@ interface Resource {
 ### Existing Models Modified
 - `User`: Add `resourceIds: string[]` field
 
+### Shared Models (if applicable)
+- `{ModelName}` - Shared with: {feature-1}, {feature-2}
+  - Fields used by this feature: {list fields}
+  - Fields used by related features: {list fields}
+- None (if this feature doesn't share models)
+
+### Model Impact Analysis
+**If this feature's models are shared:**
+- Changes to `{ModelName}` will impact: {list of features}
+- Breaking changes require updating: {list affected features}
+- Migration strategy: {describe how to handle changes}
+
+**If no shared models:**
+- This feature's models are isolated and can be changed independently
+
 ## UI Components Needed
 - {Component 1} - {Purpose}
 - {Component 2} - {Purpose}
@@ -88,7 +103,11 @@ interface Resource {
 {Any important technical considerations, constraints, or dependencies}
 
 ## Related Features
-- {Related feature 1} - {How they relate}
+- {Feature name} ({status: proposed/implemented/mockup}) - {Relationship description}
+  - Shares: {Model names or "None"}
+  - Depends on: {Specific fields, endpoints, or "None"}
+  - Impact: {What happens if this feature changes shared resources}
+- None (if this feature is standalone)
 ```
 
 ## Best Practices
@@ -102,6 +121,8 @@ interface Resource {
 - Define exact fields and types
 - Specify which existing models change
 - Identify relationships clearly
+- **Document shared models**: If models are shared with other features, explicitly list them
+- **Analyze impact**: Document which features would be affected by data model changes
 
 ### List Concrete Endpoints
 - Use actual endpoint paths (e.g., `/api/v1/workouts`)
@@ -134,6 +155,13 @@ interface Resource {
 5. **Scope Clarification**
    - "Is [related functionality] part of this feature or separate?"
    - "Should this work for all users or specific roles?"
+
+6. **Shared Data Models & Related Features**
+   - "Does this feature use any data models from other features?"
+   - "Will this feature's data models be used by other features?"
+   - "Are there any related features (proposed, implemented, or mockups) that should share this data?"
+   - "If this feature changes its data model, what other features would be impacted?"
+   - "Are there any mockups this feature is based on or related to?"
 
 ## Token Efficiency
 

@@ -10,7 +10,6 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 
 ## Workflow Steps
 
-0. **First-Run Detection**: Check if `docs/architecture.md` exists to determine if this is first feature
 1. **Get feature name**: Ask the user for a short, kebab-case feature name (e.g., "user-authentication", "workout-planner")
 2. **Requirements Gathering**: Use `requirements-agent-feature` to gather lightweight, focused requirements
 3. **Write Tests**: Use `test-writer-agent` to create tests (TDD Red phase) - reads from feature folder
@@ -114,9 +113,9 @@ Before starting, detect if this is the user's first feature by checking for exis
 
 **Then proceed with feature development** - the architecture is already defined.
 
-### Step 0.5: Check for Existing Mockups (NEW)
+### Step 0.5: Check for Existing Mockups and Related Features (NEW)
 
-Before asking for a feature name, check for existing mockups:
+Before asking for a feature name, check for existing mockups and features:
 
 ```bash
 ls frontend/routes/mockups/*.tsx 2>/dev/null | grep -v "index.tsx"
@@ -153,6 +152,18 @@ Extract the header comment block and use it as:
 - Visual reference for requirements
 - Layout inspiration for API design
 - UI structure for frontend implementation
+- **Check for "RELATED MOCKUPS" section** in the header to identify related features
+
+**Check for related mockups/features:**
+
+If the mockup header mentions related mockups (e.g., "RELATED MOCKUPS: user-profile-view, user-settings"):
+```
+I noticed this mockup is related to: user-profile-view, user-settings
+
+These features may share data models. I'll pass this information to the requirements agent to ensure data model consistency.
+```
+
+Store the list of related features to pass to requirements-agent-feature.
 
 Proceed to Step 2 (skip Step 1 - use mockup name as feature name basis).
 
@@ -187,6 +198,30 @@ This will create: features/proposed/{feature-name}/requirements.md
 ```
 
 **Important**: Pass the feature name to the agent so it knows where to write files.
+
+**If related mockups/features were identified in Step 0.5:**
+
+Include this in the agent prompt:
+```
+This feature is related to: {list of related mockups/features}
+
+Please ensure:
+- Data models are consistent with related features
+- Document shared models in the "Shared Models" section
+- Analyze impact of data model changes in "Model Impact Analysis" section
+- List related features with their status (mockup/proposed/implemented)
+```
+
+**Also suggest checking existing feature requirements:**
+
+If related features are already implemented or proposed:
+```bash
+# Check for existing feature documentation
+ls features/proposed/{related-feature-name}/requirements.md 2>/dev/null
+ls features/implemented/{related-feature-name}/requirements.md 2>/dev/null
+```
+
+Read any existing requirements to understand shared data models.
 
 ### Step 4: Launch Test Writer Agent
 

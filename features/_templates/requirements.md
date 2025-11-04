@@ -38,6 +38,21 @@ interface Resource {
 ### Existing Models Modified
 - `User`: Add `resourceIds: string[]` field
 
+### Shared Models (if applicable)
+- `{ModelName}` - Shared with: {feature-1}, {feature-2}
+  - Fields used by this feature: {list fields}
+  - Fields used by related features: {list fields}
+- None (if this feature doesn't share models)
+
+### Model Impact Analysis
+**If this feature's models are shared:**
+- Changes to `{ModelName}` will impact: {list of features}
+- Breaking changes require updating: {list affected features}
+- Migration strategy: {describe how to handle changes}
+
+**If no shared models:**
+- This feature's models are isolated and can be changed independently
+
 ## UI Components Needed
 - {Component 1} - {Purpose}
 - {Component 2} - {Purpose}
@@ -54,5 +69,8 @@ interface Resource {
 {Any important technical considerations, constraints, or dependencies}
 
 ## Related Features
-- {Related feature 1} - {How they relate}
-- {Related feature 2} - {How they relate}
+- {Feature name} ({status: proposed/implemented/mockup}) - {Relationship description}
+  - Shares: {Model names or "None"}
+  - Depends on: {Specific fields, endpoints, or "None"}
+  - Impact: {What happens if this feature changes shared resources}
+- None (if this feature is standalone)
