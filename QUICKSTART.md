@@ -231,11 +231,6 @@ git push origin main    # Auto-deploy via GitHub Actions
 # Claude Code Commands
 /requirements           # Gather requirements
 /architect              # Design architecture (recommends Deno KV + Deploy)
-/design-database       # Design Deno KV schema or PostgreSQL
-/design-api            # Design API contracts
-/write-tests           # Write tests with in-memory KV
-/implement-backend     # Implement backend (Hono + Deno KV)
-/implement-frontend    # Implement frontend (Fresh + Preact)
 /new-feature           # Full feature workflow (recommended)
 /review                # Code review
 ```
@@ -252,7 +247,7 @@ git push origin main    # Auto-deploy via GitHub Actions
 ## Troubleshooting
 
 ### Tests Not Found
-- Make sure you ran `/write-tests` before implementation
+- `/new-feature` handles the complete workflow including tests
 - Check that test files use `_test.ts` suffix or are in `tests/` directory
 - Deno automatically discovers test files
 

@@ -260,7 +260,7 @@ import { validUserData, invalidUserData } from '../helpers/test-data-patterns.ts
 
 ### For Developers
 
-When using `/write-tests` command, the agent will automatically:
+When using `/new-feature` command, the test-writer agent will automatically:
 1. Analyze service complexity from API spec
 2. Choose CRUD template for simple services
 3. Import test data patterns
@@ -373,4 +373,4 @@ When combined with API design optimizations:
 - See `tests/templates/TEST_PATTERNS.md` for pattern reference
 - See `tests/templates/service-crud.test.template.ts` for CRUD template
 - See `tests/helpers/test-data-patterns.ts` for test data examples
-- Use `/write-tests` command to write tests with all optimizations automatically
+- Use `/new-feature` command to write tests with all optimizations automatically

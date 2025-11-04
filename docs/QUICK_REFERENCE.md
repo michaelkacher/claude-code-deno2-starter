@@ -105,8 +105,8 @@ Agents automatically use templates from:
 ## TDD Workflow
 
 ```
-1. RED:   Write failing test    (/write-tests)
-2. GREEN: Write minimal code     (/implement-backend or /implement-frontend)
+1. RED:   Write failing test
+2. GREEN: Write minimal code
 3. REFACTOR: Improve code        (while keeping tests green)
 ```
 
@@ -182,9 +182,7 @@ When you have:
 | `/new-feature` | Build complete feature | 90% of development |
 | `/mockup` | Visual prototype | UI-heavy features |
 | `/design` | Update design system | Rebrand, customize styling |
-| `/write-tests` | TDD Red phase | Manual control |
-| `/implement-backend` | Backend code | Manual control |
-| `/implement-frontend` | Frontend UI | Manual control |
+
 | `/review` | Code review | Before merging |
 | `/requirements` | Project docs | Large projects (10+ features) |
 | `/architect` | Update architecture | DB migration, microservices |

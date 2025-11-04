@@ -139,7 +139,7 @@ docs/                   # Documentation
    - Update `.env.example` when adding new variables
 
 3. **Follow the development workflow:**
-   - `/requirements` → `/architect` → `/design-api` → `/write-tests` → implementation
+   - `/requirements` → `/architect` → `/new-feature`
 
 4. **Keep dependencies minimal:**
    - Deno manages dependencies automatically

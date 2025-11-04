@@ -52,7 +52,6 @@ All notable changes to this project will be documented in this file.
 
 #### New Agents (Lightweight, Feature-Focused)
 - `requirements-agent-feature.md` - Lightweight requirements gathering for individual features
-- `api-designer-agent-feature.md` - Feature-scoped API and data model design
 
 #### Updated Agents (Feature-Folder Support)
 - `test-writer-agent.md` - Now checks `features/proposed/{feature-name}/` first
@@ -65,7 +64,7 @@ All notable changes to this project will be documented in this file.
 #### Updated Commands
 - `/new-feature` - Now uses feature-scoped workflow by default
   - Creates docs in `features/proposed/{feature-name}/`
-  - Uses lightweight agents (requirements-agent-feature, api-designer-agent-feature)
+  - Uses lightweight requirements-agent-feature
   - Achieves 40-50% token reduction vs global docs approach
 
 #### Documentation Templates
@@ -127,7 +126,7 @@ For existing projects using this template:
 
 - All existing commands still work
 - Global docs (`docs/`) remain valid for project-wide concerns
-- Original agents (requirements-agent, api-designer-agent) unchanged
+- Original requirements-agent unchanged for project-wide requirements
 - Template users can continue current workflows without modification
 
 ### When to Use Each Approach

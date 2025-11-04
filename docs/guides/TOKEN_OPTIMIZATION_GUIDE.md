@@ -155,7 +155,7 @@ When building a new feature, the `/new-feature` command will automatically:
 
 If you want to adjust when shorthand templates are used:
 
-Edit `.claude/agents/api-designer-agent-feature.md`:
+Edit agent files as needed:
 
 ```markdown
 ### Use `api-spec-shorthand.md` when:

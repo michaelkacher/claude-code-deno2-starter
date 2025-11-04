@@ -157,7 +157,7 @@ You only need to define **what's unique to this feature**.
 ## Workflow Integration
 
 After completing requirements:
-1. The **api-designer-agent-feature** will read this file to design API contracts
+1. The **test-writer-agent** will read this file to write tests
 2. The **test-writer-agent** will read this to create tests
 3. The **backend-agent** and **frontend-agent** will implement based on these requirements
 
@@ -171,4 +171,4 @@ After completing requirements:
 ## Next Steps
 
 After completing feature requirements, recommend:
-- Next: Run the api-designer-agent-feature to design the API endpoints
+- Next: Run the test-writer-agent to write tests for the feature

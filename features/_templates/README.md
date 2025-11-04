@@ -145,7 +145,7 @@ To add a new reusable pattern:
 
 1. **API Pattern**: Add to `API_PATTERNS.md` under appropriate section
 2. **Zod Pattern**: Add to both `ZOD_PATTERNS.md` (docs) and `zod-patterns.ts` (code)
-3. **Update agent**: Reference the new pattern in `.claude/agents/api-designer-agent-feature.md`
+3. **Update agent**: Reference the new pattern in agent documentation as needed
 
 ### Updating Templates
 

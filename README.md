@@ -121,11 +121,9 @@ Each agent is a specialized Claude Code agent with a specific purpose:
 |-------|---------|-------|--------|
 | **requirements-agent** | Gather and document requirements | User conversation | `docs/requirements.md` |
 | **architect-agent** | **Update** system architecture | Current `architecture.md` | Updated `docs/architecture.md`, `docs/adr/*.md` |
-| **api-designer-agent** | Design API contracts | `requirements.md`, `architecture.md` | `docs/api-spec.md`, `docs/data-models.md` |
-| **test-writer-agent** | Write tests (TDD Red phase) | `api-spec.md` | `tests/**/*.test.ts` |
-| **backend-agent** | Implement backend (TDD Green) | `api-spec.md`, tests | Backend code |
-| **frontend-agent** | Implement frontend (TDD Green) | `api-spec.md`, tests | Frontend components |
-| **orchestrator-agent** ⚡ | Intelligent workflow automation (Advanced) | Project state | Automated execution |
+| **test-writer-agent** | Write tests (TDD Red phase) | Feature requirements | `tests/**/*.test.ts` |
+| **backend-agent** | Implement backend (TDD Green) | Requirements, tests | Backend code |
+| **frontend-agent** | Implement frontend (TDD Green) | Requirements, tests | Frontend components |
 
 **Note:** Architecture ships pre-defined. Most users won't need requirements-agent or architect-agent.
 
@@ -138,33 +136,14 @@ Quick workflows for common tasks:
 | `/requirements` | Optional | Gather project-wide requirements | Large projects (10+ features) or stakeholder docs |
 | `/architect` | Optional | **Update** architecture | Major changes only (DB migration, microservices) |
 | `/mockup` | **Visual** | Create UI mockup | Quick visual prototyping before building |
-| `/design-api` | Manual | Design API contracts | Before implementation |
-| `/write-tests` | Manual | Write tests (TDD) | Before coding (Red phase) |
-| `/implement-backend` | Manual | Implement backend | After tests are written |
-| `/implement-frontend` | Manual | Implement UI | After backend is ready |
 | `/new-feature` | **Recommended** | Full feature workflow (semi-automated) | Adding a complete new feature |
-| `/auto-feature` ⚡ | Advanced | Intelligent orchestration (fully automated) | Complex projects, max automation |
 | `/review` | Utility | Code review checklist | Before merging or deploying |
 
 ## Automation Levels
 
 This template provides **3 levels of automation** to match your needs:
 
-### 🔧 Level 1: Manual (Full Control)
-
-Run each agent individually for maximum control and learning.
-
-```bash
-/requirements → /architect → /design-api → /write-tests → /implement-backend → /implement-frontend
-```
-
-**Best for:** Learning, small projects, experimentation, custom workflows
-
-**Token usage:** ~20K per feature | **Time:** ~15 min | **Control:** ⭐⭐⭐
-
----
-
-### ⚙️ Level 2: Command Orchestration (Recommended)
+### ⚙️ Level 1: Command Orchestration (Recommended)
 
 Semi-automated workflow with guided steps and user approval.
 
@@ -176,23 +155,6 @@ Semi-automated workflow with guided steps and user approval.
 **Best for:** Most projects (80% of use cases), production work, teams
 
 **Token usage:** ~25K per feature | **Time:** ~10 min | **Control:** ⭐⭐
-
----
-
-### ⚡ Level 3: Intelligent Orchestration (Advanced)
-
-Fully automated with smart decisions, validation, and error recovery.
-
-```bash
-/auto-feature
-> "Add user authentication"
-```
-
-**Best for:** Complex projects, many similar features, maximum automation
-
-**Token usage:** ~35K per feature | **Time:** ~5 min | **Control:** ⭐
-
-**See [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed comparison.**
 
 ---
 
@@ -226,8 +188,8 @@ See `features/README.md` for detailed documentation.
 
 This template enforces TDD workflow:
 
-1. **Red**: Write failing tests first (`/write-tests`)
-2. **Green**: Write minimal code to pass (`/implement-backend` or `/implement-frontend`)
+1. **Red**: Write failing tests first
+2. **Green**: Write minimal code to pass
 3. **Refactor**: Improve code while keeping tests green
 
 ### Running Tests
@@ -256,24 +218,16 @@ deno test tests/users_test.ts
 │   │   ├── requirements-agent.md
 │   │   ├── requirements-agent-feature.md  # ⭐ Feature-scoped (lightweight)
 │   │   ├── architect-agent.md
-│   │   ├── api-designer-agent.md
-│   │   ├── api-designer-agent-feature.md  # ⭐ Feature-scoped (lightweight)
 │   │   ├── test-writer-agent.md
 │   │   ├── backend-agent.md
-│   │   ├── frontend-agent.md
-│   │   └── orchestrator-agent.md     # Advanced: Intelligent orchestration
+│   │   └── frontend-agent.md
 │   └── commands/            # Slash command definitions
 │       ├── new-feature.md            # ⭐ Recommended workflow (uses feature-scoped agents)
 │       ├── feature-complete.md       # ⭐ Finalize and move to implemented
 │       ├── mockup.md                 # Create UI mockups/prototypes
 │       ├── design.md                 # Update design system and styling
-│       ├── auto-feature.md           # Advanced: Full automation
 │       ├── requirements.md
 │       ├── architect.md
-│       ├── design-api.md
-│       ├── write-tests.md
-│       ├── implement-backend.md
-│       ├── implement-frontend.md
 │       └── review.md
 ├── features/                # ⭐ Feature-scoped documentation (NEW)
 │   ├── README.md           # Guide to feature-scoped workflow
@@ -432,7 +386,7 @@ This template is designed to be token-efficient with **multiple optimization lay
 | Commands (Level 2) | ~25K | Fast | Initial project setup |
 | Orchestration (Level 3) | ~35K | Fastest | Complex projects |
 
-**NEW: Fully Optimized Workflow**: Use `/new-feature`, `/write-tests`, `/implement-backend`, and `/implement-frontend` to automatically apply all 13 optimization layers:
+**NEW: Fully Optimized Workflow**: Use `/new-feature` to automatically apply all 13 optimization layers:
 - Feature-scoped documentation (40-50% savings on API design)
 - API pattern references (15-20% additional savings)
 - Shorthand API templates (10-15% additional savings)
@@ -475,11 +429,10 @@ This template is built on **Deno 2** with modern, production-ready tools optimiz
 - **Runtime**: Deno 2.0+ (secure, TypeScript-first)
 - **Framework**: Hono (ultra-fast, edge-ready, works on Deno Deploy)
 - **Language**: TypeScript (built-in, no build step)
-- **Database**: **Deno KV (recommended)** - zero-config, distributed, edge-ready
-  - PostgreSQL available when complex queries needed
+- **Database**: **Deno KV** - zero-config, distributed, edge-ready, built-in
 - **Testing**: Deno's built-in test runner with in-memory KV
 - **Validation**: Zod
-- **Deployment**: **Deno Deploy (recommended)** - zero-config serverless
+- **Deployment**: **Deno Deploy** - zero-config serverless with global KV replication
 
 ### Frontend (Fresh + Preact)
 - **Framework**: Fresh 1.7+ (Deno-native, SSR, Islands architecture)
@@ -488,9 +441,9 @@ This template is built on **Deno 2** with modern, production-ready tools optimiz
 - **Styling**: Tailwind CSS (built-in with Fresh)
 - **Deployment**: Works seamlessly on Deno Deploy
 
-### Database: Deno KV (Default)
+### Database: Deno KV
 
-**Why Deno KV is the recommended default:**
+**This template uses Deno KV as the primary data storage solution.**
 
 ✅ **Zero Configuration** - No setup, connection strings, or migrations needed
 ✅ **Built-in** - Ships with Deno runtime, no external database required
@@ -499,13 +452,9 @@ This template is built on **Deno 2** with modern, production-ready tools optimiz
 ✅ **Fast** - Optimized for key-value and simple queries
 ✅ **Easy Testing** - In-memory mode (`:memory:`) for isolated tests
 ✅ **Serverless-Native** - Perfect for edge deployment
+✅ **Free Tier** - Generous limits on Deno Deploy
 
-**When to use PostgreSQL instead:**
-- Need complex multi-table JOINs
-- Require advanced aggregations (GROUP BY with HAVING)
-- Full-text search at database level
-- Existing PostgreSQL infrastructure
-- Complex reporting and analytics
+**Note**: This template is optimized for Deno KV. If you need complex SQL queries, consider customizing the data layer.
 
 ### Deployment: Deno Deploy (Default)
 
@@ -617,22 +566,7 @@ c) Skip architecture setup
 # The agent will use the template's default stack
 ```
 
-### Example 3: Advanced Automation (Optional)
 
-Using Level 3 (fully automated):
-
-```bash
-# After architecture is defined, use orchestrator for complex features
-/auto-feature
-> "Add user authentication with JWT tokens and role-based access control"
-
-# The orchestrator will:
-# - Analyze current project state
-# - Create and present execution plan
-# - Automatically invoke required agents
-# - Validate outputs at each step
-# - Report completion with test results
-```
 
 ## Troubleshooting
 
@@ -806,11 +740,9 @@ For issues or questions:
 
 **Recommended:** Start with `/new-feature` for most projects.
 
-**Learning:** Use manual commands (`/requirements`, `/architect`, etc.) to understand the workflow.
+**Learning:** Use `/requirements` and `/architect` commands during initial setup to understand the workflow.
 
-**Advanced:** Try `/auto-feature` for complex projects requiring maximum automation.
-
-See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns or [Orchestration Guide](docs/guides/ORCHESTRATION_GUIDE.md) for detailed automation levels.
+See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns.
 
 # Backlog
 * Create account did an alert popup, change to UI

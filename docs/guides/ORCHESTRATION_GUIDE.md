@@ -4,29 +4,24 @@ This guide explains when and how to use the orchestration agent vs. simpler appr
 
 ## Three Levels of Automation
 
-### Level 1: Manual (Full Control)
+### Level 1: Guided Workflow (Recommended)
 
-**Commands:** Individual agents
+**Commands:** `/new-feature`
 ```bash
-/requirements
-/architect
-/design-api
-/write-tests
-/implement-backend
-/implement-frontend
+/new-feature
+> "Add user authentication"
 ```
 
 **Pros:**
-- ✅ Full control over each step
-- ✅ Easy to understand and debug
-- ✅ Great for learning
-- ✅ Lowest token usage
-- ✅ Can customize workflow
+- ✅ Semi-automated with guided steps
+- ✅ User approval at key decision points
+- ✅ Handles most projects (80% of use cases)
+- ✅ Good balance of control and automation
+- ✅ Clear progress tracking
 
 **Cons:**
-- ❌ More commands to run
-- ❌ You manage dependencies
-- ❌ Manual validation needed
+- ❌ Less control than manual approach
+- ❌ May ask questions you want to skip
 
 **Best for:**
 - Learning the workflow
@@ -63,39 +58,7 @@ This guide explains when and how to use the orchestration agent vs. simpler appr
 - Teams learning TDD
 - Production work
 
----
 
-### Level 3: Intelligent Orchestration (Advanced)
-
-**Command:** `/auto-feature`
-
-**How it works:**
-- Dedicated orchestrator agent analyzes project
-- Makes intelligent decisions about workflow
-- Automatically validates outputs
-- Handles errors and retries
-- Full automation
-
-**Pros:**
-- ✅ Maximum automation
-- ✅ Intelligent decision-making
-- ✅ State management across sessions
-- ✅ Error recovery
-- ✅ Validation built-in
-- ✅ Can run parallel tasks
-
-**Cons:**
-- ❌ Higher token usage
-- ❌ Less transparent
-- ❌ More complex to debug
-- ❌ Overkill for simple tasks
-
-**Best for:**
-- Complex multi-feature projects
-- Large teams
-- Repeated similar features
-- Advanced users
-- Projects with many dependencies
 
 ## Decision Matrix
 
@@ -143,18 +106,10 @@ This guide explains when and how to use the orchestration agent vs. simpler appr
 ### Scenario 1: First Project
 **Situation:** New to the template, building a todo app
 
-**Recommendation:** Level 1 (Manual)
+**Recommendation:** Level 1 (Guided)
 ```bash
-/requirements
-# Review docs/requirements.md
-
-/architect
-# Review docs/architecture.md
-
-/design-api
-# Review docs/api-spec.md
-
-# etc...
+/new-feature
+> "Add shopping cart feature"
 ```
 
 **Why:** Learning, understanding each step
@@ -164,26 +119,13 @@ This guide explains when and how to use the orchestration agent vs. simpler appr
 ### Scenario 2: Production E-commerce Site
 **Situation:** Building checkout flow for existing site
 
-**Recommendation:** Level 2 (Commands)
+**Recommendation:** Level 1 (Guided)
 ```bash
 /new-feature
 > "Add checkout flow with payment processing"
 ```
 
 **Why:** Standard workflow, need reliability, team collaboration
-
----
-
-### Scenario 3: SaaS Platform with 20 Microservices
-**Situation:** Adding feature across multiple services
-
-**Recommendation:** Level 3 (Orchestration)
-```bash
-/auto-feature
-> "Add usage analytics across all services"
-```
-
-**Why:** Complex dependencies, state management, automation needed
 
 ---
 
@@ -216,53 +158,33 @@ Approximate token usage for "Add user login feature":
 
 ## Customizing Orchestration
 
-If using Level 3, you can configure the orchestrator:
 
-Create `.claude/orchestrator.config.json`:
-```json
-{
-  "autoValidate": true,        // Validate after each agent
-  "parallelExecution": true,   // Run independent tasks in parallel
-  "autoRetry": true,           // Retry failed agents once
-  "maxRetries": 1,             // Max retry attempts
-  "skipOptionalSteps": true,   // Skip non-critical steps if possible
-  "verboseLogging": false      // Detailed progress logs
-}
-```
 
 ## Troubleshooting
 
-### "Orchestration is too opaque"
-→ Drop down to Level 2 (Commands) for more visibility
+### "I don't know where to start"
+→ Use `/new-feature` - it guides you through the process
 
-### "Too many manual steps"
-→ Move up to Level 2 (Commands) if using Manual
+### "I need to update architecture first"
+→ Run `/requirements` then `/architect`, then `/new-feature`
 
-### "Orchestrator made wrong decision"
-→ Override by using manual commands, or adjust config
-
-### "Can't debug what went wrong"
-→ Check agent outputs in `docs/` directory
-→ Consider dropping to Level 2 for better visibility
+### "The workflow isn't working for my use case"
+→ Check `features/` directory for feature-specific documentation
+→ Review the agents in `.claude/agents/` and customize if needed
 
 ## Recommendation
 
-**For 80% of users and projects:**
-Use Level 2 (`/new-feature`) as your default.
-
-Only use orchestration (Level 3) when project complexity clearly demands it.
+**For all users and projects:**
+Use `/new-feature` as your default workflow.
 
 ## Quick Reference
 
 ```bash
-# Level 1: Full control
-/requirements → /architect → /design-api → /write-tests → /implement-backend → /implement-frontend
-
-# Level 2: Balanced (RECOMMENDED)
+# Recommended: Complete feature workflow
 /new-feature
 
-# Level 3: Full automation (Advanced only)
-/auto-feature
+# Optional: Initial setup
+/requirements → /architect
 ```
 
-Start with Level 2 and adjust based on your needs!
+Start with `/new-feature` for all features!

@@ -63,9 +63,7 @@ Use this to:
 For specific tasks or updating existing code, use individual agents:
 
 ```bash
-/write-tests         # Add tests to existing code
-/implement-backend   # Implement backend logic
-/implement-frontend  # Build UI components
+/new-feature         # Complete feature workflow (recommended)
 /review             # Review code quality
 ```
 

@@ -13,13 +13,12 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 0. **First-Run Detection**: Check if `docs/architecture.md` exists to determine if this is first feature
 1. **Get feature name**: Ask the user for a short, kebab-case feature name (e.g., "user-authentication", "workout-planner")
 2. **Requirements Gathering**: Use `requirements-agent-feature` to gather lightweight, focused requirements
-3. **API Design**: Use `api-designer-agent-feature` to design endpoints and data models
-4. **Write Tests**: Use `test-writer-agent` to create tests (TDD Red phase) - reads from feature folder
-5. **Implement Backend**: Use `backend-agent` to implement server-side logic - reads from feature folder
-6. **Implement Frontend**: Use `frontend-agent` to build UI components - reads from feature folder
-7. **Update Data Browser**: Automatically add new Deno KV models to the Data Browser
-8. **Test for Runtime Errors**: Check frontend routes for common runtime errors and add safety checks
-9. **Verify & Complete**: Run tests, offer to run `/feature-complete` to move to implemented
+3. **Write Tests**: Use `test-writer-agent` to create tests (TDD Red phase) - reads from feature folder
+4. **Implement Backend**: Use `backend-agent` to implement server-side logic - reads from feature folder
+5. **Implement Frontend**: Use `frontend-agent` to build UI components - reads from feature folder
+6. **Update Data Browser**: Automatically add new Deno KV models to the Data Browser
+7. **Test for Runtime Errors**: Check frontend routes for common runtime errors and add safety checks
+8. **Verify & Complete**: Run tests, offer to run `/feature-complete` to move to implemented
 
 ## Instructions
 
@@ -189,15 +188,13 @@ This will create: features/proposed/{feature-name}/requirements.md
 
 **Important**: Pass the feature name to the agent so it knows where to write files.
 
-### Step 4: Launch API Designer Agent
+### Step 4: Launch Test Writer Agent
 
-After requirements are complete, launch **api-designer-agent-feature**:
+After requirements are complete, launch **test-writer-agent**:
 
 ```
-Now I'll design the API endpoints and data models for this feature.
-This will create:
-- features/proposed/{feature-name}/api-spec.md
-- features/proposed/{feature-name}/data-models.md
+Now I'll write tests for this feature (TDD Red phase).
+This will create test files in tests/ directory.
 ```
 
 ### Step 5: Ask About Architecture Changes
@@ -212,27 +209,18 @@ Does this feature require architectural changes? (new database tables, major new
 If yes, launch the **architect-agent** to update global architecture.
 If no, skip this step (saves tokens).
 
-### Step 6: Launch Test Writer
+### Step 6: Launch Backend Agent
 
-Launch the **test-writer-agent**:
+Launch the **backend-agent**:
 
 ```
 I'll write tests for this feature following TDD principles (Red phase).
 The agent will read from: features/proposed/{feature-name}/api-spec.md
 ```
 
-**Note**: The test-writer-agent automatically checks feature folders first.
+**Note**: The backend-agent will implement routes, services, and data models.
 
-### Step 7: Launch Backend Agent
-
-Launch the **backend-agent**:
-
-```
-I'll implement the backend to make the tests pass (Green phase).
-The agent will read from: features/proposed/{feature-name}/
-```
-
-### Step 8: Launch Frontend Agent
+### Step 7: Launch Frontend Agent
 
 Launch the **frontend-agent**:
 
@@ -241,16 +229,11 @@ I'll implement the frontend UI components.
 The agent will read from: features/proposed/{feature-name}/
 ```
 
-### Step 9: Update Data Browser (If New Data Models)
+### Step 8: Update Data Browser (If New Data Models)
 
 After backend implementation, check if the feature added new Deno KV data models:
 
-1. **Read the data-models.md file:**
-   ```
-   Read features/proposed/{feature-name}/data-models.md
-   ```
-
-2. **Look for Deno KV key patterns:**
+1. **Check backend code for KV key patterns:**
    - Check the "Deno KV Schema" section
    - Identify any new key prefixes (e.g., `['workout_category', ...]`)
 
@@ -383,16 +366,13 @@ Perfect! I'll create the feature in: features/proposed/user-profile-editing/
 Step 1: Gathering requirements...
 [Launches requirements-agent-feature]
 
-Step 2: Designing API...
-[Launches api-designer-agent-feature]
-
-Step 3: Writing tests...
+Step 2: Writing tests...
 [Launches test-writer-agent]
 
-Step 4: Implementing backend...
+Step 3: Implementing backend...
 [Launches backend-agent]
 
-Step 5: Implementing frontend...
+Step 4: Implementing frontend...
 [Launches frontend-agent]
 
 ✅ Done! Run /feature-complete when ready to finalize.
@@ -401,7 +381,7 @@ Step 5: Implementing frontend...
 ## Best Practices
 
 - **Agents run sequentially**: Each agent reads outputs from previous agents
-- **Feature-scoped first**: Always use feature agents (requirements-agent-feature, api-designer-agent-feature)
+- **Feature-scoped first**: Always use requirements-agent-feature for gathering requirements
 - **Skip unnecessary steps**: Don't update architecture for small features
 - **Keep user informed**: Show progress between agent launches
 - **Validate feature name**: Ensure kebab-case (e.g., "user-auth", not "User Auth")

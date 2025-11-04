@@ -594,4 +594,4 @@ assertEquals(typeof result.id, 'string');
 
 After writing tests, recommend:
 - Run tests to confirm they fail (Red phase)
-- `/implement-backend` or `/implement-frontend` - Implement code to pass tests
+- `/new-feature` - Implement full feature with tests

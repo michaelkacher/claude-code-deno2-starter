@@ -331,4 +331,4 @@ Date: [YYYY-MM-DD]
 ## Next Steps
 
 After completing architecture, recommend running:
-- `/design-api` - To create detailed API contracts
+- `/new-feature` - To implement features following the architecture
