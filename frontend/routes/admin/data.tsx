@@ -5,12 +5,12 @@
 
 import { PageProps } from '$fresh/server.ts';
 import {
-  AdminNavLink,
   ContentContainer,
   PageContainer,
   PageHeader
 } from '../../components/common/index.ts';
 import AdminDataBrowser from '../../islands/AdminDataBrowser.tsx';
+import AdminHeaderActions from '../../islands/AdminHeaderActions.tsx';
 
 export default function AdminDataPage(props: PageProps) {
   return (
@@ -18,16 +18,7 @@ export default function AdminDataPage(props: PageProps) {
       <PageHeader
         title="Data Browser"
         subtitle="View and filter all models in Deno KV storage"
-        actions={<>
-          <AdminNavLink href="/admin/users">Users</AdminNavLink>
-          <AdminNavLink href="/admin/jobs">Jobs</AdminNavLink>
-          <button
-            onClick="document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'; localStorage.clear(); window.location.href = '/login';"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Logout
-          </button>
-        </>}
+        actions={<AdminHeaderActions currentPage="data" />}
       />
 
       <ContentContainer>

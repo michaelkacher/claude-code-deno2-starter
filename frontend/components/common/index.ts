@@ -3,7 +3,6 @@
  * Centralized exports for reusable common components
  */
 
-export { default as AdminNavLink } from './AdminNavLink.tsx';
 export { default as ContentContainer } from './ContentContainer.tsx';
 export { default as FeatureCard } from './FeatureCard.tsx';
 export { default as PageContainer } from './PageContainer.tsx';
