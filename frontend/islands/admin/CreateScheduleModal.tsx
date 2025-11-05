@@ -4,8 +4,8 @@
  * Form for creating new scheduled jobs
  */
 
-import { useSignal } from '@preact/signals';
 import { IS_BROWSER } from '$fresh/runtime.ts';
+import { useSignal } from '@preact/signals';
 
 interface CreateScheduleModalProps {
   onClose: () => void;
@@ -216,37 +216,37 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
   };
 
   return (
-    <div class="modal-overlay" onClick={onClose}>
-      <div class="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div class="modal-header">
-          <h2>Create New Schedule</h2>
-          <button class="close-button" onClick={onClose}>×</button>
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5" onClick={onClose}>
+      <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-[600px] max-h-[90vh] overflow-y-auto shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <div class="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="m-0 text-2xl text-gray-900 dark:text-gray-100">Create New Schedule</h2>
+          <button class="bg-transparent border-none text-3xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 cursor-pointer p-0 w-8 h-8 leading-8 text-center" onClick={onClose}>×</button>
         </div>
 
-        <form onSubmit={handleSubmit} class="schedule-form">
+        <form onSubmit={handleSubmit} class="p-5">
           {/* Schedule Name */}
-          <div class="form-group">
-            <label>Schedule Name: *</label>
+          <div class="mb-5">
+            <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-200">Schedule Name: *</label>
             <input
               type="text"
               value={scheduleName.value}
               onInput={(e) => scheduleName.value = (e.target as HTMLInputElement).value}
               placeholder="e.g., daily-email-report"
-              class="form-control"
+              class="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               required
             />
-            <small class="form-hint">
+            <small class="block mt-1 text-xs text-gray-600 dark:text-gray-400">
               Unique identifier for this schedule
             </small>
           </div>
 
           {/* Cron Pattern Selector */}
-          <div class="form-group">
-            <label>Schedule Pattern:</label>
+          <div class="mb-5">
+            <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-200">Schedule Pattern:</label>
             <select
               value={selectedPattern.value}
               onChange={(e) => handlePatternChange((e.target as HTMLSelectElement).value as keyof typeof CRON_PATTERNS)}
-              class="form-control"
+              class="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
             >
               {Object.entries(CRON_PATTERNS).map(([key, pattern]) => (
                 <option key={key} value={key}>
@@ -257,28 +257,28 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
           </div>
 
           {/* Cron Expression */}
-          <div class="form-group">
-            <label>Cron Expression: *</label>
+          <div class="mb-5">
+            <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-200">Cron Expression: *</label>
             <input
               type="text"
               value={cronExpression.value}
               onInput={(e) => cronExpression.value = (e.target as HTMLInputElement).value}
               placeholder="* * * * *"
-              class="form-control code-input"
+              class="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-[13px] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               required
             />
-            <small class="form-hint">
+            <small class="block mt-1 text-xs text-gray-600 dark:text-gray-400">
               Format: minute hour day month dayOfWeek (e.g., "0 * * * *" = every hour)
             </small>
           </div>
 
           {/* Job Type Selector */}
-          <div class="form-group">
-            <label>Job Type: *</label>
+          <div class="mb-5">
+            <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-200">Job Type: *</label>
             <select
               value={selectedJobType.value}
               onChange={(e) => handleJobTypeChange((e.target as HTMLSelectElement).value)}
-              class="form-control"
+              class="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
             >
               {JOB_TYPES.map((job) => (
                 <option key={job.name} value={job.name}>
@@ -286,35 +286,35 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
                 </option>
               ))}
             </select>
-            <small class="form-hint">
+            <small class="block mt-1 text-xs text-gray-600 dark:text-gray-400">
               The type of job to run when this schedule triggers
             </small>
           </div>
 
           {/* Job Data */}
-          <div class="form-group">
-            <label>Job Data (JSON): *</label>
+          <div class="mb-5">
+            <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-200">Job Data (JSON): *</label>
             <textarea
               value={jobData.value}
               onInput={(e) => jobData.value = (e.target as HTMLTextAreaElement).value}
               placeholder='{"key": "value"}'
-              class="form-control code-input"
+              class="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-[13px] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               rows={10}
               required
             />
-            <small class="form-hint">
+            <small class="block mt-1 text-xs text-gray-600 dark:text-gray-400">
               Data passed to the job handler when scheduled. Must be valid JSON.
             </small>
           </div>
 
           {/* Options Row */}
-          <div class="form-row">
-            <div class="form-group">
-              <label>Timezone:</label>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="mb-5">
+              <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-200">Timezone:</label>
               <select
                 value={timezone.value}
                 onChange={(e) => timezone.value = (e.target as HTMLSelectElement).value}
-                class="form-control"
+                class="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               >
                 {TIMEZONES.map((tz) => (
                   <option key={tz} value={tz}>
@@ -322,32 +322,32 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
                   </option>
                 ))}
               </select>
-              <small class="form-hint">Timezone for schedule execution</small>
+              <small class="block mt-1 text-xs text-gray-600 dark:text-gray-400">Timezone for schedule execution</small>
             </div>
 
-            <div class="form-group">
-              <label>Enabled:</label>
-              <div class="checkbox-wrapper">
+            <div class="mb-5">
+              <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-200">Enabled:</label>
+              <div class="flex items-center gap-2 pt-2.5">
                 <input
                   type="checkbox"
                   checked={enabled.value}
                   onChange={(e) => enabled.value = (e.target as HTMLInputElement).checked}
-                  class="form-checkbox"
+                  class="w-[18px] h-[18px] cursor-pointer"
                 />
-                <span>Enable schedule immediately</span>
+                <span class="text-gray-700 dark:text-gray-200">Enable schedule immediately</span>
               </div>
             </div>
           </div>
 
           {/* Error Display */}
           {error.value && (
-            <div class="error-message">
+            <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-200 px-3 py-2 rounded-md mb-5 text-sm">
               {error.value}
             </div>
           )}
 
           {/* Actions */}
-          <div class="modal-actions">
+          <div class="flex justify-end gap-3 pt-5 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
@@ -368,139 +368,6 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
       </div>
 
       <style>{`
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          padding: 20px;
-        }
-
-        .modal-content {
-          background: white;
-          border-radius: 8px;
-          width: 100%;
-          max-width: 600px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 20px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .modal-header h2 {
-          margin: 0;
-          font-size: 24px;
-          color: #111827;
-        }
-
-        .close-button {
-          background: none;
-          border: none;
-          font-size: 32px;
-          color: #6b7280;
-          cursor: pointer;
-          padding: 0;
-          width: 32px;
-          height: 32px;
-          line-height: 32px;
-          text-align: center;
-        }
-
-        .close-button:hover {
-          color: #111827;
-        }
-
-        .schedule-form {
-          padding: 20px;
-        }
-
-        .form-group {
-          margin-bottom: 20px;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 8px;
-          font-weight: 600;
-          color: #374151;
-        }
-
-        .form-control {
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          font-size: 14px;
-          font-family: inherit;
-        }
-
-        .code-input {
-          font-family: 'Courier New', monospace;
-          font-size: 13px;
-        }
-
-        .form-control:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .form-hint {
-          display: block;
-          margin-top: 4px;
-          font-size: 12px;
-          color: #6b7280;
-        }
-
-        .form-row {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
-        }
-
-        .checkbox-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding-top: 10px;
-        }
-
-        .form-checkbox {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
-        }
-
-        .error-message {
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          color: #dc2626;
-          padding: 12px;
-          border-radius: 6px;
-          margin-bottom: 20px;
-        }
-
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          padding-top: 20px;
-          border-top: 1px solid #e5e7eb;
-        }
-
         .btn {
           padding: 10px 20px;
           border-radius: 6px;
@@ -524,8 +391,17 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
           color: #374151;
         }
 
+        :global(.dark) .btn-secondary {
+          background: #374151;
+          color: #f3f4f6;
+        }
+
         .btn-secondary:hover:not(:disabled) {
           background: #e5e7eb;
+        }
+
+        :global(.dark) .btn-secondary:hover:not(:disabled) {
+          background: #4b5563;
         }
 
         .btn:disabled {

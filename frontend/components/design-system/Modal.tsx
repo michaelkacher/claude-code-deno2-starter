@@ -40,30 +40,30 @@ export function Modal({
     <div class="fixed inset-0 z-50 overflow-y-auto animate-fadeIn">
       {/* Overlay */}
       <div
-        class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-all duration-300"
+        class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm transition-all duration-300"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div class="flex min-h-full items-center justify-center p-4">
         <div
-          class={`relative bg-white rounded-2xl shadow-2xl ${sizeStyle} w-full transform transition-all duration-300 ease-out animate-scaleIn`}
+          class={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ${sizeStyle} w-full transform transition-all duration-300 ease-out animate-scaleIn`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {(title || showClose) && (
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               {title && (
-                <h2 class="text-2xl font-bold text-gray-900">{title}</h2>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{title}</h2>
               )}
               {showClose && (
                 <button
                   onClick={onClose}
-                  class="p-2 rounded-lg hover:bg-gray-100 transition-colors ml-auto"
+                  class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ml-auto"
                   aria-label="Close modal"
                 >
                   <svg
-                    class="w-6 h-6 text-gray-600"
+                    class="w-6 h-6 text-gray-600 dark:text-gray-400"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
