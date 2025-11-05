@@ -2,6 +2,7 @@ import { Context, Hono } from 'hono';
 import { setCookie } from 'jsr:@hono/hono/cookie';
 import { z } from 'zod';
 import { bodySizeLimits } from '../lib/body-limit.ts';
+import { cacheStrategies } from '../lib/cache-control.ts';
 import { csrfProtection, setCsrfToken } from '../lib/csrf.ts';
 import { sendPasswordResetEmail, sendVerificationEmail } from '../lib/email.ts';
 import { createAccessToken, createRefreshToken, verifyToken } from '../lib/jwt.ts';
@@ -38,7 +39,7 @@ auth.get('/csrf-token', (c: Context) => {
 });
 
 // Apply CSRF protection, strict body size limit and rate limiting to login endpoint
-auth.post('/login', csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, validateBody(LoginSchema), async (c: Context) => {
+auth.post('/login', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, validateBody(LoginSchema), async (c: Context) => {
   try {
     const { email, password } = c.get('validatedBody') as { email: string; password: string };
 
@@ -115,7 +116,7 @@ auth.post('/login', csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, 
 });
 
 // Apply CSRF protection, strict body size limit and rate limiting to signup endpoint
-auth.post('/signup', csrfProtection(), bodySizeLimits.strict, rateLimiters.signup, validateBody(SignupSchema), async (c: Context) => {
+auth.post('/signup', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits.strict, rateLimiters.signup, validateBody(SignupSchema), async (c: Context) => {
   try {
     const { email, password, name } = c.get('validatedBody') as { email: string; password: string; name: string };
 
@@ -307,7 +308,7 @@ auth.post('/refresh', async (c: Context) => {
 });
 
 // Logout endpoint - revoke current refresh token
-auth.post('/logout', async (c: Context) => {
+auth.post('/logout', cacheStrategies.noCache(), async (c: Context) => {
   try {
     const refreshToken = c.req.header('Cookie')
       ?.split(';')
@@ -849,7 +850,7 @@ auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSc
  * Get current user information
  * Requires valid JWT token
  */
-auth.get('/me', async (c: Context) => {
+auth.get('/me', cacheStrategies.userProfile(), async (c: Context) => {
   try {
     // Get token from Authorization header
     const authHeader = c.req.header('Authorization');

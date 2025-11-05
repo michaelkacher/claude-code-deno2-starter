@@ -5,9 +5,10 @@
  */
 
 import { Hono } from 'hono';
+import { requireAdmin } from '../lib/admin-auth.ts';
+import { cacheStrategies } from '../lib/cache-control.ts';
 import { queue } from '../lib/queue.ts';
 import { scheduler } from '../lib/scheduler.ts';
-import { requireAdmin } from '../lib/admin-auth.ts';
 
 const app = new Hono();
 
@@ -21,7 +22,7 @@ app.use('*', requireAdmin());
 /**
  * GET /jobs - List jobs with filters
  */
-app.get('/jobs', async (c) => {
+app.get('/jobs', cacheStrategies.dynamic(), async (c) => {
   const status = c.req.query('status') as any;
   const name = c.req.query('name');
   const limit = parseInt(c.req.query('limit') || '50');
@@ -179,7 +180,7 @@ app.post('/jobs/cleanup', async (c) => {
 /**
  * GET /schedules - List all schedules
  */
-app.get('/schedules', (c) => {
+app.get('/schedules', cacheStrategies.dynamic(), (c) => {
   const schedules = scheduler.getSchedules();
 
   return c.json({

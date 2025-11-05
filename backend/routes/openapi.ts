@@ -4,6 +4,7 @@
  */
 
 import { Hono } from 'hono';
+import { cacheStrategies } from '../lib/cache-control.ts';
 import openApiSpec from '../openapi.json' with { type: 'json' };
 
 const app = new Hono();
@@ -12,7 +13,7 @@ const app = new Hono();
  * GET /openapi.json - OpenAPI specification
  * Returns the complete OpenAPI 3.1 specification in JSON format
  */
-app.get('/openapi.json', (c) => {
+app.get('/openapi.json', cacheStrategies.static(), (c) => {
   return c.json(openApiSpec);
 });
 
@@ -20,7 +21,7 @@ app.get('/openapi.json', (c) => {
  * GET /docs - Swagger UI
  * Interactive API documentation interface
  */
-app.get('/docs', (c) => {
+app.get('/docs', cacheStrategies.static(), (c) => {
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -75,7 +76,7 @@ app.get('/docs', (c) => {
  * GET /redoc - ReDoc UI
  * Alternative API documentation interface with a cleaner design
  */
-app.get('/redoc', (c) => {
+app.get('/redoc', cacheStrategies.static(), (c) => {
   const html = `
 <!DOCTYPE html>
 <html lang="en">

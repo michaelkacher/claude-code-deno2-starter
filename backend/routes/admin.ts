@@ -6,6 +6,7 @@
 import { Context, Hono } from 'hono';
 import { z } from 'zod';
 import { requireAdmin } from '../lib/admin-auth.ts';
+import { cacheStrategies } from '../lib/cache-control.ts';
 import { getKv } from '../lib/kv.ts';
 import { revokeAllUserTokens } from '../lib/token-revocation.ts';
 import { validateParams, validateQuery } from '../middleware/validate.ts';
@@ -21,7 +22,7 @@ admin.use('*', requireAdmin());
  * GET /api/admin/users
  * List all users with optional filtering and pagination
  */
-admin.get('/users', validateQuery(ListUsersQuerySchema), async (c: Context) => {
+admin.get('/users', cacheStrategies.adminData(), validateQuery(ListUsersQuerySchema), async (c: Context) => {
   try {
     const { page, limit, search, role, emailVerified } = c.get('validatedQuery') as {
       page: number;
@@ -347,7 +348,7 @@ admin.delete('/users/:id', validateParams(UserIdParamSchema), async (c: Context)
  * GET /api/admin/stats
  * Get admin dashboard statistics
  */
-admin.get('/stats', async (c: Context) => {
+admin.get('/stats', cacheStrategies.adminData(), async (c: Context) => {
   try {
     let totalUsers = 0;
     let verifiedUsers = 0;
