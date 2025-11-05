@@ -185,9 +185,10 @@ async function watchNotifications(userId: string, socket: WebSocket) {
  * Handle incoming messages from client
  */
 function handleClientMessage(userId: string, data: any) {
+  const client = clients.get(userId);
+  
   switch (data.type) {
     case 'ping':
-      const client = clients.get(userId);
       if (client) {
         sendMessage(client.socket, { type: 'pong' });
       }
@@ -198,7 +199,6 @@ function handleClientMessage(userId: string, data: any) {
       NotificationService.getUserNotifications(userId, {
         limit: data.limit || 10,
       }).then((notifications) => {
-        const client = clients.get(userId);
         if (client) {
           sendMessage(client.socket, {
             type: 'notifications_list',
@@ -211,7 +211,6 @@ function handleClientMessage(userId: string, data: any) {
     case 'subscribe_jobs':
       // Client wants real-time job updates
       console.log(`[WebSocket] User ${userId} subscribed to job updates`);
-      const client = clients.get(userId);
       if (client) {
         sendMessage(client.socket, {
           type: 'jobs_subscribed',
