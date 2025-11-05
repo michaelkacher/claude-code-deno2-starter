@@ -254,20 +254,20 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
       {/* Filters */}
       <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
           <input
             type="text"
             placeholder="Name, email, or ID..."
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             value={search.value}
             onInput={(e) => search.value = (e.target as HTMLInputElement).value}
             onKeyPress={(e) => e.key === 'Enter' && fetchUsers(1)}
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
           <select
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             value={roleFilter.value}
             onChange={(e) => {
               roleFilter.value = (e.target as HTMLSelectElement).value;
@@ -280,9 +280,9 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Email Status</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Status</label>
           <select
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             value={verifiedFilter.value}
             onChange={(e) => {
               verifiedFilter.value = (e.target as HTMLSelectElement).value;
@@ -304,46 +304,46 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
         >
           {loading.value ? 'Loading...' : 'Apply Filters'}
         </button>
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
           Showing {users.value.length} of {pagination.value.total} users
         </p>
       </div>
 
       {/* Table */}
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 User
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Role
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Email Status
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Created
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {users.value.map((user) => (
-              <tr key={user.id} class={user.id === currentUserId ? 'bg-purple-50' : ''}>
+              <tr key={user.id} class={user.id === currentUserId ? 'bg-purple-50 dark:bg-purple-900/20' : ''}>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div class="text-sm font-medium text-gray-900">
+                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {user.name}
                       {user.id === currentUserId && (
-                        <span class="ml-2 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded">You</span>
+                        <span class="ml-2 px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded">You</span>
                       )}
                     </div>
-                    <div class="text-sm text-gray-500">{user.email}</div>
-                    <div class="text-xs text-gray-400 font-mono">{user.id.slice(0, 8)}...</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
+                    <div class="text-xs text-gray-400 dark:text-gray-500 font-mono">{user.id.slice(0, 8)}...</div>
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -358,13 +358,13 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class={`px-2 py-1 text-xs font-semibold rounded ${
                     user.emailVerified
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                      : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
                   }`}>
                     {user.emailVerified ? '✓ Verified' : '⚠ Unverified'}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(user.createdAt)}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -373,7 +373,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
                     {user.id !== currentUserId && (
                       <button
                         onClick={() => changeRole(user.id, user.role === 'admin' ? 'user' : 'admin')}
-                        class="text-purple-600 hover:text-purple-900"
+                        class="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
                         title={user.role === 'admin' ? 'Demote to user' : 'Promote to admin'}
                       >
                         {user.role === 'admin' ? '↓' : '↑'}
@@ -424,17 +424,17 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
           <button
             onClick={() => fetchUsers(pagination.value.page - 1)}
             disabled={!pagination.value.hasPrev || loading.value}
-            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             ← Previous
           </button>
-          <span class="text-sm text-gray-600">
+          <span class="text-sm text-gray-600 dark:text-gray-400">
             Page {pagination.value.page} of {pagination.value.totalPages}
           </span>
           <button
             onClick={() => fetchUsers(pagination.value.page + 1)}
             disabled={!pagination.value.hasNext || loading.value}
-            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next →
           </button>

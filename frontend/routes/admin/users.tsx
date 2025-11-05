@@ -4,6 +4,13 @@
  */
 
 import { Handlers, PageProps } from '$fresh/server.ts';
+import {
+  AdminNavLink,
+  ContentContainer,
+  PageContainer,
+  PageHeader,
+  StatCard
+} from '../../components/common/index.ts';
 import AdminUserTable from '../../islands/AdminUserTable.tsx';
 
 interface User {
@@ -178,66 +185,49 @@ export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
   const { users, pagination, stats, currentUser } = data;
 
   return (
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header class="bg-white dark:bg-gray-800 shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="flex justify-between items-center">
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Panel</h1>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Logged in as {currentUser.name} ({currentUser.email})
-              </p>
-            </div>
-            <div class="flex gap-4">
-              <a
-                href="/admin/data"
-                class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              >
-                Data Browser
-              </a>
-              <a
-                href="/admin/jobs"
-                class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              >
-                Jobs
-              </a>
-              
-              <button
-                onClick={() => {
-                  document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                  localStorage.clear();
-                  window.location.href = '/login';
-                }}
-                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <PageContainer>
+      <PageHeader
+        title="Admin Panel"
+        subtitle={`Logged in as ${currentUser.name} (${currentUser.email})`}
+        actions={<>
+          <AdminNavLink href="/admin/data">Data Browser</AdminNavLink>
+          <AdminNavLink href="/admin/jobs">Jobs</AdminNavLink>
+          <button
+            onClick={() => {
+              document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+              localStorage.clear();
+              window.location.href = '/login';
+            }}
+            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Logout
+          </button>
+        </>}
+      />
 
-      {/* Stats Dashboard */}
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <ContentContainer>
+        {/* Stats Dashboard */}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Total Users</h3>
-            <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalUsers}</p>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Verified</h3>
-            <p class="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">{stats.verifiedUsers}</p>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{stats.verificationRate}% rate</p>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Admins</h3>
-            <p class="mt-2 text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.adminUsers}</p>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Recent (24h)</h3>
-            <p class="mt-2 text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.recentSignups24h}</p>
-          </div>
+          <StatCard
+            label="Total Users"
+            value={stats.totalUsers}
+          />
+          <StatCard
+            label="Verified"
+            value={stats.verifiedUsers}
+            valueColor="green"
+            subtitle={`${stats.verificationRate}% rate`}
+          />
+          <StatCard
+            label="Admins"
+            value={stats.adminUsers}
+            valueColor="purple"
+          />
+          <StatCard
+            label="Recent (24h)"
+            value={stats.recentSignups24h}
+            valueColor="blue"
+          />
         </div>
 
         {/* User Table */}
@@ -248,7 +238,7 @@ export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
             currentUserId={currentUser.id}
           />
         </div>
-      </div>
-    </div>
+      </ContentContainer>
+    </PageContainer>
   );
 }

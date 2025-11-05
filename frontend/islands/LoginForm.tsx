@@ -84,13 +84,13 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} class="space-y-6">
       {error && (
-        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+        <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       )}
       
       <div>
-        <label htmlFor="email" class="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Email Address
         </label>
         <input
@@ -99,14 +99,14 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
           value={email}
           onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
           required
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="you@example.com"
           disabled={isLoading}
         />
       </div>
 
       <div>
-        <label htmlFor="password" class="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Password
         </label>
         <input
@@ -115,7 +115,7 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
           value={password}
           onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
           required
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="••••••••"
           disabled={isLoading}
         />

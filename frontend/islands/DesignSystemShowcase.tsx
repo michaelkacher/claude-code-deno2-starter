@@ -68,7 +68,7 @@ export default function DesignSystemShowcase() {
             <Divider />
 
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">Sizes</p>
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Sizes</p>
               <div class="flex flex-wrap items-center gap-3">
                 <Button size="sm">Small</Button>
                 <Button size="md">Medium</Button>
@@ -80,7 +80,7 @@ export default function DesignSystemShowcase() {
             <Divider />
 
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">States</p>
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">States</p>
               <div class="flex flex-wrap gap-3">
                 <Button disabled>Disabled</Button>
                 <Button loading>Loading</Button>
@@ -103,7 +103,7 @@ export default function DesignSystemShowcase() {
       <Card className="mb-8">
         <CardHeader>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Cards</h2>
-          <p class="text-gray-600 mt-1">Container components with variants</p>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Container components with variants</p>
         </CardHeader>
         <CardBody>
           <Grid cols={3}>
@@ -137,7 +137,7 @@ export default function DesignSystemShowcase() {
       <Card className="mb-8">
         <CardHeader>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Badges</h2>
-          <p class="text-gray-600 mt-1">Status indicators and labels</p>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Status indicators and labels</p>
         </CardHeader>
         <CardBody>
           <div class="flex flex-wrap gap-3">
@@ -161,7 +161,7 @@ export default function DesignSystemShowcase() {
       <Card className="mb-8">
         <CardHeader>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Form Inputs</h2>
-          <p class="text-gray-600 mt-1">Text inputs and selects</p>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Text inputs and selects</p>
         </CardHeader>
         <CardBody>
           <Stack spacing={6}>
@@ -218,12 +218,12 @@ export default function DesignSystemShowcase() {
       <Card className="mb-8">
         <CardHeader>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Avatars</h2>
-          <p class="text-gray-600 mt-1">User profile images</p>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">User profile images</p>
         </CardHeader>
         <CardBody>
           <Stack spacing={6}>
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">Sizes</p>
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Sizes</p>
               <div class="flex flex-wrap items-center gap-4">
                 <Avatar name="John Doe" size="xs" />
                 <Avatar name="John Doe" size="sm" />
@@ -237,7 +237,7 @@ export default function DesignSystemShowcase() {
             <Divider />
 
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 With Status
               </p>
               <div class="flex flex-wrap items-center gap-4">
@@ -251,7 +251,7 @@ export default function DesignSystemShowcase() {
             <Divider />
 
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Avatar Group
               </p>
               <AvatarGroup
@@ -274,12 +274,12 @@ export default function DesignSystemShowcase() {
       <Card className="mb-8">
         <CardHeader>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Progress Indicators</h2>
-          <p class="text-gray-600 mt-1">Loading states and progress bars</p>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Loading states and progress bars</p>
         </CardHeader>
         <CardBody>
           <Stack spacing={6}>
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Progress Bars
               </p>
               <Stack spacing={4}>
@@ -312,7 +312,7 @@ export default function DesignSystemShowcase() {
             <Divider />
 
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">Spinners</p>
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Spinners</p>
               <div class="flex flex-wrap items-center gap-4">
                 <Spinner size="sm" />
                 <Spinner size="md" />
@@ -324,7 +324,7 @@ export default function DesignSystemShowcase() {
             <Divider />
 
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">Steps</p>
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Steps</p>
               <Steps
                 steps={[
                   { label: 'Select', description: 'Choose option' },
@@ -362,7 +362,7 @@ export default function DesignSystemShowcase() {
       <Card className="mb-8">
         <CardHeader>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Overlays</h2>
-          <p class="text-gray-600 mt-1">Modals and side panels</p>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Modals and side panels</p>
         </CardHeader>
         <CardBody>
           <div class="flex gap-4">

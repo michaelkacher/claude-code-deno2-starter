@@ -130,17 +130,17 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
   if (success) {
     return (
       <div class="space-y-6">
-        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+        <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-900 rounded-lg p-6">
           <div class="flex items-start gap-3">
-            <svg class="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div class="flex-1">
-              <h3 class="text-lg font-semibold text-green-900 mb-2">Account Created Successfully!</h3>
-              <p class="text-green-800 mb-4">
+              <h3 class="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">Account Created Successfully!</h3>
+              <p class="text-green-800 dark:text-green-200 mb-4">
                 {successMessage}
               </p>
-              <p class="text-sm text-green-700">
+              <p class="text-sm text-green-700 dark:text-green-300">
                 Redirecting you to the app in 3 seconds...
               </p>
             </div>
@@ -157,13 +157,13 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
   return (
     <form onSubmit={handleSubmit} class="space-y-6">
       {error && (
-        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+        <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       )}
       
       <div>
-        <label htmlFor="name" class="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Full Name
         </label>
         <input
@@ -172,14 +172,14 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
           value={name}
           onInput={(e) => setName((e.target as HTMLInputElement).value)}
           required
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="John Doe"
           disabled={isLoading}
         />
       </div>
 
       <div>
-        <label htmlFor="email" class="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Email Address
         </label>
         <input
@@ -188,14 +188,14 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
           value={email}
           onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
           required
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="you@example.com"
           disabled={isLoading}
         />
       </div>
 
       <div>
-        <label htmlFor="password" class="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Password
         </label>
         <input
@@ -205,7 +205,7 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
           onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
           required
           minLength={8}
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="••••••••"
           disabled={isLoading}
         />
@@ -213,7 +213,7 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
       </div>
 
       <div>
-        <label htmlFor="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Confirm Password
         </label>
         <input
@@ -223,7 +223,7 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
           onInput={(e) => setConfirmPassword((e.target as HTMLInputElement).value)}
           required
           minLength={8}
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="••••••••"
           disabled={isLoading}
         />
