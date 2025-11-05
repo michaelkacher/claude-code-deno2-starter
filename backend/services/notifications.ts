@@ -34,13 +34,14 @@ export class NotificationService {
       createdAt: now,
     };
 
-    // Atomic transaction: store notification + create index for listing
+    // Atomic transaction: store notification + create index for listing + trigger signal
     const result = await kv.atomic()
       .set(['notifications', data.userId, notificationId], notification)
       .set(
         ['notifications_by_user', data.userId, now, notificationId],
         null,
       ) // Secondary index
+      .set(['notification_updates', data.userId], now) // Signal for watchers
       .commit();
 
     if (!result.ok) {
@@ -143,16 +144,22 @@ export class NotificationService {
     }
 
     // Update with read status
+    const now = new Date().toISOString();
     const updatedNotification: NotificationData = {
       ...entry.value,
       read: true,
-      readAt: new Date().toISOString(),
+      readAt: now,
     };
 
-    await kv.set(
-      ['notifications', userId, notificationId],
-      updatedNotification,
-    );
+    // Update notification and trigger signal
+    const result = await kv.atomic()
+      .set(['notifications', userId, notificationId], updatedNotification)
+      .set(['notification_updates', userId], now)
+      .commit();
+
+    if (!result.ok) {
+      throw new Error('Failed to mark notification as read');
+    }
 
     return updatedNotification;
   }
@@ -183,6 +190,11 @@ export class NotificationService {
       }
     }
 
+    // Trigger signal after all updates
+    if (count > 0) {
+      await kv.set(['notification_updates', userId], now);
+    }
+
     return count;
   }
 
@@ -206,7 +218,8 @@ export class NotificationService {
       return false;
     }
 
-    // Atomic transaction: delete notification + index
+    // Atomic transaction: delete notification + index + trigger signal
+    const now = new Date().toISOString();
     const result = await kv.atomic()
       .delete(['notifications', userId, notificationId])
       .delete([
@@ -215,6 +228,7 @@ export class NotificationService {
         entry.value.createdAt,
         notificationId,
       ])
+      .set(['notification_updates', userId], now)
       .commit();
 
     return result.ok;

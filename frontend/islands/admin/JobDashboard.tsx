@@ -316,13 +316,7 @@ export default function JobDashboard() {
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('[JobDashboard] WebSocket connected');
-      
-      // Authenticate
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        ws.send(JSON.stringify({ type: 'auth', token }));
-      }
+      console.log('[JobDashboard] WebSocket connected, waiting for auth prompt');
     };
 
     ws.onmessage = (event) => {
@@ -331,8 +325,21 @@ export default function JobDashboard() {
         console.log('[JobDashboard] WebSocket message:', data.type);
 
         switch (data.type) {
+          case 'auth_required':
+            // Server requesting authentication
+            console.log('[JobDashboard] Auth required, sending token');
+            const token = localStorage.getItem('access_token');
+            if (token) {
+              ws.send(JSON.stringify({ type: 'auth', token }));
+            } else {
+              console.error('[JobDashboard] No token available');
+              ws.close();
+            }
+            break;
+
           case 'connected':
-            // Subscribe to job updates
+            // Successfully authenticated - subscribe to job updates
+            console.log('[JobDashboard] Authenticated, subscribing to job updates');
             ws.send(JSON.stringify({ type: 'subscribe_jobs' }));
             break;
 
@@ -360,8 +367,13 @@ export default function JobDashboard() {
             stats.value = data.stats;
             break;
 
+          case 'ping':
+            // Server heartbeat - respond with pong
+            ws.send(JSON.stringify({ type: 'pong' }));
+            break;
+
           case 'pong':
-            // Heartbeat response
+            // Heartbeat response (we don't send pings, only respond to them)
             break;
 
           case 'auth_failed':

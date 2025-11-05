@@ -86,8 +86,10 @@ export function setupWebSocketConnection() {
               unreadCount,
             });
 
-            // Start watching for notification changes
-            watchNotifications(userId, ws);
+            // Start watching for notification changes (don't await - runs in background)
+            watchNotifications(userId, ws).catch(error => {
+              logger.error('Watch notifications failed', error, { userId });
+            });
 
             // Start heartbeat
             startHeartbeat(client);
@@ -146,37 +148,70 @@ export function setupWebSocketConnection() {
 
 /**
  * Watch for notification changes using Deno KV
+ * 
+ * Watches a signal key that gets updated whenever notifications are created/updated/deleted.
+ * This works for notifications created through the API (same process).
+ * 
+ * Note: Test scripts that open their own KV connection won't trigger this watcher,
+ * but in production all notifications are created via API so this works perfectly.
  */
 async function watchNotifications(userId: string, socket: WebSocket) {
   const kv = await getKv();
 
   try {
-    // Watch for changes to user's notifications
-    const watcher = kv.watch([['notifications', userId]]);
+    const signalKey: Deno.KvKey = ['notification_updates', userId];
+    
+    logger.debug('Setting up notification watcher', { userId });
+    
+    const watcher = kv.watch([signalKey]);
+    let isFirstEvent = true;
 
-    for await (const _entries of watcher) {
+    for await (const entries of watcher) {
       // Check if socket is still open
       if (socket.readyState !== WebSocket.OPEN) {
+        logger.debug('Socket closed, stopping watcher', { userId });
         break;
       }
 
-      // Fetch updated notification data
-      const unreadCount = await NotificationService.getUnreadCount(userId);
-      const latestNotifications = await NotificationService.getUserNotifications(
-        userId,
-        { limit: 5 },
-      );
+      // Skip the very first event (initial state when watch starts)
+      if (isFirstEvent) {
+        isFirstEvent = false;
+        const signalEntry = entries[0];
+        logger.debug('Skipping initial watcher state', { userId, initialValue: signalEntry.value });
+        continue;
+      }
 
-      // Send update to client
-      sendMessage(socket, {
-        type: 'notification_update',
-        unreadCount,
-        latestNotifications,
-        timestamp: new Date().toISOString(),
-      });
+      const signalEntry = entries[0];
+      logger.debug('Watcher detected notification change', { userId, timestamp: signalEntry.value });
+      
+      await sendNotificationUpdate(userId, socket);
     }
   } catch (error) {
     logger.error('Watcher error', error, { userId });
+  }
+}
+
+/**
+ * Send notification update to client
+ */
+async function sendNotificationUpdate(userId: string, socket: WebSocket) {
+  try {
+    const unreadCount = await NotificationService.getUnreadCount(userId);
+    const latestNotifications = await NotificationService.getUserNotifications(
+      userId,
+      { limit: 5 },
+    );
+
+    sendMessage(socket, {
+      type: 'notification_update',
+      unreadCount,
+      latestNotifications,
+      timestamp: new Date().toISOString(),
+    });
+    
+    logger.debug('Sent notification update', { userId, unreadCount, count: latestNotifications.length });
+  } catch (error) {
+    logger.error('Error sending notification update', error, { userId });
   }
 }
 
@@ -188,9 +223,15 @@ function handleClientMessage(userId: string, data: any) {
   
   switch (data.type) {
     case 'ping':
+      // Client sent ping, respond with pong
       if (client) {
         sendMessage(client.socket, { type: 'pong' });
       }
+      break;
+
+    case 'pong':
+      // Client responded to our ping - heartbeat is alive
+      // isAlive is already set to true before this function is called
       break;
 
     case 'fetch_notifications':

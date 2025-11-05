@@ -109,28 +109,96 @@ export default function UserProfileDropdown() {
     }
 
     try {
-      const wsUrl = window.location.origin.replace('http', 'ws').replace(':3000', ':8000');
-      wsRef.current = new WebSocket(`${wsUrl}/api/notifications/ws?token=${token}`);
+      const wsUrl = window.location.origin
+        .replace('http://', 'ws://')
+        .replace('https://', 'wss://')
+        .replace(':3000', ':8000');
+      wsRef.current = new WebSocket(`${wsUrl}/api/notifications/ws`);
 
       wsRef.current.onopen = () => {
-        setIsConnected(true);
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = null;
-        }
+        // Connection opened, wait for auth_required message
       };
 
       wsRef.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'notification') {
-            setNotifications(prev => [data.notification, ...prev.slice(0, 9)]);
-            setUnreadCount(prev => prev + 1);
-          } else if (data.type === 'notification_read') {
-            setNotifications(prev => 
-              prev.map(n => n.id === data.notificationId ? { ...n, read: true } : n)
-            );
-            setUnreadCount(prev => Math.max(0, prev - 1));
+          
+          switch (data.type) {
+            case 'auth_required':
+              // Server is requesting authentication - send token
+              if (wsRef.current && token) {
+                wsRef.current.send(JSON.stringify({
+                  type: 'auth',
+                  token: token,
+                }));
+              }
+              break;
+              
+            case 'connected':
+              // Successfully authenticated
+              setIsConnected(true);
+              if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = null;
+              }
+              break;
+              
+            case 'auth_failed':
+              // Authentication failed
+              console.error('WebSocket authentication failed');
+              cleanupWebSocket();
+              break;
+              
+            case 'unread_count':
+              // Initial unread count
+              setUnreadCount(data.unreadCount || 0);
+              break;
+              
+            case 'notification_update':
+              // New notification or count update
+              if (data.unreadCount !== undefined) {
+                setUnreadCount(data.unreadCount);
+              }
+              if (data.latestNotifications) {
+                setNotifications(data.latestNotifications);
+              }
+              break;
+              
+            case 'notification':
+              // Single new notification (legacy support)
+              setNotifications(prev => [data.notification, ...prev.slice(0, 9)]);
+              setUnreadCount(prev => prev + 1);
+              break;
+              
+            case 'notification_read':
+              // Notification marked as read (legacy support)
+              setNotifications(prev => 
+                prev.map(n => n.id === data.notificationId ? { ...n, read: true } : n)
+              );
+              setUnreadCount(prev => Math.max(0, prev - 1));
+              break;
+              
+            case 'ping':
+              // Server heartbeat - respond with pong
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({ type: 'pong' }));
+              }
+              break;
+              
+            case 'pong':
+              // Heartbeat response (we don't send pings, only respond to them)
+              break;
+              
+            case 'new_notification':
+              // Direct notification push (used by test scripts)
+              if (data.notification) {
+                setNotifications(prev => [data.notification, ...prev.slice(0, 9)]);
+                setUnreadCount(prev => prev + 1);
+              }
+              break;
+              
+            default:
+              console.log('Unknown WebSocket message type:', data.type);
           }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
