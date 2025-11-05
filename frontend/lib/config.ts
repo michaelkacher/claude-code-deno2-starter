@@ -136,7 +136,7 @@ export const defaultConfig: SiteConfig = {
     enableTwoFactor: true,
     enableFileUpload: true,
     enableAdminPanel: true,
-    enableDarkMode: false,
+    enableDarkMode: true,
   },
 
   api: {

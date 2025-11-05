@@ -14,14 +14,14 @@ export default function Home(props: PageProps) {
       <Head>
         <title>Deno 2 Starter - Claude Code Template</title>
       </Head>
-      <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Hero Section */}
         <div class="max-w-7xl mx-auto px-6 py-16">
           <div class="text-center mb-16">
-            <h1 class="text-5xl font-bold text-gray-900 mb-4">
+            <h1 class="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Deno 2 + Claude Code Starter
             </h1>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Build production-ready web applications with AI-powered development,
               TDD workflows, and token-optimized agents
             </p>
@@ -47,22 +47,22 @@ export default function Home(props: PageProps) {
               {/* Design System Card */}
               <a
                 href="/design-system"
-                class="block bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-8 border border-gray-200 hover:border-blue-300"
+                class="block bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow p-8 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600"
               >
                 <div class="flex items-center mb-4">
-                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl mr-4">
+                  <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center text-2xl mr-4">
                     🎨
                   </div>
                   <div>
-                    <h2 class="text-2xl font-bold text-gray-900">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       Design System
                     </h2>
-                    <p class="text-gray-600 text-sm">
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
                       Component Library & Examples
                     </p>
                   </div>
                 </div>
-                <p class="text-gray-700 mb-4">
+                <p class="text-gray-700 dark:text-gray-300 mb-4">
                   Explore the complete design system with pre-built components:
                   Buttons, Cards, Forms, Modals, and more. All components are
                   production-ready and optimized for token efficiency.
@@ -78,22 +78,22 @@ export default function Home(props: PageProps) {
               {/* Mockups Card */}
               <a
                 href="/mockups"
-                class="block bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-8 border border-gray-200 hover:border-purple-300"
+                class="block bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow p-8 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600"
               >
                 <div class="flex items-center mb-4">
-                  <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl mr-4">
+                  <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center text-2xl mr-4">
                     🖼️
                   </div>
                   <div>
-                    <h2 class="text-2xl font-bold text-gray-900">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       UI Mockups
                     </h2>
-                    <p class="text-gray-600 text-sm">
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
                       Visual Prototypes & Designs
                     </p>
                   </div>
                 </div>
-                <p class="text-gray-700 mb-4">
+                <p class="text-gray-700 dark:text-gray-300 mb-4">
                   Browse UI mockups for rapid prototyping. Create visual prototypes
                   before building features with <code class="bg-gray-100 px-2 py-1 rounded text-sm">/mockup</code> command.
                 </p>

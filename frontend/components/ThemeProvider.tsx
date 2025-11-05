@@ -10,12 +10,14 @@ export default function ThemeProvider() {
 
   const cssVariables = `
     :root {
-      /* Brand Colors */
+      /* Brand Colors - Light Mode */
       --color-primary: ${theme.primary};
       --color-secondary: ${theme.secondary};
       --color-accent: ${theme.accent};
       --color-background: ${theme.background};
       --color-surface: ${theme.surface};
+      --color-text: #111827;
+      --color-text-secondary: #6b7280;
 
       /* Semantic Colors (derived from brand) */
       --color-primary-50: color-mix(in srgb, var(--color-primary) 5%, white);
@@ -143,6 +145,39 @@ export default function ThemeProvider() {
     .bg-warning { background-color: var(--color-warning); }
     .bg-error { background-color: var(--color-error); }
     .bg-info { background-color: var(--color-info); }
+
+    /* Dark Mode */
+    .dark {
+      /* Dark Mode Colors */
+      --color-background: #111827;
+      --color-surface: #1f2937;
+      --color-text: #f9fafb;
+      --color-text-secondary: #9ca3af;
+
+      /* Adjust brand colors for dark mode */
+      --color-primary-50: color-mix(in srgb, var(--color-primary) 10%, black);
+      --color-primary-100: color-mix(in srgb, var(--color-primary) 20%, black);
+      --color-primary-200: color-mix(in srgb, var(--color-primary) 30%, black);
+      --color-primary-900: color-mix(in srgb, var(--color-primary) 20%, white);
+
+      /* Component adjustments for dark mode */
+      --nav-bg: var(--color-surface);
+      --nav-border: #374151;
+      --nav-text: var(--color-text);
+      --nav-text-hover: var(--color-primary-400);
+      --nav-brand: var(--color-text);
+      --nav-brand-hover: var(--color-primary-400);
+
+      /* Form elements in dark mode */
+      --input-border: #374151;
+      --input-border-focus: var(--color-primary-400);
+      --input-bg: #1f2937;
+
+      /* Shadows in dark mode */
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+    }
   `;
 
   return (

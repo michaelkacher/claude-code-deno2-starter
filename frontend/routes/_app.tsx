@@ -23,8 +23,20 @@ export default function App({ Component, url }: PageProps) {
         <title>{siteName}</title>
         <link rel="stylesheet" href="/styles.css" />
         <ThemeProvider />
+        {/* Prevent FOUC (Flash of Unstyled Content) by setting dark mode class early */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              const theme = localStorage.getItem('theme');
+              const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+              if (theme === 'dark' || (!theme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+              }
+            })();
+          `
+        }} />
       </head>
-      <body>
+      <body style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
         <Navigation />
         {showEmailBanner && <EmailVerificationBanner />}
         <Component />

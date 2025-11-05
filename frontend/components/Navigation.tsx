@@ -1,14 +1,16 @@
+import DarkModeToggle from '../islands/DarkModeToggle.tsx';
 import MobileMenuToggle from '../islands/MobileMenuToggle.tsx';
 import UserProfileDropdown from '../islands/UserProfileDropdown.tsx';
-import { getMobileNavigationItems, getNavigationItems, getSiteName } from '../lib/config.ts';
+import { getFeatures, getMobileNavigationItems, getNavigationItems, getSiteName } from '../lib/config.ts';
 
 export default function Navigation() {
   const siteName = getSiteName();
   const navigationItems = getNavigationItems();
   const mobileNavigationItems = getMobileNavigationItems();
+  const features = getFeatures();
 
   return (
-    <nav class="bg-white shadow-sm border-b border-gray-200 relative">
+    <nav style={{ backgroundColor: 'var(--nav-bg)', borderColor: 'var(--nav-border)' }} class="shadow-sm border-b relative transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           {/* Logo/Brand */}
@@ -19,7 +21,7 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation */}
-          <div class="hidden md:flex items-center gap-6">
+          <div class="hidden md:flex items-center gap-3">
             <div class="flex items-center gap-1">
               {navigationItems.map((item) => (
                 <a
@@ -35,19 +37,23 @@ export default function Navigation() {
               ))}
             </div>
             
+            {/* Dark Mode Toggle */}
+            {features.enableDarkMode && <DarkModeToggle />}
+            
             {/* User Profile with Notifications */}
             <UserProfileDropdown />
           </div>
 
           {/* Mobile menu button and user profile */}
-          <div class="md:hidden flex items-center gap-3">
+          <div class="md:hidden flex items-center gap-2">
+            {features.enableDarkMode && <DarkModeToggle />}
             <UserProfileDropdown />
             <MobileMenuToggle>
               {mobileNavigationItems.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
-                  class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                  class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"
                   target={item.external ? "_blank" : undefined}
                   rel={item.external ? "noopener noreferrer" : undefined}
                 >

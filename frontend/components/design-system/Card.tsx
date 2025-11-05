@@ -33,10 +33,10 @@ interface CardFooterProps {
 }
 
 const variantStyles: Record<CardVariant, string> = {
-  default: 'bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-md',
-  elevated: 'bg-white shadow-lg hover:shadow-2xl',
-  outlined: 'bg-white border-2 border-gray-200 hover:border-gray-300',
-  flat: 'bg-gray-50/50 backdrop-blur-sm',
+  default: 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md',
+  elevated: 'bg-white dark:bg-gray-800 shadow-lg hover:shadow-2xl',
+  outlined: 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+  flat: 'bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-sm',
   gradient: 'bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 text-white shadow-2xl hover:shadow-blue-500/25',
 };
 

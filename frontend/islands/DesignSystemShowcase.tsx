@@ -5,26 +5,25 @@
 
 import { useSignal } from '@preact/signals';
 import {
-  Avatar,
-  AvatarGroup,
-  Badge,
-  Button,
-  Card,
-  CardBody,
-  CardFooter,
-  CardHeader,
-  Divider,
-  Grid,
-  Input,
-  Modal,
-  PageHeader,
-  PageLayout,
-  Panel,
-  ProgressBar,
-  Select,
-  Spinner,
-  Stack,
-  Steps,
+    Avatar,
+    AvatarGroup,
+    Badge,
+    Button,
+    Card,
+    CardBody,
+    CardHeader,
+    Divider,
+    Grid,
+    Input,
+    Modal,
+    PageHeader,
+    PageLayout,
+    Panel,
+    ProgressBar,
+    Select,
+    Spinner,
+    Stack,
+    Steps
 } from '../components/design-system/index.ts';
 
 export default function DesignSystemShowcase() {
@@ -45,13 +44,13 @@ export default function DesignSystemShowcase() {
       {/* Buttons */}
       <Card className="mb-8">
         <CardHeader>
-          <h2 class="text-2xl font-bold text-gray-900">Buttons</h2>
-          <p class="text-gray-600 mt-1">Various button styles and sizes</p>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Buttons</h2>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Various button styles and sizes</p>
         </CardHeader>
         <CardBody>
           <Stack spacing={4}>
             <div>
-              <p class="text-sm font-semibold text-gray-700 mb-3">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Variants
               </p>
               <div class="flex flex-wrap gap-3">
@@ -103,7 +102,7 @@ export default function DesignSystemShowcase() {
       {/* Cards */}
       <Card className="mb-8">
         <CardHeader>
-          <h2 class="text-2xl font-bold text-gray-900">Cards</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Cards</h2>
           <p class="text-gray-600 mt-1">Container components with variants</p>
         </CardHeader>
         <CardBody>
@@ -111,7 +110,7 @@ export default function DesignSystemShowcase() {
             <Card variant="default">
               <CardBody>
                 <p class="font-semibold mb-1">Default Card</p>
-                <p class="text-sm text-gray-600">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
                   Standard card with border
                 </p>
               </CardBody>
@@ -120,7 +119,7 @@ export default function DesignSystemShowcase() {
             <Card variant="elevated">
               <CardBody>
                 <p class="font-semibold mb-1">Elevated Card</p>
-                <p class="text-sm text-gray-600">Card with shadow</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Card with shadow</p>
               </CardBody>
             </Card>
 
@@ -137,7 +136,7 @@ export default function DesignSystemShowcase() {
       {/* Badges */}
       <Card className="mb-8">
         <CardHeader>
-          <h2 class="text-2xl font-bold text-gray-900">Badges</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Badges</h2>
           <p class="text-gray-600 mt-1">Status indicators and labels</p>
         </CardHeader>
         <CardBody>
@@ -161,7 +160,7 @@ export default function DesignSystemShowcase() {
       {/* Inputs */}
       <Card className="mb-8">
         <CardHeader>
-          <h2 class="text-2xl font-bold text-gray-900">Form Inputs</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Form Inputs</h2>
           <p class="text-gray-600 mt-1">Text inputs and selects</p>
         </CardHeader>
         <CardBody>
@@ -218,7 +217,7 @@ export default function DesignSystemShowcase() {
       {/* Avatars */}
       <Card className="mb-8">
         <CardHeader>
-          <h2 class="text-2xl font-bold text-gray-900">Avatars</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Avatars</h2>
           <p class="text-gray-600 mt-1">User profile images</p>
         </CardHeader>
         <CardBody>
@@ -274,7 +273,7 @@ export default function DesignSystemShowcase() {
       {/* Progress */}
       <Card className="mb-8">
         <CardHeader>
-          <h2 class="text-2xl font-bold text-gray-900">Progress Indicators</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Progress Indicators</h2>
           <p class="text-gray-600 mt-1">Loading states and progress bars</p>
         </CardHeader>
         <CardBody>
@@ -362,7 +361,7 @@ export default function DesignSystemShowcase() {
       {/* Modal & Panel */}
       <Card className="mb-8">
         <CardHeader>
-          <h2 class="text-2xl font-bold text-gray-900">Overlays</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Overlays</h2>
           <p class="text-gray-600 mt-1">Modals and side panels</p>
         </CardHeader>
         <CardBody>
@@ -388,7 +387,7 @@ export default function DesignSystemShowcase() {
         size="md"
       >
         <Stack spacing={4}>
-          <p class="text-gray-700">
+          <p class="text-gray-700 dark:text-gray-300">
             This is an example modal dialog. You can put any content here.
           </p>
           <Input
@@ -420,13 +419,13 @@ export default function DesignSystemShowcase() {
         size="md"
       >
         <Stack spacing={4}>
-          <p class="text-gray-700">
+          <p class="text-gray-700 dark:text-gray-300">
             This is a side panel that slides in from the side of the screen.
           </p>
 
           <Card variant="elevated" padding="md">
             <p class="font-semibold mb-2">Panel Content</p>
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               You can place any components inside the panel.
             </p>
           </Card>

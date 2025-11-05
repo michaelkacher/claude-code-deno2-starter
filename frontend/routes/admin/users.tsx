@@ -160,10 +160,10 @@ export const handler: Handlers<AdminUsersData> = {
 export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
   if (data.error) {
     return (
-      <div class="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-          <h1 class="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p class="text-gray-700 mb-6">{data.error}</p>
+      <div class="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 dark:from-purple-900 dark:to-blue-900 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-md w-full">
+          <h1 class="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Error</h1>
+          <p class="text-gray-700 dark:text-gray-300 mb-6">{data.error}</p>
           <a
             href="/"
             class="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -178,27 +178,27 @@ export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
   const { users, pagination, stats, currentUser } = data;
 
   return (
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header class="bg-white shadow">
+      <header class="bg-white dark:bg-gray-800 shadow">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div class="flex justify-between items-center">
             <div>
-              <h1 class="text-3xl font-bold text-gray-900">Admin Panel</h1>
-              <p class="mt-1 text-sm text-gray-500">
+              <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Panel</h1>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Logged in as {currentUser.name} ({currentUser.email})
               </p>
             </div>
             <div class="flex gap-4">
               <a
                 href="/admin/data"
-                class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+                class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               >
                 Data Browser
               </a>
               <a
                 href="/admin/jobs"
-                class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+                class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               >
                 Jobs
               </a>
@@ -221,27 +221,27 @@ export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
       {/* Stats Dashboard */}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500 uppercase">Total Users</h3>
-            <p class="mt-2 text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Total Users</h3>
+            <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalUsers}</p>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500 uppercase">Verified</h3>
-            <p class="mt-2 text-3xl font-bold text-green-600">{stats.verifiedUsers}</p>
-            <p class="mt-1 text-sm text-gray-500">{stats.verificationRate}% rate</p>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Verified</h3>
+            <p class="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">{stats.verifiedUsers}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{stats.verificationRate}% rate</p>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500 uppercase">Admins</h3>
-            <p class="mt-2 text-3xl font-bold text-purple-600">{stats.adminUsers}</p>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Admins</h3>
+            <p class="mt-2 text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.adminUsers}</p>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500 uppercase">Recent (24h)</h3>
-            <p class="mt-2 text-3xl font-bold text-blue-600">{stats.recentSignups24h}</p>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Recent (24h)</h3>
+            <p class="mt-2 text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.recentSignups24h}</p>
           </div>
         </div>
 
         {/* User Table */}
-        <div class="bg-white rounded-lg shadow">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
           <AdminUserTable
             users={users}
             pagination={pagination}

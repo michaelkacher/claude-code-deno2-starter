@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class', // Enable dark mode with class strategy
   content: [
     './routes/**/*.{js,ts,jsx,tsx}',
     './islands/**/*.{js,ts,jsx,tsx}',
