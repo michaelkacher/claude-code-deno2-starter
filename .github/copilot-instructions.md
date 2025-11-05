@@ -110,19 +110,21 @@ await kv.atomic()
 1. Always use `payload.sub` to get user ID from JWT (NOT `payload.userId`)
 2. Mount more specific routes BEFORE general routes (e.g., `/api/admin/data` before `/api/admin`)
 3. Include CORS for all methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
-4. Validate input with Zod schemas from `backend/types/`
-5. Use `c.json()` for responses, not `c.text()` or `Response`
-6. Add rate limiting to sensitive endpoints
-7. **Use structured logging** - Import `createLogger` from `backend/lib/logger.ts`, NOT console.log
-8. All admin routes automatically protected by `frontend/routes/admin/_middleware.ts`
+4. **Use validation middleware** - Import `validateBody/validateQuery/validateParams` from `backend/middleware/validate.ts`
+5. Define Zod schemas in `backend/types/` files (e.g., `SignupSchema`, `ListUsersQuerySchema`)
+6. Use `c.json()` for responses, not `c.text()` or `Response`
+7. Add rate limiting to sensitive endpoints
+8. **Use structured logging** - Import `createLogger` from `backend/lib/logger.ts`, NOT console.log
+9. All admin routes automatically protected by `frontend/routes/admin/_middleware.ts`
 
 ### When Writing Frontend Code
 1. Use Islands for client-side interactivity (state, event handlers)
 2. Use Routes for server-side rendering and data fetching
 3. Check `IS_BROWSER` before accessing browser APIs in islands
-4. API calls should replace port 3000→8000: `window.location.origin.replace(':3000', ':8000')`
+4. **Use API client** - Import `api` from `frontend/lib/api-client.ts`, NOT raw fetch
 5. **Use storage abstraction** - Import `TokenStorage` or `ThemeStorage` from `frontend/lib/storage.ts`, NOT direct localStorage
-6. Wrap new page sections in `<ErrorBoundary>` if they might fail independently
+6. **Use loading components** - Import from `frontend/components/common` (LoadingSpinner, LoadingButton, Skeleton, PageLoader)
+7. Wrap new page sections in `<ErrorBoundary>` if they might fail independently
 
 ### Security Considerations
 1. Never expose `JWT_SECRET` or sensitive env vars client-side

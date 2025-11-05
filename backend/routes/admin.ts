@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { requireAdmin } from '../lib/admin-auth.ts';
 import { getKv } from '../lib/kv.ts';
 import { revokeAllUserTokens } from '../lib/token-revocation.ts';
+import { validateParams, validateQuery } from '../middleware/validate.ts';
+import { ListUsersQuerySchema, UserIdParamSchema } from '../types/user.ts';
 
 const admin = new Hono();
 const kv = await getKv();
@@ -19,14 +21,16 @@ admin.use('*', requireAdmin());
  * GET /api/admin/users
  * List all users with optional filtering and pagination
  */
-admin.get('/users', async (c: Context) => {
+admin.get('/users', validateQuery(ListUsersQuerySchema), async (c: Context) => {
   try {
-    const query = c.req.query();
-    const search = query.search?.toLowerCase() || '';
-    const role = query.role as 'admin' | 'user' | undefined;
-    const verified = query.verified === 'true' ? true : query.verified === 'false' ? false : undefined;
-    const page = parseInt(query.page || '1');
-    const limit = parseInt(query.limit || '50');
+    const { page, limit, search, role, emailVerified } = c.get('validatedQuery') as {
+      page: number;
+      limit: number;
+      search?: string;
+      role?: 'admin' | 'user';
+      emailVerified?: boolean;
+    };
+    const searchLower = search?.toLowerCase() || '';
 
     const users: any[] = [];
     const allUsers = kv.list({ prefix: ['users'] });
@@ -35,10 +39,10 @@ admin.get('/users', async (c: Context) => {
       const user = entry.value as any;
       
       // Apply filters
-      if (search && !(
-        user.email.toLowerCase().includes(search) ||
-        user.name.toLowerCase().includes(search) ||
-        user.id.toLowerCase().includes(search)
+      if (searchLower && !(
+        user.email.toLowerCase().includes(searchLower) ||
+        user.name.toLowerCase().includes(searchLower) ||
+        user.id.toLowerCase().includes(searchLower)
       )) {
         continue;
       }
@@ -47,7 +51,7 @@ admin.get('/users', async (c: Context) => {
         continue;
       }
 
-      if (verified !== undefined && user.emailVerified !== verified) {
+      if (emailVerified !== undefined && user.emailVerified !== emailVerified) {
         continue;
       }
 
@@ -278,9 +282,9 @@ admin.post('/users/:id/revoke-sessions', async (c: Context) => {
  * DELETE /api/admin/users/:id
  * Delete a user and all associated data
  */
-admin.delete('/users/:id', async (c: Context) => {
+admin.delete('/users/:id', validateParams(UserIdParamSchema), async (c: Context) => {
   try {
-    const userId = c.req.param('id');
+    const { id: userId } = c.get('validatedParams') as { id: string };
     const currentUser = c.get('user');
 
     // Prevent deleting yourself

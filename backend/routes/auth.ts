@@ -16,7 +16,13 @@ import {
   storeRefreshToken,
   verifyRefreshToken,
 } from '../lib/token-revocation.ts';
-import { CreateUserSchema, LoginSchema } from '../types/user.ts';
+import { validateBody } from '../middleware/validate.ts';
+import {
+  LoginSchema,
+  PasswordResetRequestSchema,
+  PasswordResetSchema,
+  SignupSchema
+} from '../types/user.ts';
 
 const auth = new Hono();
 const kv = await getKv();
@@ -32,10 +38,9 @@ auth.get('/csrf-token', (c: Context) => {
 });
 
 // Apply CSRF protection, strict body size limit and rate limiting to login endpoint
-auth.post('/login', csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, async (c: Context) => {
+auth.post('/login', csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, validateBody(LoginSchema), async (c: Context) => {
   try {
-    const body = await c.req.json();
-    const { email, password } = LoginSchema.parse(body);
+    const { email, password } = c.get('validatedBody') as { email: string; password: string };
 
     // Get user by email
     const userKey = await kv.get(['users_by_email', email]);
@@ -110,10 +115,9 @@ auth.post('/login', csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, 
 });
 
 // Apply CSRF protection, strict body size limit and rate limiting to signup endpoint
-auth.post('/signup', csrfProtection(), bodySizeLimits.strict, rateLimiters.signup, async (c: Context) => {
+auth.post('/signup', csrfProtection(), bodySizeLimits.strict, rateLimiters.signup, validateBody(SignupSchema), async (c: Context) => {
   try {
-    const body = await c.req.json();
-    const { email, password, name } = CreateUserSchema.parse(body);
+    const { email, password, name } = c.get('validatedBody') as { email: string; password: string; name: string };
 
     // Check if user already exists
     const existingUserKey = await kv.get(['users_by_email', email]);
@@ -607,10 +611,9 @@ auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Cont
 });
 
 // Forgot password - request reset email
-auth.post('/forgot-password', rateLimiters.passwordReset, async (c: Context) => {
+auth.post('/forgot-password', rateLimiters.passwordReset, validateBody(PasswordResetRequestSchema), async (c: Context) => {
   try {
-    const body = await c.req.json();
-    const { email } = z.object({ email: z.string().email() }).parse(body);
+    const { email } = c.get('validatedBody') as { email: string };
 
     // Get user by email
     const userKey = await kv.get(['users_by_email', email]);
@@ -714,14 +717,9 @@ auth.get('/validate-reset-token', async (c: Context) => {
 });
 
 // Reset password with token
-auth.post('/reset-password', bodySizeLimits.strict, async (c: Context) => {
+auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSchema.extend({ twoFactorCode: z.string().optional() })), async (c: Context) => {
   try {
-    const body = await c.req.json();
-    const { token, password, twoFactorCode } = z.object({
-      token: z.string().uuid(),
-      password: z.string().min(8),
-      twoFactorCode: z.string().optional()
-    }).parse(body);
+    const { token, password, twoFactorCode } = c.get('validatedBody') as { token: string; password: string; twoFactorCode?: string };
 
     // Get reset token data
     const resetKey = ['password_reset', token];
