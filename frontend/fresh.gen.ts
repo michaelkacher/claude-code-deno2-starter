@@ -16,24 +16,26 @@ import * as $lib_token_refresh from "./routes/lib/token-refresh.ts";
 import * as $login from "./routes/login.tsx";
 import * as $mockups_index from "./routes/mockups/index.tsx";
 import * as $notifications from "./routes/notifications.tsx";
+import * as $profile from "./routes/profile.tsx";
 import * as $resend_verification from "./routes/resend-verification.tsx";
 import * as $reset_password from "./routes/reset-password.tsx";
 import * as $signup from "./routes/signup.tsx";
 import * as $verify_email from "./routes/verify-email.tsx";
 import * as $AdminDataBrowser from "./islands/AdminDataBrowser.tsx";
 import * as $AdminUserTable from "./islands/AdminUserTable.tsx";
-import * as $AuthBanner from "./islands/AuthBanner.tsx";
 import * as $AvatarUpload from "./islands/AvatarUpload.tsx";
 import * as $Counter from "./islands/Counter.tsx";
 import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
 import * as $EmailVerificationBanner from "./islands/EmailVerificationBanner.tsx";
 import * as $ImageUpload from "./islands/ImageUpload.tsx";
 import * as $LoginForm from "./islands/LoginForm.tsx";
+import * as $MobileMenuToggle from "./islands/MobileMenuToggle.tsx";
 import * as $NotificationBell from "./islands/NotificationBell.tsx";
 import * as $NotificationList from "./islands/NotificationList.tsx";
 import * as $ResetPasswordForm from "./islands/ResetPasswordForm.tsx";
 import * as $SignupForm from "./islands/SignupForm.tsx";
 import * as $TwoFactorSetup from "./islands/TwoFactorSetup.tsx";
+import * as $UserProfileDropdown from "./islands/UserProfileDropdown.tsx";
 import * as $admin_CreateJobModal from "./islands/admin/CreateJobModal.tsx";
 import * as $admin_CreateScheduleModal from "./islands/admin/CreateScheduleModal.tsx";
 import * as $admin_JobDashboard from "./islands/admin/JobDashboard.tsx";
@@ -55,6 +57,7 @@ const manifest = {
     "./routes/login.tsx": $login,
     "./routes/mockups/index.tsx": $mockups_index,
     "./routes/notifications.tsx": $notifications,
+    "./routes/profile.tsx": $profile,
     "./routes/resend-verification.tsx": $resend_verification,
     "./routes/reset-password.tsx": $reset_password,
     "./routes/signup.tsx": $signup,
@@ -63,18 +66,19 @@ const manifest = {
   islands: {
     "./islands/AdminDataBrowser.tsx": $AdminDataBrowser,
     "./islands/AdminUserTable.tsx": $AdminUserTable,
-    "./islands/AuthBanner.tsx": $AuthBanner,
     "./islands/AvatarUpload.tsx": $AvatarUpload,
     "./islands/Counter.tsx": $Counter,
     "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
     "./islands/EmailVerificationBanner.tsx": $EmailVerificationBanner,
     "./islands/ImageUpload.tsx": $ImageUpload,
     "./islands/LoginForm.tsx": $LoginForm,
+    "./islands/MobileMenuToggle.tsx": $MobileMenuToggle,
     "./islands/NotificationBell.tsx": $NotificationBell,
     "./islands/NotificationList.tsx": $NotificationList,
     "./islands/ResetPasswordForm.tsx": $ResetPasswordForm,
     "./islands/SignupForm.tsx": $SignupForm,
     "./islands/TwoFactorSetup.tsx": $TwoFactorSetup,
+    "./islands/UserProfileDropdown.tsx": $UserProfileDropdown,
     "./islands/admin/CreateJobModal.tsx": $admin_CreateJobModal,
     "./islands/admin/CreateScheduleModal.tsx": $admin_CreateScheduleModal,
     "./islands/admin/JobDashboard.tsx": $admin_JobDashboard,

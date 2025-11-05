@@ -202,12 +202,7 @@ export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
               >
                 Jobs
               </a>
-              <a
-                href="/"
-                class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
-              >
-                ← Back to Home
-              </a>
+              
               <button
                 onClick={() => {
                   document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';

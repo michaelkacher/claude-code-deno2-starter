@@ -1,0 +1,393 @@
+/**
+ * User Profile Dropdown Island
+ * Integrates user authentication, notifications, and profile management
+ */
+
+import { IS_BROWSER } from '$fresh/runtime.ts';
+import { useEffect, useRef, useState } from 'preact/hooks';
+
+interface Notification {
+  id: string;
+  userId: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
+  message: string;
+  read: boolean;
+  link?: string;
+  createdAt: string;
+  readAt?: string;
+}
+
+export default function UserProfileDropdown() {
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
+
+  // Check authentication status
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+    
+    const token = localStorage.getItem('access_token');
+    const email = localStorage.getItem('user_email');
+    const role = localStorage.getItem('user_role');
+    
+    if (token && email) {
+      setUserEmail(email);
+      setUserRole(role);
+      fetchNotifications();
+      connectWebSocket();
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // WebSocket connection for real-time notifications
+  const connectWebSocket = () => {
+    if (!IS_BROWSER) return;
+
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      const wsUrl = window.location.origin.replace('http', 'ws').replace(':3000', ':8000');
+      wsRef.current = new WebSocket(`${wsUrl}/api/notifications/ws?token=${token}`);
+
+      wsRef.current.onopen = () => {
+        setIsConnected(true);
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
+      };
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'notification') {
+            setNotifications(prev => [data.notification, ...prev.slice(0, 9)]);
+            setUnreadCount(prev => prev + 1);
+          } else if (data.type === 'notification_read') {
+            setNotifications(prev => 
+              prev.map(n => n.id === data.notificationId ? { ...n, read: true } : n)
+            );
+            setUnreadCount(prev => Math.max(0, prev - 1));
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      wsRef.current.onclose = () => {
+        setIsConnected(false);
+        // Reconnect after delay
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 3000);
+      };
+
+      wsRef.current.onerror = () => {
+        setIsConnected(false);
+      };
+    } catch (error) {
+      console.error('WebSocket connection error:', error);
+    }
+  };
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    if (!IS_BROWSER) return;
+    
+    setIsNotificationsLoading(true);
+    try {
+      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const token = localStorage.getItem('access_token');
+      
+      if (!token) return;
+
+      const response = await fetch(`${apiUrl}/api/notifications?limit=5`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setIsNotificationsLoading(false);
+    }
+  };
+
+  // Mark notification as read
+  const markAsRead = async (notificationId: string) => {
+    if (!IS_BROWSER) return;
+
+    try {
+      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const token = localStorage.getItem('access_token');
+      
+      if (!token) return;
+
+      await fetch(`${apiUrl}/api/notifications/${notificationId}/read`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      // Update local state
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    if (!IS_BROWSER) return;
+    
+    try {
+      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      
+      await fetch(`${apiUrl}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
+    // Close WebSocket
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    
+    // Clear auth data
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_role');
+    
+    // Clear cookie
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+    
+    // Redirect to home
+    window.location.href = '/';
+  };
+
+  // Toggle dropdown
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Format time ago
+  const timeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div class="h-8 w-8 bg-gray-200 animate-pulse rounded-full"></div>
+    );
+  }
+
+  // Not logged in
+  if (!userEmail) {
+    return (
+      <a
+        href="/login"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+      >
+        Login
+      </a>
+    );
+  }
+
+  // Logged in - show profile dropdown
+  return (
+    <div class="relative" ref={dropdownRef}>
+      {/* Profile Button */}
+      <button
+        onClick={toggleDropdown}
+        class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+      >
+        {/* Avatar with notification indicator */}
+        <div class="relative">
+          <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+            {userEmail.charAt(0).toUpperCase()}
+          </div>
+          {unreadCount > 0 && (
+            <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+              <span class="text-xs text-white font-medium">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            </div>
+          )}
+          {isConnected && (
+            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+          )}
+        </div>
+        
+        {/* Dropdown Arrow */}
+        <svg
+          class={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isDropdownOpen && (
+        <div class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+          {/* User Info Header */}
+          <div class="px-4 py-3 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+                {userEmail.charAt(0).toUpperCase()}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 truncate">{userEmail}</p>
+                <p class="text-xs text-gray-500 capitalize">{userRole || 'user'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Notifications Section */}
+          <div class="px-4 py-3 border-b border-gray-200">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-sm font-medium text-gray-900">Notifications</h3>
+              {unreadCount > 0 && (
+                <span class="text-xs text-blue-600 font-medium">{unreadCount} unread</span>
+              )}
+            </div>
+            
+            {isNotificationsLoading ? (
+              <div class="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} class="h-12 bg-gray-100 animate-pulse rounded"></div>
+                ))}
+              </div>
+            ) : notifications.length > 0 ? (
+              <div class="space-y-2 max-h-48 overflow-y-auto">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    class={`p-2 rounded cursor-pointer transition-colors ${
+                      notification.read 
+                        ? 'bg-gray-50 hover:bg-gray-100' 
+                        : 'bg-blue-50 hover:bg-blue-100 border-l-2 border-blue-500'
+                    }`}
+                    onClick={() => {
+                      if (!notification.read) {
+                        markAsRead(notification.id);
+                      }
+                      if (notification.link) {
+                        window.location.href = notification.link;
+                      }
+                    }}
+                  >
+                    <div class="flex justify-between items-start">
+                      <div class="flex-1 min-w-0">
+                        <p class="text-xs font-medium text-gray-900 truncate">
+                          {notification.title}
+                        </p>
+                        <p class="text-xs text-gray-600 truncate">
+                          {notification.message}
+                        </p>
+                      </div>
+                      <span class="text-xs text-gray-400 ml-2">
+                        {timeAgo(notification.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p class="text-xs text-gray-500 text-center py-4">No notifications</p>
+            )}
+            
+            {notifications.length > 0 && (
+              <a
+                href="/notifications"
+                class="block text-center text-xs text-blue-600 hover:text-blue-700 mt-2 py-1"
+              >
+                View all notifications
+              </a>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div class="px-4 py-3">
+            <div class="space-y-1">
+              {userRole === 'admin' && (
+                <a
+                  href="/admin/users"
+                  class="block w-full text-left px-3 py-2 text-sm text-purple-700 hover:bg-purple-50 rounded transition-colors"
+                >
+                  🛠️ Admin Panel
+                </a>
+              )}
+              <a
+                href="/profile"
+                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors"
+              >
+                👤 Profile Settings
+              </a>
+              <button
+                onClick={handleLogout}
+                class="block w-full text-left px-3 py-2 text-sm text-red-700 hover:bg-red-50 rounded transition-colors"
+              >
+                🚪 Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

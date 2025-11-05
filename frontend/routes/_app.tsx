@@ -1,6 +1,5 @@
 import { type PageProps } from "$fresh/server.ts";
 import Navigation from "../components/Navigation.tsx";
-import AuthBanner from "../islands/AuthBanner.tsx";
 import EmailVerificationBanner from "../islands/EmailVerificationBanner.tsx";
 
 export default function App({ Component, url }: PageProps) {
@@ -8,9 +7,9 @@ export default function App({ Component, url }: PageProps) {
   const disableAuthEnv = Deno.env.get('DISABLE_AUTH');
   const disableAuth = disableAuthEnv === 'true' || disableAuthEnv === true || disableAuthEnv === undefined;
   
-  // Don't show auth banner on login or signup pages, or when auth is disabled
+  // Don't show email verification banner on login or signup pages, or when auth is disabled
   const isAuthPage = url.pathname === '/login' || url.pathname === '/signup';
-  const showAuthBanner = !isAuthPage && !disableAuth;
+  const showEmailBanner = !isAuthPage && !disableAuth;
   
   return (
     <html>
@@ -22,8 +21,7 @@ export default function App({ Component, url }: PageProps) {
       </head>
       <body>
         <Navigation />
-        {showAuthBanner && <AuthBanner />}
-        {showAuthBanner && <EmailVerificationBanner />}
+        {showEmailBanner && <EmailVerificationBanner />}
         <Component />
       </body>
     </html>
