@@ -197,6 +197,12 @@ export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
                 Data Browser
               </a>
               <a
+                href="/admin/jobs"
+                class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Jobs
+              </a>
+              <a
                 href="/"
                 class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
               >

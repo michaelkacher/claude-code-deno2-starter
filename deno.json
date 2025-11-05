@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "exports": "./backend/main.ts",
   "tasks": {
-    "dev": "deno run --allow-net --allow-read --allow-env --allow-run --allow-write --watch dev.ts",
-    "dev:backend": "deno run --unstable-kv --allow-net --allow-read --allow-env --allow-write --watch backend/main.ts",
+    "dev": "deno run --allow-net --allow-read --allow-env --allow-run --allow-write --allow-ffi --watch dev.ts",
+    "dev:backend": "deno run --unstable-kv --allow-net --allow-read --allow-env --allow-write --allow-ffi --watch backend/main.ts",
     "dev:frontend": "cd frontend && deno task start",
-    "start": "deno run --unstable-kv --allow-net --allow-read --allow-env --allow-write backend/main.ts",
+    "start": "deno run --unstable-kv --allow-net --allow-read --allow-env --allow-write --allow-ffi backend/main.ts",
     "start:frontend": "cd frontend && deno task preview",
     "build": "deno task build:backend && deno task build:frontend",
     "build:backend": "deno compile --unstable-kv --allow-net --allow-read --allow-env --allow-write --output=./dist/backend backend/main.ts",
@@ -30,6 +30,7 @@
     "kv:inspect": "deno run --allow-read --allow-write --allow-env scripts/inspect-local-kv.ts",
     "kv:seed-user": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/seed-test-user.ts",
     "kill-ports": "deno run --allow-run scripts/kill-ports.ts",
+    "reset-rate-limits": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/reset-rate-limits.ts",
     "users:list": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/list-users.ts",
     "users:make-admin": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/make-admin.ts"
   },
@@ -52,6 +53,7 @@
     "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
     "playwright/test": "npm:@playwright/test@^1.48"
   },
+  "nodeModulesDir": "auto",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact",

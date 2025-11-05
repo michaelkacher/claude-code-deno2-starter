@@ -33,12 +33,24 @@ export function requireAdmin() {
       }
 
       const token = authHeader.replace('Bearer ', '');
-      const payload = await verifyToken(token);
+
+      let payload;
+      try {
+        payload = await verifyToken(token);
+      } catch (err) {
+        // Token verification failed (expired, invalid, etc.)
+        return c.json({
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Invalid or expired token'
+          }
+        }, 401);
+      }
 
       // Get user from database to check role
       const kv = await getKv();
       const userEntry = await kv.get(['users', payload.sub]);
-      
+
       if (!userEntry.value) {
         return c.json({
           error: {
@@ -63,12 +75,26 @@ export function requireAdmin() {
       // Store user in context and continue
       c.set('user', user);
       c.set('isAdmin', true);
-      await next();
+
+      try {
+        await next();
+      } catch (err) {
+        // If the next handler throws, catch it and return an error response
+        console.error('Error in route handler:', err);
+        return c.json({
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'An error occurred processing your request'
+          }
+        }, 500);
+      }
     } catch (error) {
+      // Catch any unexpected errors
+      console.error('Error in requireAdmin middleware:', error);
       return c.json({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Invalid or expired token'
+          message: 'Authentication failed'
         }
       }, 401);
     }

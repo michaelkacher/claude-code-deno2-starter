@@ -1,12 +1,12 @@
 /**
- * Admin Data Browser Page
- * Protected route for viewing Deno KV storage models
+ * Admin Jobs Dashboard Page
+ * Protected route for managing background jobs and schedules
  */
 
 import { PageProps } from '$fresh/server.ts';
-import AdminDataBrowser from '../../islands/AdminDataBrowser.tsx';
+import JobDashboard from '../../islands/admin/JobDashboard.tsx';
 
-export default function AdminDataPage(props: PageProps) {
+export default function AdminJobsPage(props: PageProps) {
   return (
     <div class="min-h-screen bg-gray-50">
       {/* Header */}
@@ -14,9 +14,11 @@ export default function AdminDataPage(props: PageProps) {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div class="flex justify-between items-center">
             <div>
-              <h1 class="text-3xl font-bold text-gray-900">Data Browser</h1>
+              <h1 class="text-3xl font-bold text-gray-900">
+                Background Jobs
+              </h1>
               <p class="mt-1 text-sm text-gray-500">
-                View and filter all models in Deno KV storage
+                Monitor and manage background jobs and scheduled tasks
               </p>
             </div>
             <div class="flex gap-4">
@@ -27,10 +29,10 @@ export default function AdminDataPage(props: PageProps) {
                 Users
               </a>
               <a
-                href="/admin/jobs"
+                href="/admin/data"
                 class="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
               >
-                Jobs
+                Data
               </a>
               <a
                 href="/"
@@ -50,7 +52,7 @@ export default function AdminDataPage(props: PageProps) {
       </header>
 
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <AdminDataBrowser />
+        <JobDashboard />
       </div>
     </div>
   );

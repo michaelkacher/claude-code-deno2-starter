@@ -10,6 +10,10 @@ data/*.db-wal
 *.sqlite-shm
 *.sqlite-wal
 
+# File uploads (local storage)
+uploads/
+*.upload
+
 # Claude Code
 .claude/settings.local.json
 

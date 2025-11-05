@@ -158,6 +158,48 @@ const envSchema = z.object({
     .optional()
     .describe('AWS secret access key'),
 
+  // ===== Storage Configuration =====
+  STORAGE_TYPE: z
+    .enum(['local', 's3'])
+    .default('local')
+    .describe('Storage backend type (local or s3)'),
+
+  STORAGE_PATH: z
+    .string()
+    .default('./uploads')
+    .describe('Local storage path (only for local storage)'),
+
+  S3_ENDPOINT: z
+    .string()
+    .optional()
+    .describe('S3 endpoint URL (for Cloudflare R2, MinIO, etc.)'),
+
+  S3_REGION: z
+    .string()
+    .default('auto')
+    .describe('S3 region'),
+
+  S3_BUCKET: z
+    .string()
+    .optional()
+    .describe('S3 bucket name'),
+
+  S3_ACCESS_KEY_ID: z
+    .string()
+    .optional()
+    .describe('S3 access key ID'),
+
+  S3_SECRET_ACCESS_KEY: z
+    .string()
+    .optional()
+    .describe('S3 secret access key'),
+
+  S3_PUBLIC_URL: z
+    .string()
+    .url()
+    .optional()
+    .describe('Public URL for S3 bucket (optional)'),
+
   // ===== Feature Flags =====
   ENABLE_ANALYTICS: z
     .string()

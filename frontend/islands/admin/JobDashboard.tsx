@@ -1,0 +1,832 @@
+/**
+ * Background Jobs Admin Dashboard
+ *
+ * Monitor and manage background jobs and schedules
+ */
+
+import { IS_BROWSER } from '$fresh/runtime.ts';
+import { useSignal, useComputed } from '@preact/signals';
+import { useEffect } from 'preact/hooks';
+import CreateJobModal from './CreateJobModal.tsx';
+import CreateScheduleModal from './CreateScheduleModal.tsx';
+
+interface Job {
+  id: string;
+  name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'retrying';
+  attempts: number;
+  maxRetries: number;
+  error?: string;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  priority: number;
+}
+
+interface Stats {
+  pending: number;
+  running: number;
+  completed: number;
+  failed: number;
+  total: number;
+}
+
+interface Schedule {
+  name: string;
+  cron: string;
+  enabled: boolean;
+  timezone: string;
+  nextRun?: string;
+  lastRun?: string;
+  runCount: number;
+}
+
+export default function JobDashboard() {
+  const jobs = useSignal<Job[]>([]);
+  const stats = useSignal<Stats | null>(null);
+  const schedules = useSignal<Schedule[]>([]);
+  const selectedTab = useSignal<'jobs' | 'schedules'>('jobs');
+  const statusFilter = useSignal<string>('all');
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(null);
+  const showCreateModal = useSignal(false);
+  const showCreateScheduleModal = useSignal(false);
+
+  // Get API URL
+  const getApiUrl = () => {
+    if (!IS_BROWSER) return 'http://localhost:8000';
+    return window.location.origin.replace(':3000', ':8000');
+  };
+
+  // Refresh access token
+  const refreshAccessToken = async (): Promise<boolean> => {
+    try {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include', // Send refresh_token cookie
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      if (data.data?.accessToken && IS_BROWSER) {
+        localStorage.setItem('access_token', data.data.accessToken);
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('Failed to refresh token:', err);
+      return false;
+    }
+  };
+
+  // Handle authentication errors
+  const handleAuthError = async () => {
+    // Try to refresh the token
+    const refreshed = await refreshAccessToken();
+
+    if (refreshed) {
+      // Token refreshed successfully, retry the requests
+      await fetchJobs();
+      await fetchStats();
+      await fetchSchedules();
+    } else {
+      // Refresh failed, redirect to login
+      if (IS_BROWSER) {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login?redirect=/admin/jobs';
+      }
+    }
+  };
+
+  // Fetch jobs
+  const fetchJobs = async () => {
+    try {
+      loading.value = true;
+      error.value = null;
+
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const statusParam = statusFilter.value !== 'all' ? `?status=${statusFilter.value}` : '';
+      const response = await fetch(`${apiUrl}/api/jobs/jobs${statusParam}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.status === 401) {
+        // Token expired or invalid - try to refresh
+        await handleAuthError();
+        return;
+      }
+
+      if (!response.ok) throw new Error('Failed to fetch jobs');
+
+      const data = await response.json();
+      jobs.value = data.data;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch jobs';
+      console.error('Failed to fetch jobs:', err);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Fetch stats
+  const fetchStats = async () => {
+    try {
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const response = await fetch(`${apiUrl}/api/jobs/jobs/stats`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.status === 401) {
+        // Will be handled by fetchJobs
+        return;
+      }
+
+      if (!response.ok) throw new Error('Failed to fetch stats');
+
+      const data = await response.json();
+      stats.value = data.data;
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  };
+
+  // Fetch schedules
+  const fetchSchedules = async () => {
+    try {
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const response = await fetch(`${apiUrl}/api/jobs/schedules`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.status === 401) {
+        // Will be handled by fetchJobs
+        return;
+      }
+
+      if (!response.ok) throw new Error('Failed to fetch schedules');
+
+      const data = await response.json();
+      schedules.value = data.data;
+    } catch (err) {
+      console.error('Failed to fetch schedules:', err);
+    }
+  };
+
+  // Retry job
+  const retryJob = async (jobId: string) => {
+    try {
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const response = await fetch(`${apiUrl}/api/jobs/jobs/${jobId}/retry`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to retry job');
+
+      await fetchJobs();
+      await fetchStats();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to retry job');
+    }
+  };
+
+  // Delete job
+  const deleteJob = async (jobId: string) => {
+    if (!confirm('Are you sure you want to delete this job?')) return;
+
+    try {
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const response = await fetch(`${apiUrl}/api/jobs/jobs/${jobId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to delete job');
+
+      await fetchJobs();
+      await fetchStats();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete job');
+    }
+  };
+
+  // Trigger schedule
+  const triggerSchedule = async (name: string) => {
+    try {
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const response = await fetch(`${apiUrl}/api/jobs/schedules/${name}/trigger`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to trigger schedule');
+
+      alert(`Schedule "${name}" triggered successfully`);
+      await fetchSchedules();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to trigger schedule');
+    }
+  };
+
+  // Toggle schedule
+  const toggleSchedule = async (name: string, enabled: boolean) => {
+    try {
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const endpoint = enabled ? 'disable' : 'enable';
+      const response = await fetch(`${apiUrl}/api/jobs/schedules/${name}/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to toggle schedule');
+
+      await fetchSchedules();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to toggle schedule');
+    }
+  };
+
+  // Cleanup old jobs
+  const cleanupJobs = async () => {
+    if (!confirm('Delete all completed/failed jobs older than 7 days?')) return;
+
+    try {
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const response = await fetch(`${apiUrl}/api/jobs/jobs/cleanup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ daysOld: 7 }),
+      });
+
+      if (!response.ok) throw new Error('Failed to cleanup jobs');
+
+      const result = await response.json();
+      alert(result.message);
+      await fetchJobs();
+      await fetchStats();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to cleanup jobs');
+    }
+  };
+
+  // Auto-refresh
+  useEffect(() => {
+    fetchJobs();
+    fetchStats();
+    fetchSchedules();
+
+    const interval = setInterval(() => {
+      fetchJobs();
+      fetchStats();
+      fetchSchedules();
+    }, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [statusFilter.value]);
+
+  // Format date
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleString();
+  };
+
+  // Format duration
+  const formatDuration = (job: Job) => {
+    if (!job.startedAt) return 'N/A';
+    const start = new Date(job.startedAt).getTime();
+    const end = job.completedAt ? new Date(job.completedAt).getTime() : Date.now();
+    const duration = Math.round((end - start) / 1000);
+    return `${duration}s`;
+  };
+
+  return (
+    <div class="job-dashboard">
+      {showCreateModal.value && (
+        <CreateJobModal
+          onClose={() => showCreateModal.value = false}
+          onJobCreated={() => {
+            fetchJobs();
+            fetchStats();
+          }}
+        />
+      )}
+
+      {showCreateScheduleModal.value && (
+        <CreateScheduleModal
+          onClose={() => showCreateScheduleModal.value = false}
+          onScheduleCreated={() => {
+            fetchSchedules();
+          }}
+        />
+      )}
+
+      <div class="dashboard-header">
+        <h1>Background Jobs</h1>
+        <div class="header-actions">
+          <button onClick={() => showCreateModal.value = true} class="btn btn-primary">
+            ➕ Create Job
+          </button>
+          <button onClick={cleanupJobs} class="btn btn-secondary">
+            🗑️ Cleanup Old Jobs
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      {stats.value && (
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">{stats.value.pending}</div>
+            <div class="stat-label">Pending</div>
+          </div>
+          <div class="stat-card stat-running">
+            <div class="stat-value">{stats.value.running}</div>
+            <div class="stat-label">Running</div>
+          </div>
+          <div class="stat-card stat-completed">
+            <div class="stat-value">{stats.value.completed}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-card stat-failed">
+            <div class="stat-value">{stats.value.failed}</div>
+            <div class="stat-label">Failed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{stats.value.total}</div>
+            <div class="stat-label">Total</div>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div class="tabs">
+        <button
+          class={`tab ${selectedTab.value === 'jobs' ? 'active' : ''}`}
+          onClick={() => selectedTab.value = 'jobs'}
+        >
+          📋 Jobs
+        </button>
+        <button
+          class={`tab ${selectedTab.value === 'schedules' ? 'active' : ''}`}
+          onClick={() => selectedTab.value = 'schedules'}
+        >
+          ⏰ Schedules
+        </button>
+      </div>
+
+      {/* Jobs Tab */}
+      {selectedTab.value === 'jobs' && (
+        <div class="jobs-section">
+          {/* Filters */}
+          <div class="filters">
+            <label>
+              Status:
+              <select
+                value={statusFilter.value}
+                onChange={(e) => statusFilter.value = (e.target as HTMLSelectElement).value}
+              >
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+                <option value="retrying">Retrying</option>
+              </select>
+            </label>
+          </div>
+
+          {/* Jobs Table */}
+          {loading.value && <div class="loading">Loading jobs...</div>}
+          {error.value && <div class="error">{error.value}</div>}
+
+          {!loading.value && !error.value && (
+            <div class="table-container">
+              <table class="jobs-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Attempts</th>
+                    <th>Created</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.value.length === 0 && (
+                    <tr>
+                      <td colSpan={6} class="text-center">No jobs found</td>
+                    </tr>
+                  )}
+                  {jobs.value.map((job) => (
+                    <tr key={job.id}>
+                      <td>
+                        <div class="job-name">{job.name}</div>
+                        <div class="job-id">{job.id.slice(0, 8)}</div>
+                      </td>
+                      <td>
+                        <span class={`status-badge status-${job.status}`}>
+                          {job.status}
+                        </span>
+                      </td>
+                      <td>{job.attempts} / {job.maxRetries}</td>
+                      <td>{formatDate(job.createdAt)}</td>
+                      <td>{formatDuration(job)}</td>
+                      <td>
+                        <div class="action-buttons">
+                          {job.status === 'failed' && (
+                            <button
+                              onClick={() => retryJob(job.id)}
+                              class="btn btn-sm btn-primary"
+                              title="Retry"
+                            >
+                              🔄
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteJob(job.id)}
+                            class="btn btn-sm btn-danger"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Schedules Tab */}
+      {selectedTab.value === 'schedules' && (
+        <div class="schedules-section">
+          <div class="section-header">
+            <button onClick={() => showCreateScheduleModal.value = true} class="btn btn-primary">
+              ➕ Create Schedule
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="schedules-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Cron</th>
+                  <th>Status</th>
+                  <th>Next Run</th>
+                  <th>Last Run</th>
+                  <th>Run Count</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schedules.value.length === 0 && (
+                  <tr>
+                    <td colSpan={7} class="text-center">No schedules configured</td>
+                  </tr>
+                )}
+                {schedules.value.map((schedule) => (
+                  <tr key={schedule.name}>
+                    <td>{schedule.name}</td>
+                    <td><code>{schedule.cron}</code></td>
+                    <td>
+                      <span class={`status-badge ${schedule.enabled ? 'status-enabled' : 'status-disabled'}`}>
+                        {schedule.enabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </td>
+                    <td>{formatDate(schedule.nextRun)}</td>
+                    <td>{formatDate(schedule.lastRun)}</td>
+                    <td>{schedule.runCount}</td>
+                    <td>
+                      <div class="action-buttons">
+                        <button
+                          onClick={() => triggerSchedule(schedule.name)}
+                          class="btn btn-sm btn-primary"
+                          title="Trigger Now"
+                        >
+                          ▶️
+                        </button>
+                        <button
+                          onClick={() => toggleSchedule(schedule.name, schedule.enabled)}
+                          class="btn btn-sm btn-secondary"
+                          title={schedule.enabled ? 'Disable' : 'Enable'}
+                        >
+                          {schedule.enabled ? '⏸️' : '▶️'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .job-dashboard {
+          padding: 20px;
+        }
+
+        .dashboard-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24px;
+        }
+
+        .dashboard-header h1 {
+          margin: 0;
+          font-size: 24px;
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 12px;
+        }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+
+        .stat-card {
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          padding: 16px;
+          text-align: center;
+        }
+
+        .stat-value {
+          font-size: 32px;
+          font-weight: bold;
+          color: #111827;
+        }
+
+        .stat-label {
+          font-size: 14px;
+          color: #6b7280;
+          margin-top: 4px;
+        }
+
+        .stat-running .stat-value {
+          color: #3b82f6;
+        }
+
+        .stat-completed .stat-value {
+          color: #10b981;
+        }
+
+        .stat-failed .stat-value {
+          color: #ef4444;
+        }
+
+        .tabs {
+          display: flex;
+          gap: 8px;
+          border-bottom: 2px solid #e5e7eb;
+          margin-bottom: 24px;
+        }
+
+        .tab {
+          padding: 12px 24px;
+          background: none;
+          border: none;
+          border-bottom: 2px solid transparent;
+          cursor: pointer;
+          font-size: 16px;
+          color: #6b7280;
+          transition: all 0.2s;
+        }
+
+        .tab:hover {
+          color: #111827;
+        }
+
+        .tab.active {
+          color: #3b82f6;
+          border-bottom-color: #3b82f6;
+        }
+
+        .filters {
+          margin-bottom: 16px;
+        }
+
+        .filters label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          color: #374151;
+        }
+
+        .filters select {
+          padding: 8px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+
+        .section-header {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 16px;
+        }
+
+        .table-container {
+          overflow-x: auto;
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+        }
+
+        .jobs-table, .schedules-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .jobs-table th, .schedules-table th {
+          background: #f9fafb;
+          padding: 12px;
+          text-align: left;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6b7280;
+          text-transform: uppercase;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .jobs-table td, .schedules-table td {
+          padding: 12px;
+          border-bottom: 1px solid #f3f4f6;
+          font-size: 14px;
+          color: #374151;
+        }
+
+        .jobs-table tbody tr:hover, .schedules-table tbody tr:hover {
+          background: #f9fafb;
+        }
+
+        .job-name {
+          font-weight: 500;
+          color: #111827;
+        }
+
+        .job-id {
+          font-size: 12px;
+          color: #9ca3af;
+          font-family: monospace;
+        }
+
+        .status-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 500;
+          text-transform: capitalize;
+        }
+
+        .status-pending {
+          background: #fef3c7;
+          color: #92400e;
+        }
+
+        .status-running {
+          background: #dbeafe;
+          color: #1e40af;
+        }
+
+        .status-completed {
+          background: #d1fae5;
+          color: #065f46;
+        }
+
+        .status-failed {
+          background: #fee2e2;
+          color: #991b1b;
+        }
+
+        .status-retrying {
+          background: #fce7f3;
+          color: #831843;
+        }
+
+        .status-enabled {
+          background: #d1fae5;
+          color: #065f46;
+        }
+
+        .status-disabled {
+          background: #f3f4f6;
+          color: #6b7280;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 8px;
+        }
+
+        .btn {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-sm {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+
+        .btn-primary {
+          background: #3b82f6;
+          color: white;
+        }
+
+        .btn-primary:hover {
+          background: #2563eb;
+        }
+
+        .btn-secondary {
+          background: #6b7280;
+          color: white;
+        }
+
+        .btn-secondary:hover {
+          background: #4b5563;
+        }
+
+        .btn-danger {
+          background: #ef4444;
+          color: white;
+        }
+
+        .btn-danger:hover {
+          background: #dc2626;
+        }
+
+        .loading, .error {
+          padding: 24px;
+          text-align: center;
+          color: #6b7280;
+        }
+
+        .error {
+          color: #ef4444;
+        }
+
+        .text-center {
+          text-align: center;
+        }
+
+        code {
+          background: #f3f4f6;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 13px;
+        }
+      `}</style>
+    </div>
+  );
+}

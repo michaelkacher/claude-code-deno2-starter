@@ -28,19 +28,18 @@ app.use('*', cors({
   allowHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token'],
 }));
 
-// Apply rate limiting to all API routes (except health check and docs)
+// Apply rate limiting to all API routes (except health check, docs, and auth endpoints)
 app.use('/api/*', async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
   
-  // Skip rate limiting for health checks and documentation endpoints
-  const skipPaths = ['/api/health', '/api/openapi.json', '/api/docs', '/api/redoc'];
+  // Skip rate limiting for health checks, documentation, and CSRF token endpoint
+  const skipPaths = ['/api/health', '/api/openapi.json', '/api/docs', '/api/redoc', '/api/auth/csrf-token'];
   if (skipPaths.some(path => pathname.startsWith(path))) {
-    await next();
-    return;
+    return await next();
   }
   
   // Apply general API rate limiter
-  await rateLimiters.api(c, next);
+  return await rateLimiters.api(c, next);
 });
 
 // Root route - API info
@@ -74,13 +73,19 @@ app.route('/api', openApiRoutes);
 import adminRoutes from './routes/admin.ts';
 import authRoutes from './routes/auth.ts';
 import dataBrowserRoutes from './routes/data-browser.ts';
+import jobRoutes from './routes/jobs.ts';
+import notificationRoutes from './routes/notifications.ts';
 import twoFactorRoutes from './routes/two-factor.ts';
+import uploadRoutes from './routes/uploads.ts';
 
 // Mount routes (more specific routes first to avoid conflicts)
 app.route('/api/auth', authRoutes);
 app.route('/api/2fa', twoFactorRoutes);
 app.route('/api/admin/data', dataBrowserRoutes);
+app.route('/api/jobs', jobRoutes);
+app.route('/api/notifications', notificationRoutes);
 app.route('/api/admin', adminRoutes);
+app.route('/api/uploads', uploadRoutes);
 
 // 404 handler
 app.notFound((c) => {
@@ -111,6 +116,22 @@ const port = env.PORT;
 // Setup initial admin if specified (only runs if DISABLE_AUTH=false)
 import { setupInitialAdmin } from './lib/initial-admin-setup.ts';
 await setupInitialAdmin();
+
+// Initialize background job system
+import { queue } from './lib/queue.ts';
+import { scheduler } from './lib/scheduler.ts';
+import { registerAllWorkers } from './workers/index.ts';
+
+// Register all workers and scheduled tasks
+registerAllWorkers();
+
+// Start the job queue processor
+await queue.start();
+console.log('📋 Job queue started');
+
+// Start the scheduler
+scheduler.start();
+console.log('⏰ Job scheduler started');
 
 console.log(`🚀 Server starting on http://localhost:${port}`);
 console.log(`📝 Environment: ${env.DENO_ENV}`);

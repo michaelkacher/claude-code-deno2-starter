@@ -1,4 +1,5 @@
 import { type PageProps } from "$fresh/server.ts";
+import Navigation from "../components/Navigation.tsx";
 import AuthBanner from "../islands/AuthBanner.tsx";
 import EmailVerificationBanner from "../islands/EmailVerificationBanner.tsx";
 
@@ -20,6 +21,7 @@ export default function App({ Component, url }: PageProps) {
         <link rel="stylesheet" href="/styles.css" />
       </head>
       <body>
+        <Navigation />
         {showAuthBanner && <AuthBanner />}
         {showAuthBanner && <EmailVerificationBanner />}
         <Component />
