@@ -43,11 +43,56 @@ export async function refreshAccessToken(): Promise<string | null> {
 }
 
 /**
+ * Decode JWT to get expiration time (without verification)
+ */
+function getTokenAge(token: string): number {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return Infinity;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    const issued = payload.iat * 1000; // Convert to milliseconds
+    return Date.now() - issued;
+  } catch {
+    return Infinity;
+  }
+}
+
+/**
  * Setup automatic token refresh
  * Refreshes token 2 minutes before it expires (15min - 2min = 13min)
+ * Only refreshes when page is visible and user is active
  */
 export function setupAutoRefresh() {
   if (typeof window === 'undefined') return;
+
+  let lastActivity = Date.now();
+  let isPageVisible = !document.hidden;
+
+  // Track user activity
+  ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(eventType => {
+    document.addEventListener(eventType, () => {
+      lastActivity = Date.now();
+    }, { passive: true });
+  });
+
+  // Track page visibility changes
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    
+    if (isPageVisible) {
+      // Page became visible - check if we need immediate refresh
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        const tokenAge = getTokenAge(token);
+        // If token is older than 12 minutes, refresh immediately
+        if (tokenAge > 12 * 60 * 1000) {
+          console.debug('Token age:', Math.floor(tokenAge / 60000), 'minutes - refreshing');
+          refreshAccessToken();
+        }
+      }
+    }
+  });
 
   // Refresh every 13 minutes (2 minutes before 15min expiry)
   const refreshInterval = 13 * 60 * 1000;
@@ -56,6 +101,20 @@ export function setupAutoRefresh() {
     const token = localStorage.getItem('access_token');
     if (!token) {
       clearInterval(intervalId);
+      return;
+    }
+
+    // Only refresh if page is visible AND user was active in last 5 minutes
+    const timeSinceActivity = Date.now() - lastActivity;
+    const isUserActive = timeSinceActivity < 5 * 60 * 1000;
+
+    if (!isPageVisible) {
+      console.debug('Token refresh skipped - page not visible');
+      return;
+    }
+
+    if (!isUserActive) {
+      console.debug('Token refresh skipped - user inactive for', Math.floor(timeSinceActivity / 60000), 'minutes');
       return;
     }
 

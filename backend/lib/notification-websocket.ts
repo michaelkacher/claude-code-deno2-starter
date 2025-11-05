@@ -13,6 +13,7 @@ const logger = createLogger('WebSocket');
 interface WebSocketClient {
   socket: WebSocket;
   userId: string;
+  isAdmin: boolean;
   isAlive: boolean;
   heartbeatInterval?: number;
 }
@@ -59,12 +60,18 @@ export function setupWebSocketConnection() {
             userId = payload.sub;
             authenticated = true;
 
-            logger.info('User authenticated', { userId });
+            // Check if user is admin
+            const kv = await getKv();
+            const userEntry = await kv.get(['users', userId]);
+            const isAdmin = userEntry.value?.role === 'admin';
+
+            logger.info('User authenticated', { userId, isAdmin });
 
             // Create client
             client = {
               socket: ws,
               userId,
+              isAdmin,
               isAlive: true,
             };
 
@@ -328,11 +335,14 @@ export function broadcast(message: any) {
  */
 export function broadcastJobUpdate(jobData: any) {
   clients.forEach((client) => {
-    sendMessage(client.socket, {
-      type: 'job_update',
-      job: jobData,
-      timestamp: new Date().toISOString(),
-    });
+    // Only send job updates to admin users
+    if (client.isAdmin) {
+      sendMessage(client.socket, {
+        type: 'job_update',
+        job: jobData,
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 }
 
@@ -341,11 +351,14 @@ export function broadcastJobUpdate(jobData: any) {
  */
 export function broadcastJobStats(stats: any) {
   clients.forEach((client) => {
-    sendMessage(client.socket, {
-      type: 'job_stats_update',
-      stats,
-      timestamp: new Date().toISOString(),
-    });
+    // Only send job stats to admin users
+    if (client.isAdmin) {
+      sendMessage(client.socket, {
+        type: 'job_stats_update',
+        stats,
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 }
 
