@@ -45,9 +45,43 @@ export default function UserProfileDropdown() {
       setUserRole(role);
       fetchNotifications();
       connectWebSocket();
+    } else {
+      // User is not authenticated, clean up any existing connections
+      cleanupWebSocket();
+      setUserEmail(null);
+      setUserRole(null);
+      setNotifications([]);
+      setUnreadCount(0);
     }
     setIsLoading(false);
   }, []);
+
+  // Cleanup WebSocket connections when component unmounts or user logs out
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+
+    return () => {
+      cleanupWebSocket();
+    };
+  }, []);
+
+  // Helper function to clean up WebSocket connections
+  const cleanupWebSocket = () => {
+    // Close existing WebSocket connection
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    
+    // Clear reconnection timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    // Update connection status
+    setIsConnected(false);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -68,7 +102,11 @@ export default function UserProfileDropdown() {
     if (!IS_BROWSER) return;
 
     const token = localStorage.getItem('access_token');
-    if (!token) return;
+    if (!token) {
+      // No token available, don't attempt connection
+      cleanupWebSocket();
+      return;
+    }
 
     try {
       const wsUrl = window.location.origin.replace('http', 'ws').replace(':3000', ':8000');
@@ -101,14 +139,30 @@ export default function UserProfileDropdown() {
 
       wsRef.current.onclose = () => {
         setIsConnected(false);
-        // Reconnect after delay
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connectWebSocket();
-        }, 3000);
+        
+        // Only attempt reconnection if user is still authenticated
+        const currentToken = localStorage.getItem('access_token');
+        if (currentToken && userEmail) {
+          // Reconnect after delay only if user is still logged in
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectWebSocket();
+          }, 3000);
+        } else {
+          // User is no longer authenticated, stop reconnection attempts
+          cleanupWebSocket();
+        }
       };
 
-      wsRef.current.onerror = () => {
+      wsRef.current.onerror = (error) => {
         setIsConnected(false);
+        console.error('WebSocket error:', error);
+        
+        // Check if this is an authentication error (429 often indicates rate limiting due to auth issues)
+        const currentToken = localStorage.getItem('access_token');
+        if (!currentToken || !userEmail) {
+          // Stop reconnection attempts if no auth
+          cleanupWebSocket();
+        }
       };
     } catch (error) {
       console.error('WebSocket connection error:', error);
@@ -119,12 +173,15 @@ export default function UserProfileDropdown() {
   const fetchNotifications = async () => {
     if (!IS_BROWSER) return;
     
+    const token = localStorage.getItem('access_token');
+    if (!token || !userEmail) {
+      // User is not authenticated, don't fetch notifications
+      return;
+    }
+    
     setIsNotificationsLoading(true);
     try {
       const apiUrl = window.location.origin.replace(':3000', ':8000');
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) return;
 
       const response = await fetch(`${apiUrl}/api/notifications?limit=5`, {
         headers: {
@@ -137,6 +194,9 @@ export default function UserProfileDropdown() {
         const data = await response.json();
         setNotifications(data.notifications || []);
         setUnreadCount(data.unreadCount || 0);
+      } else if (response.status === 401) {
+        // Token is invalid, clean up auth state
+        handleLogout();
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -149,13 +209,16 @@ export default function UserProfileDropdown() {
   const markAsRead = async (notificationId: string) => {
     if (!IS_BROWSER) return;
 
+    const token = localStorage.getItem('access_token');
+    if (!token || !userEmail) {
+      // User is not authenticated, don't attempt to mark as read
+      return;
+    }
+
     try {
       const apiUrl = window.location.origin.replace(':3000', ':8000');
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) return;
 
-      await fetch(`${apiUrl}/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${apiUrl}/api/notifications/${notificationId}/read`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -163,11 +226,16 @@ export default function UserProfileDropdown() {
         credentials: 'include',
       });
 
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (response.ok) {
+        // Update local state
+        setNotifications(prev => 
+          prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } else if (response.status === 401) {
+        // Token is invalid, clean up auth state
+        handleLogout();
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -176,6 +244,9 @@ export default function UserProfileDropdown() {
   // Handle logout
   const handleLogout = async () => {
     if (!IS_BROWSER) return;
+    
+    // Clean up WebSocket connections immediately
+    cleanupWebSocket();
     
     try {
       const apiUrl = window.location.origin.replace(':3000', ':8000');
@@ -188,12 +259,6 @@ export default function UserProfileDropdown() {
       console.error('Logout error:', error);
     }
     
-    // Close WebSocket
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    
     // Clear auth data
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_email');
@@ -201,6 +266,12 @@ export default function UserProfileDropdown() {
     
     // Clear cookie
     document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+    
+    // Clear component state
+    setUserEmail(null);
+    setUserRole(null);
+    setNotifications([]);
+    setUnreadCount(0);
     
     // Redirect to home
     window.location.href = '/';
