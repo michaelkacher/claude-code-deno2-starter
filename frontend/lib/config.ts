@@ -84,11 +84,11 @@ export const defaultConfig: SiteConfig = {
         href: "/design-system",
         icon: "🎨",
       },
-      {
-        label: "Documentation",
-        href: "/docs",
-        icon: "📚",
-      },
+    //   {
+    //     label: "Documentation",
+    //     href: "/docs",
+    //     icon: "📚",
+    //   },
     ],
     mobile: [
       {

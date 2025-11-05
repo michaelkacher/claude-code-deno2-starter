@@ -31,15 +31,15 @@ export const handler: Handlers<ProfileData> = {
       const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
       
       // Fetch user profile from backend
-      const response = await fetch(`${apiUrl}/auth/profile`, {
+      const response = await fetch(`${apiUrl}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
       });
 
       if (response.ok) {
-        const user = await response.json();
-        return ctx.render({ user });
+        const result = await response.json();
+        return ctx.render({ user: result.data.user });
       } else {
         // Auth failed, redirect to login
         return new Response(null, {
@@ -152,7 +152,7 @@ export default function Profile({ data }: PageProps<ProfileData>) {
                       ✓ Enabled
                     </span>
                     <a
-                      href="/settings/two-factor"
+                      href="/2fa/setup"
                       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                     >
                       Manage
@@ -164,7 +164,7 @@ export default function Profile({ data }: PageProps<ProfileData>) {
                       Disabled
                     </span>
                     <a
-                      href="/settings/two-factor"
+                      href="/2fa/setup"
                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                     >
                       Enable
@@ -184,7 +184,7 @@ export default function Profile({ data }: PageProps<ProfileData>) {
           <div class="px-6 py-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <a
-                href="/settings/password"
+                href="/forgot-password"
                 class="border border-gray-300 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
                 <div class="text-lg">🔒</div>
