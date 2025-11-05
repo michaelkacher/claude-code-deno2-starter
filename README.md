@@ -59,7 +59,36 @@ deno task dev
 # Frontend: http://localhost:3000
 ```
 
-3. Create a mockup
+3. Customize your template (Recommended)
+
+```bash
+# Guided customization workflow to brand your application
+# Works with Claude Code or GitHub Copilot
+/customize
+
+# Or alternatively:
+@workspace customize starter
+@workspace I want to customize this template
+
+# The command walks you through:
+# - Naming your application
+# - Setting up branding and colors
+# - Configuring features (notifications, 2FA, file uploads, etc.)
+# - Updating navigation structure
+# - Creates/updates frontend/lib/config.ts with your settings
+```
+
+**What gets customized:**
+- Site name, description, and URL
+- Brand colors and theme
+- Navigation menu items (primary, mobile, footer)
+- Feature flags (notifications, 2FA, file uploads, admin panel, dark mode)
+- API configuration
+- Social media links
+
+See `.claude/commands/customize.md` or `.github/copilot-workflows.md` for details.
+
+4. Create a mockup
 
 ```bash
 # Create a mockup and describe what you want to implement. 
@@ -68,7 +97,7 @@ deno task dev
 /mockup create a task list and create task screens for yard work. There should be fields for estimated time, effort, and a list of required supplies.
 ```
 
-4. Implement the mockup with and write tests
+5. Implement the mockup with and write tests
 
 ```bash
 # from within Claude Code use the /new-feature command
@@ -139,6 +168,7 @@ Quick workflows for common tasks:
 
 | Command | Level | Description | When to Use |
 |---------|-------|-------------|-------------|
+| `/customize` | **Initial Setup** | Customize template branding and configuration | First step after cloning template |
 | `/requirements` | Optional | Gather project-wide requirements | Large projects (10+ features) or stakeholder docs |
 | `/architect` | Optional | **Update** architecture | Major changes only (DB migration, microservices) |
 | `/mockup` | **Visual** | Create UI mockup | Quick visual prototyping before building |
@@ -228,6 +258,7 @@ deno test tests/users_test.ts
 │   │   ├── backend-agent.md
 │   │   └── frontend-agent.md
 │   └── commands/            # Slash command definitions
+│       ├── customize.md              # ⭐ Initial template customization
 │       ├── new-feature.md            # ⭐ Recommended workflow (uses feature-scoped agents)
 │       ├── feature-complete.md       # ⭐ Finalize and move to implemented
 │       ├── mockup.md                 # Create UI mockups/prototypes
@@ -493,6 +524,32 @@ This template is built on **Deno 2** with modern, production-ready tools optimiz
 You can still use npm packages when needed via `npm:` specifier.
 
 ## Customization
+
+### Template Customization (Quick Start)
+
+Use the `/customize` command to quickly personalize the template:
+
+```bash
+# Claude Code:
+/customize
+
+# GitHub Copilot:
+@workspace customize starter
+```
+
+This guided workflow helps you configure:
+- **Site Identity**: Name, description, URL, logo
+- **Branding**: Primary, secondary, and accent colors
+- **Navigation**: Menu items for desktop, mobile, and footer
+- **Features**: Toggle notifications, 2FA, file uploads, admin panel, dark mode
+- **API Settings**: Base URL, timeout, retry configuration
+- **Social Links**: GitHub, Twitter, LinkedIn, Discord
+
+**Output:** Creates/updates `frontend/lib/config.ts` with your settings.
+
+All customizations use TypeScript interfaces for type safety and are automatically applied through CSS custom properties and component rendering.
+
+See `.claude/commands/customize.md` or `.github/copilot-workflows.md` for detailed workflow documentation.
 
 ### Adding Custom Agents
 
