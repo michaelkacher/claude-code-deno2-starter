@@ -6,6 +6,9 @@
 import { NotificationService } from '../services/notifications.ts';
 import { verifyToken } from './jwt.ts';
 import { getKv } from './kv.ts';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('WebSocket');
 
 interface WebSocketClient {
   socket: WebSocket;
@@ -28,7 +31,7 @@ export function setupWebSocketConnection() {
 
   return {
     onOpen(_event: Event, ws: WebSocket) {
-      console.log('[WebSocket] Connection opened, waiting for auth...');
+      logger.debug('Connection opened, waiting for auth');
       
       // Request authentication
       sendMessage(ws, {
@@ -40,23 +43,23 @@ export function setupWebSocketConnection() {
     async onMessage(event: MessageEvent, ws: WebSocket) {
       try {
         const data = JSON.parse(event.data as string);
-        console.log(`[WebSocket] Received message type: ${data.type}, authenticated: ${authenticated}`);
+        logger.debug('Received message', { type: data.type, authenticated });
 
         // Handle authentication message
         if (data.type === 'auth') {
           // Ignore auth attempts if already authenticated
           if (authenticated) {
-            console.log('[WebSocket] Ignoring duplicate auth attempt - already authenticated');
+            logger.debug('Ignoring duplicate auth attempt - already authenticated');
             return;
           }
 
           try {
-            console.log('[WebSocket] Verifying token...');
+            logger.debug('Verifying token');
             const payload = await verifyToken(data.token);
             userId = payload.sub;
             authenticated = true;
 
-            console.log(`[WebSocket] User ${userId} authenticated`);
+            logger.info('User authenticated', { userId });
 
             // Create client
             client = {
@@ -68,7 +71,7 @@ export function setupWebSocketConnection() {
             // Store client connection
             clients.set(userId, client);
 
-            console.log('[WebSocket] Sending connection confirmation...');
+            logger.debug('Sending connection confirmation', { userId });
             // Send connection confirmation
             sendMessage(ws, {
               type: 'connected',
@@ -76,7 +79,6 @@ export function setupWebSocketConnection() {
               timestamp: new Date().toISOString(),
             });
 
-            console.log('[WebSocket] Fetching unread count...');
             // Send current unread count
             const unreadCount = await NotificationService.getUnreadCount(userId);
             sendMessage(ws, {
@@ -84,17 +86,14 @@ export function setupWebSocketConnection() {
               unreadCount,
             });
 
-            console.log('[WebSocket] Starting notification watcher...');
             // Start watching for notification changes
             watchNotifications(userId, ws);
 
-            console.log('[WebSocket] Starting heartbeat...');
             // Start heartbeat
             startHeartbeat(client);
-            console.log('[WebSocket] Setup complete!');
+            logger.info('WebSocket setup complete', { userId });
           } catch (error) {
-            // Don't log full error for expired/invalid tokens - this is expected
-            console.log('[WebSocket] Authentication failed: Invalid or expired token', error);
+            logger.warn('Authentication failed', error);
             sendMessage(ws, {
               type: 'auth_failed',
               message: 'Invalid or expired token',
@@ -119,25 +118,25 @@ export function setupWebSocketConnection() {
           ws.close();
         }
       } catch (error) {
-        console.error('[WebSocket] Error parsing message:', error);
+        logger.error('Error parsing message', error);
       }
     },
 
     onClose() {
       if (userId) {
-        console.log(`[WebSocket] User ${userId} disconnected`);
+        logger.info('User disconnected', { userId });
         // Clear heartbeat interval if exists
         if (client?.heartbeatInterval) {
           clearInterval(client.heartbeatInterval);
         }
         clients.delete(userId);
       } else {
-        console.log('[WebSocket] Unauthenticated connection closed');
+        logger.debug('Unauthenticated connection closed');
       }
     },
 
     onError(error: Event) {
-      console.error('[WebSocket] Error:', error);
+      logger.error('WebSocket error', error);
       if (userId) {
         clients.delete(userId);
       }
@@ -177,7 +176,7 @@ async function watchNotifications(userId: string, socket: WebSocket) {
       });
     }
   } catch (error) {
-    console.error(`[WebSocket] Watcher error for user ${userId}:`, error);
+    logger.error('Watcher error', error, { userId });
   }
 }
 
@@ -210,7 +209,7 @@ function handleClientMessage(userId: string, data: any) {
 
     case 'subscribe_jobs':
       // Client wants real-time job updates
-      console.log(`[WebSocket] User ${userId} subscribed to job updates`);
+      logger.info('User subscribed to job updates', { userId });
       if (client) {
         sendMessage(client.socket, {
           type: 'jobs_subscribed',
@@ -221,11 +220,11 @@ function handleClientMessage(userId: string, data: any) {
 
     case 'unsubscribe_jobs':
       // Client no longer wants job updates
-      console.log(`[WebSocket] User ${userId} unsubscribed from job updates`);
+      logger.info('User unsubscribed from job updates', { userId });
       break;
 
     default:
-      console.log(`[WebSocket] Unknown message type from ${userId}:`, data.type);
+      logger.warn('Unknown message type', { userId, type: data.type });
   }
 }
 
@@ -244,7 +243,7 @@ function sendMessage(socket: WebSocket, data: any) {
 function startHeartbeat(client: WebSocketClient) {
   const interval = setInterval(() => {
     if (!client.isAlive) {
-      console.log(`[WebSocket] Client ${client.userId} failed heartbeat`);
+      logger.warn('Client failed heartbeat', { userId: client.userId });
       client.socket.close();
       clients.delete(client.userId);
       clearInterval(interval);

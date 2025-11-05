@@ -6,6 +6,7 @@ import * as $_2fa_setup from "./routes/2fa/setup.tsx";
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
+import * as $admin_middleware from "./routes/admin/_middleware.ts";
 import * as $admin_data from "./routes/admin/data.tsx";
 import * as $admin_jobs from "./routes/admin/jobs.tsx";
 import * as $admin_users from "./routes/admin/users.tsx";
@@ -49,6 +50,7 @@ const manifest = {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
+    "./routes/admin/_middleware.ts": $admin_middleware,
     "./routes/admin/data.tsx": $admin_data,
     "./routes/admin/jobs.tsx": $admin_jobs,
     "./routes/admin/users.tsx": $admin_users,

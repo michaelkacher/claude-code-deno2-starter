@@ -4,6 +4,7 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
+import { TokenStorage } from '../lib/storage.ts';
 
 interface AdminHeaderActionsProps {
   currentPage: 'users' | 'data' | 'jobs';
@@ -13,9 +14,9 @@ export default function AdminHeaderActions({ currentPage }: AdminHeaderActionsPr
   const handleLogout = () => {
     if (!IS_BROWSER) return;
     
-    // Clear auth tokens
+    // Clear auth tokens using storage abstraction
+    TokenStorage.clearAuth();
     document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    localStorage.clear();
     
     // Redirect to login
     window.location.href = '/login';

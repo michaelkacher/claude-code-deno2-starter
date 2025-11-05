@@ -1,4 +1,5 @@
 import { type PageProps } from "$fresh/server.ts";
+import ErrorBoundary from "../components/ErrorBoundary.tsx";
 import Navigation from "../components/Navigation.tsx";
 import ThemeProvider from "../components/ThemeProvider.tsx";
 import EmailVerificationBanner from "../islands/EmailVerificationBanner.tsx";
@@ -39,7 +40,9 @@ export default function App({ Component, url }: PageProps) {
       <body style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
         <Navigation />
         {showEmailBanner && <EmailVerificationBanner />}
-        <Component />
+        <ErrorBoundary>
+          <Component />
+        </ErrorBoundary>
       </body>
     </html>
   );

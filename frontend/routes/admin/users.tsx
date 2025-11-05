@@ -49,48 +49,13 @@ interface AdminUsersData {
 
 export const handler: Handlers<AdminUsersData> = {
   async GET(req, ctx) {
-    // Check if user is authenticated and is admin
-    const token = req.headers.get('cookie')?.split('; ')
-      .find((c) => c.startsWith('auth_token='))
-      ?.split('=')[1];
-
-    if (!token) {
-      // Not logged in - redirect to login
-      return new Response(null, {
-        status: 302,
-        headers: { location: '/login?redirect=/admin/users' },
-      });
-    }
+    // User data is injected by middleware - guaranteed to be admin
+    const currentUser = ctx.state.user as User;
+    const token = ctx.state.token as string;
 
     const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
 
     try {
-      // Fetch current user to verify admin status
-      const userResponse = await fetch(`${apiUrl}/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!userResponse.ok) {
-        // Invalid token - redirect to login
-        return new Response(null, {
-          status: 302,
-          headers: { location: '/login?redirect=/admin/users' },
-        });
-      }
-
-      const userData = await userResponse.json();
-      const currentUser = userData.data.user;
-
-      // Check if user is admin
-      if (currentUser.role !== 'admin') {
-        // Not an admin - redirect to home with error
-        return new Response(null, {
-          status: 302,
-          headers: { location: '/?error=unauthorized' },
-        });
-      }
 
       // Get query params for filtering/pagination
       const url = new URL(req.url);

@@ -5,6 +5,7 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useState } from 'preact/hooks';
+import { TokenStorage } from '../lib/storage.ts';
 
 interface LoginFormProps {
   redirectTo?: string;
@@ -60,12 +61,14 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         return;
       }
 
-      // Store access token in localStorage (refresh token is in httpOnly cookie)
+      // Store user session using storage abstraction
       if (IS_BROWSER) {
-        localStorage.setItem('access_token', data.data.accessToken);
-        localStorage.setItem('user_email', data.data.user.email);
-        localStorage.setItem('user_role', data.data.user.role);
-        localStorage.setItem('email_verified', data.data.user.emailVerified ? 'true' : 'false');
+        TokenStorage.setUserSession({
+          accessToken: data.data.accessToken,
+          email: data.data.user.email,
+          role: data.data.user.role,
+          emailVerified: data.data.user.emailVerified,
+        });
         
         // Also set access token in cookie for server-side auth check (15 minutes expiry)
         const expiryDate = new Date();

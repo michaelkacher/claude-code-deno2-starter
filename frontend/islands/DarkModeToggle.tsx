@@ -5,6 +5,7 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useEffect, useState } from 'preact/hooks';
+import { ThemeStorage } from '../lib/storage.ts';
 
 export default function DarkModeToggle() {
   // Check if dark mode is active (will be set by inline script in _app.tsx before hydration)
@@ -27,7 +28,7 @@ export default function DarkModeToggle() {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
       // Only auto-switch if user hasn't set a preference
-      if (!localStorage.getItem('theme')) {
+      if (!ThemeStorage.getTheme()) {
         setIsDark(e.matches);
         if (e.matches) {
           document.documentElement.classList.add('dark');
@@ -49,10 +50,10 @@ export default function DarkModeToggle() {
     
     if (newIsDark) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+      ThemeStorage.setTheme('dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      ThemeStorage.setTheme('light');
     }
   };
 

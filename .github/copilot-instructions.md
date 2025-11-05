@@ -113,13 +113,16 @@ await kv.atomic()
 4. Validate input with Zod schemas from `backend/types/`
 5. Use `c.json()` for responses, not `c.text()` or `Response`
 6. Add rate limiting to sensitive endpoints
+7. **Use structured logging** - Import `createLogger` from `backend/lib/logger.ts`, NOT console.log
+8. All admin routes automatically protected by `frontend/routes/admin/_middleware.ts`
 
 ### When Writing Frontend Code
 1. Use Islands for client-side interactivity (state, event handlers)
 2. Use Routes for server-side rendering and data fetching
 3. Check `IS_BROWSER` before accessing browser APIs in islands
 4. API calls should replace port 3000→8000: `window.location.origin.replace(':3000', ':8000')`
-5. Store access token in localStorage, check auth in middleware
+5. **Use storage abstraction** - Import `TokenStorage` or `ThemeStorage` from `frontend/lib/storage.ts`, NOT direct localStorage
+6. Wrap new page sections in `<ErrorBoundary>` if they might fail independently
 
 ### Security Considerations
 1. Never expose `JWT_SECRET` or sensitive env vars client-side
