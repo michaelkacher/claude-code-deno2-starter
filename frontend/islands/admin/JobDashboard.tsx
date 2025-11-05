@@ -5,7 +5,7 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useSignal, useComputed } from '@preact/signals';
+import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import CreateJobModal from './CreateJobModal.tsx';
 import CreateScheduleModal from './CreateScheduleModal.tsx';
@@ -299,19 +299,96 @@ export default function JobDashboard() {
     }
   };
 
-  // Auto-refresh
+  // WebSocket connection for real-time updates
   useEffect(() => {
+    if (!IS_BROWSER) return;
+
+    // Initial fetch
     fetchJobs();
     fetchStats();
     fetchSchedules();
 
-    const interval = setInterval(() => {
-      fetchJobs();
-      fetchStats();
-      fetchSchedules();
-    }, 5000); // Refresh every 5 seconds
+    // Set up WebSocket connection
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host.replace(':3000', ':8000')}/api/notifications/ws`;
+    
+    console.log('[JobDashboard] Connecting to WebSocket:', wsUrl);
+    const ws = new WebSocket(wsUrl);
 
-    return () => clearInterval(interval);
+    ws.onopen = () => {
+      console.log('[JobDashboard] WebSocket connected');
+      
+      // Authenticate
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        ws.send(JSON.stringify({ type: 'auth', token }));
+      }
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('[JobDashboard] WebSocket message:', data.type);
+
+        switch (data.type) {
+          case 'connected':
+            // Subscribe to job updates
+            ws.send(JSON.stringify({ type: 'subscribe_jobs' }));
+            break;
+
+          case 'job_update':
+            // Update individual job in the list
+            console.log('[JobDashboard] Job update received:', data.job.id);
+            const jobIndex = jobs.value.findIndex(j => j.id === data.job.id);
+            if (jobIndex !== -1) {
+              // Update existing job
+              jobs.value = [
+                ...jobs.value.slice(0, jobIndex),
+                data.job,
+                ...jobs.value.slice(jobIndex + 1),
+              ];
+            } else {
+              // New job - refresh the list
+              fetchJobs();
+            }
+            // Refresh stats when jobs update
+            fetchStats();
+            break;
+
+          case 'job_stats_update':
+            // Update stats in real-time
+            stats.value = data.stats;
+            break;
+
+          case 'pong':
+            // Heartbeat response
+            break;
+
+          case 'auth_failed':
+            console.error('[JobDashboard] WebSocket auth failed');
+            ws.close();
+            break;
+        }
+      } catch (err) {
+        console.error('[JobDashboard] Error handling WebSocket message:', err);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('[JobDashboard] WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('[JobDashboard] WebSocket disconnected');
+    };
+
+    // Cleanup on unmount
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'unsubscribe_jobs' }));
+        ws.close();
+      }
+    };
   }, [statusFilter.value]);
 
   // Format date

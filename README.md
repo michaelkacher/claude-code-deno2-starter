@@ -633,6 +633,27 @@ c) Skip architecture setup
 
 ## Troubleshooting
 
+### Rate Limiting / "429 Too Many Requests"
+
+The API has rate limiting enabled for security. In development mode, limits are 10x more lenient.
+
+**Quick fix:**
+```bash
+deno task reset-rate-limits
+```
+
+**Verify development mode:**
+Ensure your `.env` file has:
+```bash
+DENO_ENV=development
+```
+
+See [docs/RATE_LIMITING.md](docs/RATE_LIMITING.md) for detailed information about:
+- Rate limit configuration (dev vs production)
+- Auto-refresh intervals (JobDashboard refreshes every 30s)
+- How to adjust or disable auto-refresh
+- Best practices for avoiding rate limits
+
 ### Tests Failing
 
 1. Check that you're in the Green phase (tests should be written first)

@@ -99,43 +99,47 @@ export function createRateLimiter(options: RateLimitOptions) {
 /**
  * Pre-configured rate limiters for common use cases
  */
+
+// Check if in development mode (more lenient limits)
+const isDevelopment = Deno.env.get('DENO_ENV') === 'development';
+
 export const rateLimiters = {
-  // Strict limit for auth endpoints (5 attempts per 15 minutes)
+  // Strict limit for auth endpoints (5 attempts per 15 minutes in prod, 50 in dev)
   auth: createRateLimiter({
     windowMs: 15 * 60 * 1000,  // 15 minutes
-    maxRequests: 5,
+    maxRequests: isDevelopment ? 50 : 5,
     keyPrefix: 'auth',
     message: 'Too many login attempts. Please try again in 15 minutes.'
   }),
   
-  // Moderate limit for signup (3 per hour)
+  // Moderate limit for signup (3 per hour in prod, 20 in dev)
   signup: createRateLimiter({
     windowMs: 60 * 60 * 1000,  // 1 hour
-    maxRequests: 3,
+    maxRequests: isDevelopment ? 20 : 3,
     keyPrefix: 'signup',
     message: 'Too many signup attempts. Please try again later.'
   }),
   
-  // Lenient limit for general API (100 per 15 minutes)
+  // Lenient limit for general API (100 per 15 minutes in prod, 1000 in dev)
   api: createRateLimiter({
     windowMs: 15 * 60 * 1000,
-    maxRequests: 100,
+    maxRequests: isDevelopment ? 1000 : 100,
     keyPrefix: 'api',
     message: 'API rate limit exceeded. Please slow down your requests.'
   }),
   
-  // Strict limit for email verification (3 per hour to prevent spam)
+  // Strict limit for email verification (3 per hour in prod, 20 in dev)
   emailVerification: createRateLimiter({
     windowMs: 60 * 60 * 1000,  // 1 hour
-    maxRequests: 3,
+    maxRequests: isDevelopment ? 20 : 3,
     keyPrefix: 'email-verification',
     message: 'Too many verification email requests. Please try again later.'
   }),
   
-  // Strict limit for password reset (3 per hour to prevent abuse)
+  // Strict limit for password reset (3 per hour in prod, 20 in dev)
   passwordReset: createRateLimiter({
     windowMs: 60 * 60 * 1000,  // 1 hour
-    maxRequests: 3,
+    maxRequests: isDevelopment ? 20 : 3,
     keyPrefix: 'password-reset',
     message: 'Too many password reset requests. Please try again later.'
   })

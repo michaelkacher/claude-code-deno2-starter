@@ -208,6 +208,23 @@ function handleClientMessage(userId: string, data: any) {
       });
       break;
 
+    case 'subscribe_jobs':
+      // Client wants real-time job updates
+      console.log(`[WebSocket] User ${userId} subscribed to job updates`);
+      const client = clients.get(userId);
+      if (client) {
+        sendMessage(client.socket, {
+          type: 'jobs_subscribed',
+          message: 'Subscribed to job updates',
+        });
+      }
+      break;
+
+    case 'unsubscribe_jobs':
+      // Client no longer wants job updates
+      console.log(`[WebSocket] User ${userId} unsubscribed from job updates`);
+      break;
+
     default:
       console.log(`[WebSocket] Unknown message type from ${userId}:`, data.type);
   }
@@ -264,6 +281,32 @@ export function notifyUser(userId: string, notification: any) {
 export function broadcast(message: any) {
   clients.forEach((client) => {
     sendMessage(client.socket, message);
+  });
+}
+
+/**
+ * Broadcast job update to all connected admin clients
+ */
+export function broadcastJobUpdate(jobData: any) {
+  clients.forEach((client) => {
+    sendMessage(client.socket, {
+      type: 'job_update',
+      job: jobData,
+      timestamp: new Date().toISOString(),
+    });
+  });
+}
+
+/**
+ * Broadcast job stats update to all connected admin clients
+ */
+export function broadcastJobStats(stats: any) {
+  clients.forEach((client) => {
+    sendMessage(client.socket, {
+      type: 'job_stats_update',
+      stats,
+      timestamp: new Date().toISOString(),
+    });
   });
 }
 

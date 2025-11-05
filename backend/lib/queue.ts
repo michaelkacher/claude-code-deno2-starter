@@ -393,6 +393,15 @@ export class JobQueue {
       job.attempts++;
       job.processingBy = Deno.env.get('DENO_DEPLOYMENT_ID') || 'local';
       await this.kv!.set(['jobs', job.id], job);
+      
+      // Broadcast job update via WebSocket
+      try {
+        const { broadcastJobUpdate } = await import('./notification-websocket.ts');
+        broadcastJobUpdate(job);
+      } catch (wsError) {
+        // WebSocket broadcast is not critical, just log if it fails
+        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+      }
 
       // Execute handler
       await handler(job);
@@ -401,6 +410,14 @@ export class JobQueue {
       job.status = 'completed';
       job.completedAt = new Date().toISOString();
       await this.kv!.set(['jobs', job.id], job);
+      
+      // Broadcast completion
+      try {
+        const { broadcastJobUpdate } = await import('./notification-websocket.ts');
+        broadcastJobUpdate(job);
+      } catch (wsError) {
+        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+      }
     } catch (error) {
       console.error(`Job ${job.id} failed:`, error);
 
@@ -424,6 +441,14 @@ export class JobQueue {
       }
 
       await this.kv!.set(['jobs', job.id], job);
+      
+      // Broadcast error/retry status
+      try {
+        const { broadcastJobUpdate } = await import('./notification-websocket.ts');
+        broadcastJobUpdate(job);
+      } catch (wsError) {
+        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+      }
     } finally {
       this.processing.delete(job.id);
     }
