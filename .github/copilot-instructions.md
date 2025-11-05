@@ -1,9 +1,10 @@
 # GitHub Copilot Instructions
 
 > **Custom Workflows Available**: This project includes custom workflows that mirror Claude Code commands.
-> See `.github/copilot-workflows.md` for detailed instructions on running feature development, mockup creation, and test generation workflows.
+> See `.github/copilot-workflows.md` for detailed instructions on running feature development, mockup creation, and starter customization workflows.
 > 
-> **Usage**: `@workspace run new-feature workflow` or `@workspace create a new feature`
+> **Quick Start**: `@workspace customize starter` or `@workspace I want to customize this template`
+> **Feature Development**: `@workspace run new-feature workflow` or `@workspace create a new feature`
 
 ## Project Overview
 

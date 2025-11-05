@@ -14,6 +14,42 @@ Or simply ask:
 
 ## Custom Workflows
 
+### Starter Customization Workflow
+
+**Trigger phrases:**
+- "customize starter"
+- "customize template" 
+- "setup project"
+- "configure starter"
+- "personalize app"
+- "initial setup"
+
+**Instructions:**
+
+When user wants to customize the starter template, follow the workflow defined in:
+```
+Read file: .claude/commands/customize.md
+```
+
+**Summary of workflow:**
+1. Assess current configuration state
+2. Gather project requirements (name, type, features)
+3. Design navigation structure 
+4. Choose theme colors and branding
+5. Configure feature flags
+6. Update `frontend/lib/config.ts`
+7. Test configuration changes
+8. Provide next steps guidance
+
+**Key principles:**
+- Always backup config before changes
+- Suggest presets based on app type (SaaS, e-commerce, portfolio)
+- Use accessible colors and navigation patterns
+- Test changes incrementally
+- Guide users to relevant documentation
+
+---
+
 ### New Feature Workflow
 
 **Trigger phrases:**
