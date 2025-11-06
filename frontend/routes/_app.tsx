@@ -51,7 +51,8 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
         }} />
       </head>
       <body style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
-        <Navigation userEmail={userEmail} userRole={userRole} initialTheme={initialTheme} />
+        {/* Use key="nav" to persist the same Navigation island instance across navigations */}
+        <Navigation key="nav" userEmail={userEmail} userRole={userRole} initialTheme={initialTheme} />
         {showEmailBanner && <EmailVerificationBanner />}
         <ErrorBoundary>
           <Component />

@@ -24,8 +24,6 @@ interface NavigationProps {
 }
 
 function Navigation(props: NavigationProps) {
-  console.log('🧭 Navigation render', { userEmail: props.userEmail, userRole: props.userRole, initialTheme: props.initialTheme });
-  
   // Config functions now work in both server and browser
   // The config.ts file checks for Deno availability internally
   const siteName = getSiteName();
@@ -68,10 +66,10 @@ function Navigation(props: NavigationProps) {
           {/* Right side: Dark Mode + Profile (shared across desktop and mobile) */}
           <div class="flex items-center gap-2 md:gap-3">
             {/* Dark Mode Toggle */}
-            {features.enableDarkMode && <DarkModeToggle initialTheme={props.initialTheme} />}
+            {features.enableDarkMode && <DarkModeToggle key="theme" initialTheme={props.initialTheme} />}
             
             {/* User Profile with Notifications - SINGLE INSTANCE for both desktop and mobile */}
-            <UserProfileDropdown initialEmail={props.userEmail} initialRole={props.userRole} />
+            <UserProfileDropdown key="profile" initialEmail={props.userEmail} initialRole={props.userRole} />
             
             {/* Mobile menu toggle - only visible on mobile */}
             <div class="md:hidden">
@@ -100,16 +98,8 @@ function Navigation(props: NavigationProps) {
 // Memoize Navigation to prevent re-renders when props haven't changed
 // This is critical for preventing child islands from re-rendering on page navigation
 export default memo(Navigation, (prevProps, nextProps) => {
-  const isSame = prevProps.userEmail === nextProps.userEmail && 
-                 prevProps.userRole === nextProps.userRole &&
-                 prevProps.initialTheme === nextProps.initialTheme;
-  
-  console.log('🔍 Navigation memo comparison:', {
-    prev: { email: prevProps.userEmail, role: prevProps.userRole, theme: prevProps.initialTheme },
-    next: { email: nextProps.userEmail, role: nextProps.userRole, theme: nextProps.initialTheme },
-    isSame,
-    willSkipRender: isSame
-  });
-  
-  return isSame;
+  // Return true to SKIP re-render (props are equal)
+  return prevProps.userEmail === nextProps.userEmail && 
+         prevProps.userRole === nextProps.userRole &&
+         prevProps.initialTheme === nextProps.initialTheme;
 });

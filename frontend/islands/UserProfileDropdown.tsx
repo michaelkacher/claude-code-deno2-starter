@@ -5,7 +5,7 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { memo } from 'preact/compat';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { isTokenExpired } from '../lib/jwt.ts';
 import { TokenStorage } from '../lib/storage.ts';
 
@@ -26,20 +26,7 @@ interface UserProfileDropdownProps {
   initialRole?: string | null;
 }
 
-// Track render count globally for debugging
-let renderCount = 0;
-
 function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownProps) {
-  // Debug: Log when component renders with timestamp
-  if (IS_BROWSER) {
-    renderCount++;
-    console.log(`🔄 [${new Date().toLocaleTimeString()}] UserProfileDropdown render #${renderCount}`, { 
-      initialEmail, 
-      initialRole, 
-      location: window.location.pathname 
-    });
-  }
-  
   // Use lazy initialization to prevent flickering - only initialize from props once
   const [userEmail, setUserEmail] = useState<string | null>(() => {
     // On initial mount, prefer localStorage over props if available
@@ -72,8 +59,9 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
         return parseInt(stored, 10);
       }
     }
-    // Default to 0 (hidden) only if no stored value exists
-    return 0;
+    // On server, default to 1 to render badge (will be hidden with CSS)
+    // Client will immediately update to correct value from sessionStorage
+    return IS_BROWSER ? 0 : 1;
   });
   
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
@@ -97,21 +85,35 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
   const reconnectTimeoutRef = useRef<number | null>(null);
   const tokenCheckIntervalRef = useRef<number | null>(null);
   const isInitializedRef = useRef<boolean>(false);
-  const [isHydrated, setIsHydrated] = useState(false);
   
-  // Set hydrated flag on mount to enable smooth transitions after initial render
-  useEffect(() => {
-    if (IS_BROWSER) {
-      // Use a small delay to ensure initial state is rendered first
-      const timer = setTimeout(() => setIsHydrated(true), 100);
-      return () => clearTimeout(timer);
+  // Track previous value to prevent unnecessary re-renders
+  const prevUnreadCountRef = useRef<number>(unreadCount);
+  
+  // Ref to the badge DOM element for direct manipulation
+  const badgeRef = useRef<HTMLDivElement>(null);
+  
+  // Use useLayoutEffect to update badge visibility BEFORE browser paint
+  // This runs synchronously after DOM mutations but before the screen updates
+  // Prevents any visual flicker during re-renders on navigation
+  useLayoutEffect(() => {
+    if (IS_BROWSER && badgeRef.current) {
+      const shouldShow = unreadCount > 0;
+      badgeRef.current.style.visibility = shouldShow ? 'visible' : 'hidden';
     }
-  }, []);
+  }, [unreadCount]);
 
   // Wrapper functions that update both state and sessionStorage
+  // Only update state if value actually changed to prevent unnecessary re-renders
   const updateUnreadCount = (value: number | ((prev: number) => number)) => {
     setUnreadCount(prev => {
       const newValue = typeof value === 'function' ? value(prev) : value;
+      
+      // Only update if value changed
+      if (newValue === prevUnreadCountRef.current) {
+        return prev; // Return prev to prevent re-render
+      }
+      
+      prevUnreadCountRef.current = newValue;
       if (IS_BROWSER) {
         sessionStorage.setItem('unreadCount', String(newValue));
       }
@@ -163,14 +165,8 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
     // Use sessionStorage instead of ref so it persists across component recreation
     if (sessionStorage.getItem('wsInitialized') === 'true') {
       console.log('🔌 [WebSocket] Already initialized, skipping setup');
-      // Sync from sessionStorage first (instant, prevents flicker)
-      const storedUnread = sessionStorage.getItem('unreadCount');
-      if (storedUnread !== null) {
-        const count = parseInt(storedUnread, 10);
-        setUnreadCount(count);
-      }
-      
-      // Then fetch fresh data in background to ensure accuracy
+      // State is already initialized from sessionStorage in useState
+      // Just fetch fresh data in background to ensure accuracy
       const token = TokenStorage.getAccessToken();
       if (token && userEmail) {
         fetchNotifications();
@@ -556,11 +552,6 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
   // Use state email if available, otherwise fall back to initial prop
   const displayEmail = userEmail || initialEmail || '';
   
-  // Debug: Log unreadCount state
-  if (IS_BROWSER) {
-    console.log('📊 Badge state:', { unreadCount, isConnected, displayEmail });
-  }
-  
   // Not logged in - only show login button if we're certain user is not authenticated
   // Check localStorage on client-side to prevent flicker during navigation
   if (!displayEmail) {
@@ -595,10 +586,11 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
           <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
             {displayEmail.charAt(0).toUpperCase()}
           </div>
-          {/* Notification badge - always rendered, use visibility to prevent layout shift and flicker */}
+          {/* Notification Badge - visibility controlled ONLY by ref (direct DOM manipulation) */}
+          {/* No inline style - ref effect handles visibility completely */}
           <div 
-            class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center"
-            style={{ visibility: unreadCount > 0 ? 'visible' : 'hidden' }}
+            ref={badgeRef}
+            class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center transition-none"
           >
             <span class="text-xs text-white font-medium">
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -735,16 +727,7 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
 // Memoize component to prevent re-renders when props haven't actually changed
 // This prevents flickering when navigating between pages
 export default memo(UserProfileDropdown, (prevProps, nextProps) => {
-  const isSame = prevProps.initialEmail === nextProps.initialEmail && 
-                 prevProps.initialRole === nextProps.initialRole;
-  
-  console.log('🔍 Memo comparison:', {
-    prev: { email: prevProps.initialEmail, role: prevProps.initialRole },
-    next: { email: nextProps.initialEmail, role: nextProps.initialRole },
-    isSame,
-    willSkipRender: isSame
-  });
-  
   // Return true to SKIP re-render (props are equal)
-  return isSame;
+  return prevProps.initialEmail === nextProps.initialEmail && 
+         prevProps.initialRole === nextProps.initialRole;
 });
