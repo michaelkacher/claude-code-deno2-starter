@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { requireAdmin } from '../lib/admin-auth.ts';
 import { cacheStrategies } from '../lib/cache-control.ts';
 import { getKv } from '../lib/kv.ts';
+import { getPaginationParams } from '../lib/pagination.ts';
 import { revokeAllUserTokens } from '../lib/token-revocation.ts';
 import { validateParams, validateQuery } from '../middleware/validate.ts';
 import { ListUsersQuerySchema, UserIdParamSchema } from '../types/user.ts';
@@ -24,14 +25,18 @@ admin.use('*', requireAdmin());
  */
 admin.get('/users', cacheStrategies.adminData(), validateQuery(ListUsersQuerySchema), async (c: Context) => {
   try {
-    const { page, limit, search, role, emailVerified } = c.get('validatedQuery') as {
-      page: number;
-      limit: number;
+    // Get pagination params with enforced limits
+    const pagination = getPaginationParams(c, { maxLimit: 100, defaultLimit: 10 });
+    
+    const query = c.get('validatedQuery') as {
+      page?: number;
       search?: string;
       role?: 'admin' | 'user';
       emailVerified?: boolean;
     };
-    const searchLower = search?.toLowerCase() || '';
+    
+    const page = query.page || 1;
+    const searchLower = query.search?.toLowerCase() || '';
 
     const users: any[] = [];
     const allUsers = kv.list({ prefix: ['users'] });
@@ -48,11 +53,11 @@ admin.get('/users', cacheStrategies.adminData(), validateQuery(ListUsersQuerySch
         continue;
       }
 
-      if (role && user.role !== role) {
+      if (query.role && user.role !== query.role) {
         continue;
       }
 
-      if (emailVerified !== undefined && user.emailVerified !== emailVerified) {
+      if (query.emailVerified !== undefined && user.emailVerified !== query.emailVerified) {
         continue;
       }
 
@@ -64,11 +69,11 @@ admin.get('/users', cacheStrategies.adminData(), validateQuery(ListUsersQuerySch
     // Sort by creation date (newest first)
     users.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Pagination
+    // Pagination with enforced limits
     const total = users.length;
-    const totalPages = Math.ceil(total / limit);
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
+    const totalPages = Math.ceil(total / pagination.limit);
+    const startIndex = (page - 1) * pagination.limit;
+    const endIndex = startIndex + pagination.limit;
     const paginatedUsers = users.slice(startIndex, endIndex);
 
     return c.json({
@@ -76,7 +81,7 @@ admin.get('/users', cacheStrategies.adminData(), validateQuery(ListUsersQuerySch
         users: paginatedUsers,
         pagination: {
           page,
-          limit,
+          limit: pagination.limit, // Return enforced limit
           total,
           totalPages,
           hasNext: page < totalPages,

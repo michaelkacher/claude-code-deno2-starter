@@ -21,7 +21,8 @@ interface User {
 
 export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
   // Extract token from cookies
-  const token = req.headers.get('cookie')?.split('; ')
+  const cookieHeader = req.headers.get('cookie');
+  const token = cookieHeader?.split('; ')
     .find((c) => c.startsWith('auth_token='))
     ?.split('=')[1];
 
@@ -45,7 +46,8 @@ export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
     });
 
     if (!userResponse.ok) {
-      // Invalid or expired token - redirect to login
+      // Invalid or expired token - redirect to login with reason
+      // This will trigger the login page to show an appropriate error message
       return new Response(null, {
         status: 302,
         headers: { location: '/login?reason=invalid_session' },

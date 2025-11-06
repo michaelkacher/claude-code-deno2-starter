@@ -308,12 +308,32 @@ export default function JobDashboard() {
     fetchStats();
     fetchSchedules();
 
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: number | null = null;
+    let isCleaningUp = false;
+
+    const connectWebSocket = () => {
+      if (isCleaningUp) return;
+      
+      if (ws) {
+        try {
+          const readyState = ws.readyState;
+          if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) {
+            ws.close();
+          }
+        } catch (error) {
+          console.debug('Error closing existing WebSocket during cleanup (non-critical):', error);
+        }
+        ws = null;
+      }
+
+      
     // Set up WebSocket connection
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.host.replace(':3000', ':8000')}/api/notifications/ws`;
     
     console.log('[JobDashboard] Connecting to WebSocket:', wsUrl);
-    const ws = new WebSocket(wsUrl);
+    ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log('[JobDashboard] WebSocket connected, waiting for auth prompt');
@@ -391,16 +411,55 @@ export default function JobDashboard() {
     };
 
     ws.onclose = () => {
-      console.log('[JobDashboard] WebSocket disconnected');
+      console.log('[JobDashboard] WebSocket disconnected', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean
+      });
+
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
+
+      if (!isCleaningUp) {
+        reconnectTimeout = setTimeout(() => {
+          connectWebSocket();
+        }, 5000);  
+      }
     };
+    };
+
+    connectWebSocket();
 
     // Cleanup on unmount
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'unsubscribe_jobs' }));
-        ws.close();
+      isCleaningUp = true;
+
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
+
+      try {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'unsubscribe_jobs' }));
+        }
+
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+          ws.close();
+        }
+        
+      } catch (err) {
+        console.error('[JobDashboard] Error closing WebSocket:', err);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    if (IS_BROWSER) {
+      fetchJobs();
+    }
   }, [statusFilter.value]);
 
   // Format date

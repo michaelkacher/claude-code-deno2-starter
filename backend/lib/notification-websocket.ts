@@ -16,10 +16,89 @@ interface WebSocketClient {
   isAdmin: boolean;
   isAlive: boolean;
   heartbeatInterval?: number;
+  connectionId: string; // Unique ID for this connection
+  connectedAt: number; // Timestamp when connected
+  lastActivity: number; // Last time we received a message
 }
 
+// Configuration
+const MAX_CONNECTIONS_PER_USER = 5; // Allow multiple devices/tabs
+const CLEANUP_INTERVAL_MS = 60000; // Check for dead connections every 60s
+const CONNECTION_TIMEOUT_MS = 300000; // Consider connection dead after 5min of inactivity
+const MAX_TOTAL_CONNECTIONS = 1000; // Global limit to prevent abuse
+
 // Track active WebSocket connections by user ID
-const clients = new Map<string, WebSocketClient>();
+// Changed to Map<userId, Map<connectionId, WebSocketClient>> to support multiple connections per user
+const clients = new Map<string, Map<string, WebSocketClient>>();
+
+// Track total connection count for global limit
+let totalConnections = 0;
+
+/**
+ * Periodic cleanup of dead connections
+ * Runs every 60 seconds to check for connections that haven't responded to heartbeat
+ */
+function startPeriodicCleanup() {
+  setInterval(() => {
+    const now = Date.now();
+    let cleaned = 0;
+    
+    for (const [userId, userConnections] of clients.entries()) {
+      for (const [connectionId, client] of userConnections.entries()) {
+        const inactiveDuration = now - client.lastActivity;
+        
+        // Remove connections that are:
+        // 1. Not alive (failed heartbeat)
+        // 2. Inactive for too long
+        // 3. Socket not in OPEN state
+        if (
+          !client.isAlive ||
+          inactiveDuration > CONNECTION_TIMEOUT_MS ||
+          client.socket.readyState !== WebSocket.OPEN
+        ) {
+          logger.warn('Cleaning up stale connection', {
+            userId,
+            connectionId,
+            inactiveDuration,
+            isAlive: client.isAlive,
+            readyState: client.socket.readyState,
+          });
+          
+          // Close socket if still open
+          if (client.socket.readyState === WebSocket.OPEN) {
+            client.socket.close();
+          }
+          
+          // Clear heartbeat interval
+          if (client.heartbeatInterval) {
+            clearInterval(client.heartbeatInterval);
+          }
+          
+          // Remove from map
+          userConnections.delete(connectionId);
+          totalConnections--;
+          cleaned++;
+        }
+      }
+      
+      // Remove user entry if no connections left
+      if (userConnections.size === 0) {
+        clients.delete(userId);
+      }
+    }
+    
+    if (cleaned > 0) {
+      logger.info('Periodic cleanup complete', {
+        cleaned,
+        totalConnections,
+        activeUsers: clients.size,
+      });
+    }
+  }, CLEANUP_INTERVAL_MS);
+}
+
+// Start periodic cleanup when module loads
+startPeriodicCleanup();
 
 /**
  * Set up WebSocket connection - returns event handlers for Hono
@@ -28,10 +107,22 @@ const clients = new Map<string, WebSocketClient>();
 export function setupWebSocketConnection() {
   let authenticated = false;
   let userId: string | null = null;
+  let connectionId: string | null = null;
   let client: WebSocketClient | null = null;
 
   return {
     onOpen(_event: Event, ws: WebSocket) {
+      // Check global connection limit
+      if (totalConnections >= MAX_TOTAL_CONNECTIONS) {
+        logger.warn('Global connection limit reached', { totalConnections });
+        sendMessage(ws, {
+          type: 'error',
+          message: 'Server connection limit reached. Please try again later.',
+        });
+        ws.close();
+        return;
+      }
+      
       logger.debug('Connection opened, waiting for auth');
       
       // Request authentication
@@ -67,22 +158,67 @@ export function setupWebSocketConnection() {
 
             logger.info('User authenticated', { userId, isAdmin });
 
+            // Check per-user connection limit
+            const userConnections = clients.get(userId);
+            if (userConnections && userConnections.size >= MAX_CONNECTIONS_PER_USER) {
+              logger.warn('User connection limit reached', {
+                userId,
+                currentConnections: userConnections.size,
+                limit: MAX_CONNECTIONS_PER_USER,
+              });
+              
+              // Close oldest connection to make room for new one
+              const oldestConnection = Array.from(userConnections.values())
+                .sort((a, b) => a.connectedAt - b.connectedAt)[0];
+              
+              if (oldestConnection) {
+                logger.info('Closing oldest connection for user', {
+                  userId,
+                  oldConnectionId: oldestConnection.connectionId,
+                });
+                
+                oldestConnection.socket.close();
+                if (oldestConnection.heartbeatInterval) {
+                  clearInterval(oldestConnection.heartbeatInterval);
+                }
+                userConnections.delete(oldestConnection.connectionId);
+                totalConnections--;
+              }
+            }
+
+            // Generate unique connection ID
+            connectionId = crypto.randomUUID();
+            const now = Date.now();
+
             // Create client
             client = {
               socket: ws,
               userId,
               isAdmin,
               isAlive: true,
+              connectionId,
+              connectedAt: now,
+              lastActivity: now,
             };
 
             // Store client connection
-            clients.set(userId, client);
+            if (!clients.has(userId)) {
+              clients.set(userId, new Map());
+            }
+            clients.get(userId)!.set(connectionId, client);
+            totalConnections++;
 
-            logger.debug('Sending connection confirmation', { userId });
+            logger.debug('Sending connection confirmation', {
+              userId,
+              connectionId,
+              totalConnections,
+            });
+            
             // Send connection confirmation
             sendMessage(ws, {
               type: 'connected',
               message: 'WebSocket connection established',
+              connectionId,
               timestamp: new Date().toISOString(),
             });
 
@@ -94,8 +230,8 @@ export function setupWebSocketConnection() {
             });
 
             // Start watching for notification changes (don't await - runs in background)
-            watchNotifications(userId, ws).catch(error => {
-              logger.error('Watch notifications failed', error, { userId });
+            watchNotifications(userId, connectionId, ws).catch(error => {
+              logger.error('Watch notifications failed', error, { userId, connectionId });
             });
 
             // Start heartbeat
@@ -110,13 +246,14 @@ export function setupWebSocketConnection() {
             ws.close();
             return;
           }
-        } else if (authenticated && userId) {
+        } else if (authenticated && userId && connectionId) {
           // Handle regular messages
-          handleClientMessage(userId, data);
+          handleClientMessage(userId, connectionId, data);
 
-          // Reset heartbeat on any message
+          // Update last activity and reset heartbeat on any message
           if (client) {
             client.isAlive = true;
+            client.lastActivity = Date.now();
           }
         } else {
           // Not authenticated and not auth message
@@ -132,13 +269,32 @@ export function setupWebSocketConnection() {
     },
 
     onClose() {
-      if (userId) {
-        logger.info('User disconnected', { userId });
+      if (userId && connectionId) {
+        logger.info('User disconnected', { userId, connectionId });
+        
         // Clear heartbeat interval if exists
         if (client?.heartbeatInterval) {
           clearInterval(client.heartbeatInterval);
         }
-        clients.delete(userId);
+        
+        // Remove this specific connection
+        const userConnections = clients.get(userId);
+        if (userConnections) {
+          userConnections.delete(connectionId);
+          totalConnections--;
+          
+          // Remove user entry if no connections left
+          if (userConnections.size === 0) {
+            clients.delete(userId);
+          }
+          
+          logger.debug('Connection cleaned up', {
+            userId,
+            connectionId,
+            remainingConnectionsForUser: userConnections.size,
+            totalConnections,
+          });
+        }
       } else {
         logger.debug('Unauthenticated connection closed');
       }
@@ -146,8 +302,24 @@ export function setupWebSocketConnection() {
 
     onError(error: Event) {
       logger.error('WebSocket error', error);
-      if (userId) {
-        clients.delete(userId);
+      
+      if (userId && connectionId) {
+        // Clear heartbeat interval
+        if (client?.heartbeatInterval) {
+          clearInterval(client.heartbeatInterval);
+        }
+        
+        // Remove this specific connection
+        const userConnections = clients.get(userId);
+        if (userConnections) {
+          userConnections.delete(connectionId);
+          totalConnections--;
+          
+          // Remove user entry if no connections left
+          if (userConnections.size === 0) {
+            clients.delete(userId);
+          }
+        }
       }
     },
   };
@@ -162,21 +334,27 @@ export function setupWebSocketConnection() {
  * Note: Test scripts that open their own KV connection won't trigger this watcher,
  * but in production all notifications are created via API so this works perfectly.
  */
-async function watchNotifications(userId: string, socket: WebSocket) {
+async function watchNotifications(userId: string, connectionId: string, socket: WebSocket) {
   const kv = await getKv();
 
   try {
     const signalKey: Deno.KvKey = ['notification_updates', userId];
     
-    logger.debug('Setting up notification watcher', { userId });
+    logger.debug('Setting up notification watcher', { userId, connectionId });
     
     const watcher = kv.watch([signalKey]);
     let isFirstEvent = true;
 
     for await (const entries of watcher) {
-      // Check if socket is still open
-      if (socket.readyState !== WebSocket.OPEN) {
-        logger.debug('Socket closed, stopping watcher', { userId });
+      // Check if socket is still open and connection still exists
+      const userConnections = clients.get(userId);
+      const connection = userConnections?.get(connectionId);
+      
+      if (!connection || socket.readyState !== WebSocket.OPEN) {
+        logger.debug('Socket closed or connection removed, stopping watcher', {
+          userId,
+          connectionId,
+        });
         break;
       }
 
@@ -184,17 +362,30 @@ async function watchNotifications(userId: string, socket: WebSocket) {
       if (isFirstEvent) {
         isFirstEvent = false;
         const signalEntry = entries[0];
-        logger.debug('Skipping initial watcher state', { userId, initialValue: signalEntry.value });
+        logger.debug('Skipping initial watcher state', {
+          userId,
+          connectionId,
+          initialValue: signalEntry.value,
+        });
         continue;
       }
 
       const signalEntry = entries[0];
-      logger.debug('Watcher detected notification change', { userId, timestamp: signalEntry.value });
+      logger.debug('Watcher detected notification change', {
+        userId,
+        connectionId,
+        timestamp: signalEntry.value,
+      });
+      
+      // Update last activity
+      if (connection) {
+        connection.lastActivity = Date.now();
+      }
       
       await sendNotificationUpdate(userId, socket);
     }
   } catch (error) {
-    logger.error('Watcher error', error, { userId });
+    logger.error('Watcher error', error, { userId, connectionId });
   }
 }
 
@@ -225,15 +416,19 @@ async function sendNotificationUpdate(userId: string, socket: WebSocket) {
 /**
  * Handle incoming messages from client
  */
-function handleClientMessage(userId: string, data: any) {
-  const client = clients.get(userId);
+function handleClientMessage(userId: string, connectionId: string, data: any) {
+  const userConnections = clients.get(userId);
+  const client = userConnections?.get(connectionId);
+  
+  if (!client) {
+    logger.warn('Message from unknown connection', { userId, connectionId });
+    return;
+  }
   
   switch (data.type) {
     case 'ping':
       // Client sent ping, respond with pong
-      if (client) {
-        sendMessage(client.socket, { type: 'pong' });
-      }
+      sendMessage(client.socket, { type: 'pong' });
       break;
 
     case 'pong':
@@ -246,8 +441,10 @@ function handleClientMessage(userId: string, data: any) {
       NotificationService.getUserNotifications(userId, {
         limit: data.limit || 10,
       }).then((notifications) => {
-        if (client) {
-          sendMessage(client.socket, {
+        // Re-check client still exists
+        const currentClient = clients.get(userId)?.get(connectionId);
+        if (currentClient) {
+          sendMessage(currentClient.socket, {
             type: 'notifications_list',
             notifications,
           });
@@ -257,22 +454,20 @@ function handleClientMessage(userId: string, data: any) {
 
     case 'subscribe_jobs':
       // Client wants real-time job updates
-      logger.info('User subscribed to job updates', { userId });
-      if (client) {
-        sendMessage(client.socket, {
-          type: 'jobs_subscribed',
-          message: 'Subscribed to job updates',
-        });
-      }
+      logger.info('User subscribed to job updates', { userId, connectionId });
+      sendMessage(client.socket, {
+        type: 'jobs_subscribed',
+        message: 'Subscribed to job updates',
+      });
       break;
 
     case 'unsubscribe_jobs':
       // Client no longer wants job updates
-      logger.info('User unsubscribed from job updates', { userId });
+      logger.info('User unsubscribed from job updates', { userId, connectionId });
       break;
 
     default:
-      logger.warn('Unknown message type', { userId, type: data.type });
+      logger.warn('Unknown message type', { userId, connectionId, type: data.type });
   }
 }
 
@@ -291,9 +486,26 @@ function sendMessage(socket: WebSocket, data: any) {
 function startHeartbeat(client: WebSocketClient) {
   const interval = setInterval(() => {
     if (!client.isAlive) {
-      logger.warn('Client failed heartbeat', { userId: client.userId });
+      logger.warn('Client failed heartbeat', {
+        userId: client.userId,
+        connectionId: client.connectionId,
+      });
+      
+      // Close socket
       client.socket.close();
-      clients.delete(client.userId);
+      
+      // Remove from clients map
+      const userConnections = clients.get(client.userId);
+      if (userConnections) {
+        userConnections.delete(client.connectionId);
+        totalConnections--;
+        
+        // Remove user entry if no connections left
+        if (userConnections.size === 0) {
+          clients.delete(client.userId);
+        }
+      }
+      
       clearInterval(interval);
       return;
     }
@@ -308,25 +520,36 @@ function startHeartbeat(client: WebSocketClient) {
 }
 
 /**
- * Broadcast notification to a specific user (if connected)
+ * Broadcast notification to a specific user (all their connections)
  */
 export function notifyUser(userId: string, notification: any) {
-  const client = clients.get(userId);
-  if (client && client.socket.readyState === WebSocket.OPEN) {
-    sendMessage(client.socket, {
-      type: 'new_notification',
-      notification,
-      timestamp: new Date().toISOString(),
-    });
-  }
+  const userConnections = clients.get(userId);
+  if (!userConnections) return;
+  
+  const message = {
+    type: 'new_notification',
+    notification,
+    timestamp: new Date().toISOString(),
+  };
+  
+  // Send to all of user's connections
+  userConnections.forEach((client) => {
+    if (client.socket.readyState === WebSocket.OPEN) {
+      sendMessage(client.socket, message);
+    }
+  });
 }
 
 /**
  * Broadcast to all connected clients
  */
 export function broadcast(message: any) {
-  clients.forEach((client) => {
-    sendMessage(client.socket, message);
+  clients.forEach((userConnections) => {
+    userConnections.forEach((client) => {
+      if (client.socket.readyState === WebSocket.OPEN) {
+        sendMessage(client.socket, message);
+      }
+    });
   });
 }
 
@@ -334,15 +557,19 @@ export function broadcast(message: any) {
  * Broadcast job update to all connected admin clients
  */
 export function broadcastJobUpdate(jobData: any) {
-  clients.forEach((client) => {
-    // Only send job updates to admin users
-    if (client.isAdmin) {
-      sendMessage(client.socket, {
-        type: 'job_update',
-        job: jobData,
-        timestamp: new Date().toISOString(),
-      });
-    }
+  const message = {
+    type: 'job_update',
+    job: jobData,
+    timestamp: new Date().toISOString(),
+  };
+  
+  clients.forEach((userConnections) => {
+    userConnections.forEach((client) => {
+      // Only send job updates to admin users
+      if (client.isAdmin && client.socket.readyState === WebSocket.OPEN) {
+        sendMessage(client.socket, message);
+      }
+    });
   });
 }
 
@@ -350,15 +577,19 @@ export function broadcastJobUpdate(jobData: any) {
  * Broadcast job stats update to all connected admin clients
  */
 export function broadcastJobStats(stats: any) {
-  clients.forEach((client) => {
-    // Only send job stats to admin users
-    if (client.isAdmin) {
-      sendMessage(client.socket, {
-        type: 'job_stats_update',
-        stats,
-        timestamp: new Date().toISOString(),
-      });
-    }
+  const message = {
+    type: 'job_stats_update',
+    stats,
+    timestamp: new Date().toISOString(),
+  };
+  
+  clients.forEach((userConnections) => {
+    userConnections.forEach((client) => {
+      // Only send job stats to admin users
+      if (client.isAdmin && client.socket.readyState === WebSocket.OPEN) {
+        sendMessage(client.socket, message);
+      }
+    });
   });
 }
 
@@ -366,29 +597,86 @@ export function broadcastJobStats(stats: any) {
  * Get connection statistics
  */
 export function getConnectionStats() {
+  const userConnectionCounts = new Map<string, number>();
+  
+  clients.forEach((userConnections, userId) => {
+    userConnectionCounts.set(userId, userConnections.size);
+  });
+  
   return {
-    totalConnections: clients.size,
+    totalConnections,
+    activeUsers: clients.size,
     connectedUsers: Array.from(clients.keys()),
+    connectionsPerUser: Object.fromEntries(userConnectionCounts),
+    maxConnectionsPerUser: MAX_CONNECTIONS_PER_USER,
+    maxTotalConnections: MAX_TOTAL_CONNECTIONS,
   };
 }
 
 /**
- * Disconnect a specific user
+ * Disconnect all connections for a specific user
  */
 export function disconnectUser(userId: string) {
-  const client = clients.get(userId);
-  if (client) {
+  const userConnections = clients.get(userId);
+  if (!userConnections) return;
+  
+  userConnections.forEach((client) => {
+    if (client.heartbeatInterval) {
+      clearInterval(client.heartbeatInterval);
+    }
     client.socket.close();
+    totalConnections--;
+  });
+  
+  clients.delete(userId);
+  
+  logger.info('Disconnected all connections for user', {
+    userId,
+    count: userConnections.size,
+  });
+}
+
+/**
+ * Disconnect a specific connection
+ */
+export function disconnectConnection(userId: string, connectionId: string) {
+  const userConnections = clients.get(userId);
+  if (!userConnections) return;
+  
+  const client = userConnections.get(connectionId);
+  if (!client) return;
+  
+  if (client.heartbeatInterval) {
+    clearInterval(client.heartbeatInterval);
+  }
+  
+  client.socket.close();
+  userConnections.delete(connectionId);
+  totalConnections--;
+  
+  // Remove user entry if no connections left
+  if (userConnections.size === 0) {
     clients.delete(userId);
   }
+  
+  logger.info('Disconnected specific connection', { userId, connectionId });
 }
 
 /**
  * Disconnect all users
  */
 export function disconnectAll() {
-  clients.forEach((client) => {
-    client.socket.close();
+  clients.forEach((userConnections) => {
+    userConnections.forEach((client) => {
+      if (client.heartbeatInterval) {
+        clearInterval(client.heartbeatInterval);
+      }
+      client.socket.close();
+    });
   });
+  
   clients.clear();
+  totalConnections = 0;
+  
+  logger.info('Disconnected all connections');
 }

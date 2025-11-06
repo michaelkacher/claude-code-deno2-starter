@@ -21,9 +21,22 @@ export default function NotificationBell() {
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
+  const lastFetchTimeRef = useRef<number>(0);
+  
+  // Cache expiration time: 30 seconds
+  const CACHE_EXPIRY_MS = 30 * 1000;
 
-  // Fetch notifications from API
-  const fetchNotifications = async () => {
+  // Fetch notifications from API (with cache check)
+  const fetchNotifications = async (force = false) => {
+    // Check cache expiration (skip if data is fresh)
+    const now = Date.now();
+    const timeSinceLastFetch = now - lastFetchTimeRef.current;
+    
+    if (!force && timeSinceLastFetch < CACHE_EXPIRY_MS) {
+      console.log(`[NotificationBell] Using cached data (${Math.round(timeSinceLastFetch / 1000)}s old)`);
+      return;
+    }
+    
     try {
       const apiUrl = IS_BROWSER
         ? window.location.origin.replace(':3000', ':8000')
@@ -43,6 +56,8 @@ export default function NotificationBell() {
         const data = await response.json();
         setNotifications(data.notifications || []);
         setUnreadCount(data.unreadCount || 0);
+        lastFetchTimeRef.current = Date.now();
+        console.log('[NotificationBell] Notifications fetched and cached');
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -107,6 +122,8 @@ export default function NotificationBell() {
         // Update local state
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnreadCount(0);
+        // Invalidate cache since data changed
+        lastFetchTimeRef.current = 0;
       }
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -159,7 +176,15 @@ export default function NotificationBell() {
 
     // Close existing connection
     if (wsRef.current) {
-      wsRef.current.close();
+      try {
+        const readyState = wsRef.current.readyState;
+        if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) {
+          wsRef.current.close();
+          }
+        } catch (error) {
+          console.error('Error closing existing WebSocket:', error);
+      }
+      wsRef.current = null;
     }
 
     // Create WebSocket connection with proper URL
@@ -208,8 +233,8 @@ export default function NotificationBell() {
           case 'connected':
             console.log('[WebSocket] Authenticated and connected');
             setIsConnected(true);
-            // Fetch initial notifications after successful auth
-            fetchNotifications();
+            // Fetch initial notifications after successful auth (force refresh)
+            fetchNotifications(true);
             break;
 
           case 'unread_count':
@@ -218,16 +243,16 @@ export default function NotificationBell() {
 
           case 'notification_update':
             setUnreadCount(data.unreadCount);
-            // If dropdown is open, refresh the list
+            // If dropdown is open, refresh the list (force refresh for real-time updates)
             if (isOpen) {
-              fetchNotifications();
+              fetchNotifications(true);
             }
             break;
 
           case 'new_notification':
-            // New notification received - add to list if dropdown is open
+            // New notification received - add to list if dropdown is open (force refresh)
             if (isOpen) {
-              fetchNotifications();
+              fetchNotifications(true);
             } else {
               // Just update the count
               setUnreadCount((prev) => prev + 1);
@@ -249,13 +274,14 @@ export default function NotificationBell() {
       setIsConnected(false);
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       console.log('[WebSocket] Disconnected');
       setIsConnected(false);
 
       // Attempt to reconnect after 5 seconds
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
       reconnectTimeoutRef.current = setTimeout(() => {
         if (IS_BROWSER && localStorage.getItem('access_token')) {
@@ -285,14 +311,29 @@ export default function NotificationBell() {
       }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
+      if (wsRef.current) {
+        try {
+          const readyState = wsRef.current.readyState;
+          if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) {
+            wsRef.current.close();
+          }
+         } catch (error) {
+            console.debug('Error closing existing WebSocket during cleanup (non-critical):', error);
+         }
+        
+        wsRef.current = null;
       }
     };
   }, []);
 
-  // Refresh notifications when dropdown opens
+  // Refresh notifications when dropdown opens (use cache if fresh)
   useEffect(() => {
     if (isOpen && IS_BROWSER) {
-      fetchNotifications();
+      // Don't force refresh - will use cache if data is < 30s old
+      fetchNotifications(false);
     }
   }, [isOpen]);
 

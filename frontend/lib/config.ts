@@ -152,7 +152,13 @@ export const defaultConfig: SiteConfig = {
 };
 
 // Environment-specific overrides
+// Only run on server-side where Deno is available
 const getEnvironmentConfig = (): Partial<SiteConfig> => {
+  // Check if we're in a browser environment (Deno is only available server-side)
+  if (typeof Deno === 'undefined') {
+    return {}; // Return empty config in browser, use defaults
+  }
+  
   const env = Deno.env.get("DENO_ENV") || "development";
 
   switch (env) {

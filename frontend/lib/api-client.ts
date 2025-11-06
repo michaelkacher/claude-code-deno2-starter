@@ -115,6 +115,21 @@ export class ApiClient {
 
       // Handle error responses
       if (!response.ok) {
+        // Handle 401 Unauthorized - token expired or invalid
+        if (response.status === 401 && !skipAuth) {
+          console.log('🔒 [API] 401 Unauthorized - token expired, logging out');
+          
+          // Clear auth data
+          if (typeof window !== 'undefined') {
+            TokenStorage.clearAuth();
+            document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+            document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Strict';
+            
+            // Redirect to login with reason
+            window.location.href = '/login?reason=expired';
+          }
+        }
+        
         return {
           error: {
             code: data.error?.code || 'UNKNOWN_ERROR',

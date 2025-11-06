@@ -14,14 +14,29 @@ interface LoginData {
 
 export const handler: Handlers<LoginData> = {
   GET(req, ctx) {
+    // Check if user is already authenticated with a valid token
+    const cookies = req.headers.get('cookie') || '';
+    const authToken = cookies.split(';')
+      .map(c => c.trim())
+      .find(c => c.startsWith('auth_token='))
+      ?.split('=')[1];
+    
     // Get redirect URL and reason from query params
     const url = new URL(req.url);
     const redirectTo = url.searchParams.get('redirect') || '/';
     const reason = url.searchParams.get('reason');
     
+    // If already authenticated and not explicitly logging out/expired, redirect to home
+    // Only redirect if there's a valid token and no error reason
+    if (authToken && !reason) {
+      return Response.redirect(new URL(redirectTo, url.origin).href, 302);
+    }
+    
     let error: string | undefined;
     if (reason === 'expired') {
       error = 'Your session has expired. Please log in again.';
+    } else if (reason === 'invalid_session') {
+      error = 'Your session is invalid. Please log in again.';
     }
     
     return ctx.render({ redirectTo, error });

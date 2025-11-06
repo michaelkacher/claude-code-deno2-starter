@@ -7,12 +7,20 @@ import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useEffect, useState } from 'preact/hooks';
 import { ThemeStorage } from '../lib/storage.ts';
 
-export default function DarkModeToggle() {
-  // Check if dark mode is active (will be set by inline script in _app.tsx before hydration)
+interface DarkModeToggleProps {
+  initialTheme?: 'light' | 'dark' | null;
+}
+
+export default function DarkModeToggle({ initialTheme }: DarkModeToggleProps) {
+  // Initialize with server-provided theme, or check DOM if in browser
   const [isDark, setIsDark] = useState(() => {
+    if (initialTheme) {
+      return initialTheme === 'dark';
+    }
     if (IS_BROWSER) {
       return document.documentElement.classList.contains('dark');
     }
+    // Default to false (light mode) for SSR
     return false;
   });
 

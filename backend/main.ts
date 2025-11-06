@@ -20,6 +20,13 @@ const app = new Hono();
 // Middleware
 app.use('*', logger());
 app.use('*', securityHeaders()); // Add security headers to all responses
+// NOTE: Compression middleware temporarily disabled due to ERR_CONTENT_DECODING_FAILED errors
+// TODO: Fix compression middleware to properly handle all response types
+// app.use('*', compress({ 
+//   threshold: 1024, 
+//   enableBrotli: true,
+//   excludePaths: ['/api/notifications/ws'], // Exclude WebSocket endpoint
+// })); // Compress responses > 1KB
 app.use('*', bodySizeLimits.json); // Limit request body size (1MB default)
 app.use('*', cors({
   origin: env.CORS_ORIGIN,
@@ -143,4 +150,3 @@ if (isDevelopment) {
 }
 console.log(`📝 Ready to build! Start with: /requirements then /new-feature`);
 Deno.serve({ port }, app.fetch);
-

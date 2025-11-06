@@ -36,9 +36,15 @@ const DEFAULT_CSP = [
   "font-src 'self' data:",
   "connect-src 'self' https://cdn.jsdelivr.net",
   "worker-src 'self' blob:",
+  "child-src 'self'",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "media-src 'self'",
+  "manifest-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
+  "upgrade-insecure-requests",
 ].join('; ');
 
 /**
@@ -52,6 +58,11 @@ const DEV_CSP = [
   "font-src 'self' data:",
   "connect-src 'self' ws: wss: https://cdn.jsdelivr.net",
   "worker-src 'self' blob:",
+  "child-src 'self'",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "media-src 'self'",
+  "manifest-src 'self'",
   "frame-ancestors 'none'",
 ].join('; ');
 

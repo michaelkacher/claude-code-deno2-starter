@@ -4,7 +4,10 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
+import { memo } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { isTokenExpired } from '../lib/jwt.ts';
+import { TokenStorage } from '../lib/storage.ts';
 
 interface Notification {
   id: string;
@@ -18,42 +21,204 @@ interface Notification {
   readAt?: string;
 }
 
-export default function UserProfileDropdown() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface UserProfileDropdownProps {
+  initialEmail?: string | null;
+  initialRole?: string | null;
+}
+
+// Track render count globally for debugging
+let renderCount = 0;
+
+function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownProps) {
+  // Debug: Log when component renders with timestamp
+  if (IS_BROWSER) {
+    renderCount++;
+    console.log(`🔄 [${new Date().toLocaleTimeString()}] UserProfileDropdown render #${renderCount}`, { 
+      initialEmail, 
+      initialRole, 
+      location: window.location.pathname 
+    });
+  }
+  
+  // Use lazy initialization to prevent flickering - only initialize from props once
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    // On initial mount, prefer localStorage over props if available
+    if (IS_BROWSER) {
+      const storedEmail = localStorage.getItem('user_email');
+      if (storedEmail) return storedEmail;
+    }
+    // Fallback to initialEmail (from SSR/middleware), or null to show login
+    return initialEmail || null;
+  });
+  
+  const [userRole, setUserRole] = useState<string | null>(() => {
+    if (IS_BROWSER) {
+      const storedRole = localStorage.getItem('user_role');
+      if (storedRole) return storedRole;
+    }
+    return initialRole || null;
+  });
+  
+  const [isLoading, setIsLoading] = useState(false); // Start as false since we have initial state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Initialize state from sessionStorage to persist across re-renders/navigation
+  // Default to last known value to prevent disappearing during navigation
+  const [unreadCount, setUnreadCount] = useState(() => {
+    if (IS_BROWSER) {
+      const stored = sessionStorage.getItem('unreadCount');
+      if (stored !== null) {
+        return parseInt(stored, 10);
+      }
+    }
+    // Default to 0 (hidden) only if no stored value exists
+    return 0;
+  });
+  
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  
+  // Track connection status - default to true (show dot) unless explicitly disconnected
+  // This prevents flickering during navigation - dot stays visible
+  const [isConnected, setIsConnected] = useState(() => {
+    if (IS_BROWSER) {
+      const stored = sessionStorage.getItem('isConnected');
+      // Only hide if explicitly set to false
+      if (stored === 'false') {
+        return false;
+      }
+    }
+    // Default to true - always show green dot unless we know we're disconnected
+    return true;
+  });
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
+  const tokenCheckIntervalRef = useRef<number | null>(null);
+  const isInitializedRef = useRef<boolean>(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+  
+  // Set hydrated flag on mount to enable smooth transitions after initial render
+  useEffect(() => {
+    if (IS_BROWSER) {
+      // Use a small delay to ensure initial state is rendered first
+      const timer = setTimeout(() => setIsHydrated(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
-  // Check authentication status
+  // Wrapper functions that update both state and sessionStorage
+  const updateUnreadCount = (value: number | ((prev: number) => number)) => {
+    setUnreadCount(prev => {
+      const newValue = typeof value === 'function' ? value(prev) : value;
+      if (IS_BROWSER) {
+        sessionStorage.setItem('unreadCount', String(newValue));
+      }
+      return newValue;
+    });
+  };
+
+  const updateIsConnected = (value: boolean) => {
+    if (IS_BROWSER) {
+      sessionStorage.setItem('isConnected', String(value));
+    }
+    setIsConnected(value);
+  };
+
+  // Auto-logout when token expires
+  const handleTokenExpiry = () => {
+    if (!IS_BROWSER) return;
+    
+    console.log('🔒 [Auth] Token expired, logging out automatically');
+    
+    // Clean up WebSocket connections
+    cleanupWebSocket();
+    
+    // Clear all auth data
+    TokenStorage.clearAuth();
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+    document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Strict';
+    
+    // Clear sessionStorage flags
+    sessionStorage.removeItem('wsInitialized');
+    sessionStorage.removeItem('unreadCount');
+    sessionStorage.removeItem('isConnected');
+    
+    // Update component state
+    setUserEmail(null);
+    setUserRole(null);
+    setNotifications([]);
+    updateUnreadCount(0);
+    
+    // Redirect to login with reason
+    window.location.href = '/login?reason=expired';
+  };
+
+  // Check authentication status and setup
   useEffect(() => {
     if (!IS_BROWSER) return;
     
-    const token = localStorage.getItem('access_token');
-    const email = localStorage.getItem('user_email');
-    const role = localStorage.getItem('user_role');
+    // Only initialize once to prevent flickering on navigation
+    // Use sessionStorage instead of ref so it persists across component recreation
+    if (sessionStorage.getItem('wsInitialized') === 'true') {
+      console.log('🔌 [WebSocket] Already initialized, skipping setup');
+      // Sync from sessionStorage first (instant, prevents flicker)
+      const storedUnread = sessionStorage.getItem('unreadCount');
+      if (storedUnread !== null) {
+        const count = parseInt(storedUnread, 10);
+        setUnreadCount(count);
+      }
+      
+      // Then fetch fresh data in background to ensure accuracy
+      const token = TokenStorage.getAccessToken();
+      if (token && userEmail) {
+        fetchNotifications();
+      }
+      return;
+    }
+    sessionStorage.setItem('wsInitialized', 'true');
     
-    if (token && email) {
-      setUserEmail(email);
-      setUserRole(role);
+    const token = TokenStorage.getAccessToken();
+    
+    // If user is authenticated, setup notifications and WebSocket
+    if (token && userEmail) {
+      // Check if token is already expired
+      if (isTokenExpired(token)) {
+        console.log('🔒 [Auth] Token already expired on mount');
+        handleTokenExpiry();
+        return;
+      }
+      
+      // Fetch notifications and connect WebSocket
       fetchNotifications();
       connectWebSocket();
+      
+      // Set up periodic token expiry check (every 30 seconds)
+      tokenCheckIntervalRef.current = setInterval(() => {
+        const currentToken = TokenStorage.getAccessToken();
+        if (!currentToken || isTokenExpired(currentToken)) {
+          handleTokenExpiry();
+          // Clear the interval
+          if (tokenCheckIntervalRef.current) {
+            clearInterval(tokenCheckIntervalRef.current);
+            tokenCheckIntervalRef.current = null;
+          }
+        }
+      }, 30000); // Check every 30 seconds
     } else {
-      // User is not authenticated, clean up any existing connections
-      cleanupWebSocket();
-      setUserEmail(null);
-      setUserRole(null);
-      setNotifications([]);
-      setUnreadCount(0);
+      // Not authenticated - hide badge, but keep dot visible (default state)
+      updateUnreadCount(0);
+      // Don't hide connection dot - it shows by default for logged-in users
     }
-    setIsLoading(false);
+    
+    // Cleanup on unmount
+    return () => {
+      if (tokenCheckIntervalRef.current) {
+        clearInterval(tokenCheckIntervalRef.current);
+        tokenCheckIntervalRef.current = null;
+      }
+    };
   }, []);
 
   // Cleanup WebSocket connections when component unmounts or user logs out
@@ -80,7 +245,7 @@ export default function UserProfileDropdown() {
     }
     
     // Update connection status
-    setIsConnected(false);
+    updateIsConnected(false);
   };
 
   // Close dropdown when clicking outside
@@ -100,6 +265,11 @@ export default function UserProfileDropdown() {
   // WebSocket connection for real-time notifications
   const connectWebSocket = () => {
     if (!IS_BROWSER) return;
+
+    // Don't reconnect if already connected
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return;
+    }
 
     const token = localStorage.getItem('access_token');
     if (!token) {
@@ -136,7 +306,7 @@ export default function UserProfileDropdown() {
               
             case 'connected':
               // Successfully authenticated
-              setIsConnected(true);
+              updateIsConnected(true);
               if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
                 reconnectTimeoutRef.current = null;
@@ -151,13 +321,13 @@ export default function UserProfileDropdown() {
               
             case 'unread_count':
               // Initial unread count
-              setUnreadCount(data.unreadCount || 0);
+              updateUnreadCount(data.unreadCount || 0);
               break;
               
             case 'notification_update':
               // New notification or count update
               if (data.unreadCount !== undefined) {
-                setUnreadCount(data.unreadCount);
+                updateUnreadCount(data.unreadCount);
               }
               if (data.latestNotifications) {
                 setNotifications(data.latestNotifications);
@@ -167,7 +337,7 @@ export default function UserProfileDropdown() {
             case 'notification':
               // Single new notification (legacy support)
               setNotifications(prev => [data.notification, ...prev.slice(0, 9)]);
-              setUnreadCount(prev => prev + 1);
+              updateUnreadCount(prev => prev + 1);
               break;
               
             case 'notification_read':
@@ -175,7 +345,7 @@ export default function UserProfileDropdown() {
               setNotifications(prev => 
                 prev.map(n => n.id === data.notificationId ? { ...n, read: true } : n)
               );
-              setUnreadCount(prev => Math.max(0, prev - 1));
+              updateUnreadCount(prev => Math.max(0, prev - 1));
               break;
               
             case 'ping':
@@ -193,7 +363,7 @@ export default function UserProfileDropdown() {
               // Direct notification push (used by test scripts)
               if (data.notification) {
                 setNotifications(prev => [data.notification, ...prev.slice(0, 9)]);
-                setUnreadCount(prev => prev + 1);
+                updateUnreadCount(prev => prev + 1);
               }
               break;
               
@@ -206,7 +376,7 @@ export default function UserProfileDropdown() {
       };
 
       wsRef.current.onclose = () => {
-        setIsConnected(false);
+        updateIsConnected(false);
         
         // Only attempt reconnection if user is still authenticated
         const currentToken = localStorage.getItem('access_token');
@@ -222,7 +392,7 @@ export default function UserProfileDropdown() {
       };
 
       wsRef.current.onerror = (error) => {
-        setIsConnected(false);
+        updateIsConnected(false);
         console.error('WebSocket error:', error);
         
         // Check if this is an authentication error (429 often indicates rate limiting due to auth issues)
@@ -247,7 +417,11 @@ export default function UserProfileDropdown() {
       return;
     }
     
-    setIsNotificationsLoading(true);
+    // Don't show loading state if we already have notifications (prevents flicker on re-fetch)
+    const shouldShowLoading = notifications.length === 0;
+    if (shouldShowLoading) {
+      setIsNotificationsLoading(true);
+    }
     try {
       const apiUrl = window.location.origin.replace(':3000', ':8000');
 
@@ -261,7 +435,7 @@ export default function UserProfileDropdown() {
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
+        updateUnreadCount(data.unreadCount || 0);
       } else if (response.status === 401) {
         // Token is invalid, clean up auth state
         handleLogout();
@@ -269,7 +443,9 @@ export default function UserProfileDropdown() {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
-      setIsNotificationsLoading(false);
+      if (shouldShowLoading) {
+        setIsNotificationsLoading(false);
+      }
     }
   };
 
@@ -299,7 +475,7 @@ export default function UserProfileDropdown() {
         setNotifications(prev => 
           prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
         );
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        updateUnreadCount(prev => Math.max(0, prev - 1));
       } else if (response.status === 401) {
         // Token is invalid, clean up auth state
         handleLogout();
@@ -332,6 +508,11 @@ export default function UserProfileDropdown() {
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_role');
     
+    // Clear sessionStorage flags
+    sessionStorage.removeItem('wsInitialized');
+    sessionStorage.removeItem('unreadCount');
+    sessionStorage.removeItem('isConnected');
+    
     // Clear cookie
     document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
     
@@ -339,7 +520,7 @@ export default function UserProfileDropdown() {
     setUserEmail(null);
     setUserRole(null);
     setNotifications([]);
-    setUnreadCount(0);
+    updateUnreadCount(0);
     
     // Redirect to home
     window.location.href = '/';
@@ -372,8 +553,25 @@ export default function UserProfileDropdown() {
     );
   }
 
-  // Not logged in
-  if (!userEmail) {
+  // Use state email if available, otherwise fall back to initial prop
+  const displayEmail = userEmail || initialEmail || '';
+  
+  // Debug: Log unreadCount state
+  if (IS_BROWSER) {
+    console.log('📊 Badge state:', { unreadCount, isConnected, displayEmail });
+  }
+  
+  // Not logged in - only show login button if we're certain user is not authenticated
+  // Check localStorage on client-side to prevent flicker during navigation
+  if (!displayEmail) {
+    // On client, double-check localStorage before showing login button
+    if (IS_BROWSER && localStorage.getItem('user_email')) {
+      // We have stored email, but state hasn't updated yet - show loading
+      return (
+        <div class="h-8 w-8 bg-gray-200 animate-pulse rounded-full"></div>
+      );
+    }
+    
     return (
       <a
         href="/login"
@@ -395,18 +593,21 @@ export default function UserProfileDropdown() {
         {/* Avatar with notification indicator */}
         <div class="relative">
           <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-            {userEmail.charAt(0).toUpperCase()}
+            {displayEmail.charAt(0).toUpperCase()}
           </div>
-          {unreadCount > 0 && (
-            <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-              <span class="text-xs text-white font-medium">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            </div>
-          )}
-          {isConnected && (
-            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
-          )}
+          {/* Notification badge - always rendered, use visibility to prevent layout shift and flicker */}
+          <div 
+            class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center"
+            style={{ visibility: unreadCount > 0 ? 'visible' : 'hidden' }}
+          >
+            <span class="text-xs text-white font-medium">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          </div>
+          {/* Connection indicator - show by default when logged in, always visible during navigation */}
+          <div 
+            class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"
+          />
         </div>
         
         {/* Dropdown Arrow */}
@@ -427,11 +628,11 @@ export default function UserProfileDropdown() {
           <div class="px-4 py-3 border-b border-gray-200">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                {userEmail.charAt(0).toUpperCase()}
+                {displayEmail.charAt(0).toUpperCase()}
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">{userEmail}</p>
-                <p class="text-xs text-gray-500 capitalize">{userRole || 'user'}</p>
+                <p class="text-sm font-medium text-gray-900 truncate">{displayEmail}</p>
+                <p class="text-xs text-gray-500 capitalize">{userRole || initialRole || 'user'}</p>
               </div>
             </div>
           </div>
@@ -530,3 +731,20 @@ export default function UserProfileDropdown() {
     </div>
   );
 }
+
+// Memoize component to prevent re-renders when props haven't actually changed
+// This prevents flickering when navigating between pages
+export default memo(UserProfileDropdown, (prevProps, nextProps) => {
+  const isSame = prevProps.initialEmail === nextProps.initialEmail && 
+                 prevProps.initialRole === nextProps.initialRole;
+  
+  console.log('🔍 Memo comparison:', {
+    prev: { email: prevProps.initialEmail, role: prevProps.initialRole },
+    next: { email: nextProps.initialEmail, role: nextProps.initialRole },
+    isSame,
+    willSkipRender: isSame
+  });
+  
+  // Return true to SKIP re-render (props are equal)
+  return isSame;
+});

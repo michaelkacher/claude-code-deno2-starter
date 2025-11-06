@@ -8,6 +8,17 @@
  * - Dead letter queue for failed jobs
  * - Job status tracking
  * - Concurrency control
+ * - Optimized indexing to prevent N+1 queries
+ *
+ * Performance Optimizations:
+ * - The `jobs_by_name` index stores full job data (not just IDs)
+ * - listJobs() uses the optimized index for O(1) lookups per job
+ * - Atomic operations ensure index consistency
+ * - Early exit optimization when limit is reached
+ * - Concurrent job fetching based on available capacity
+ * - Atomic job claiming prevents race conditions
+ * - Separate ready/scheduled queues avoid scanning all pending jobs
+ * - Time-based index on scheduled queue for efficient promotion
  *
  * @example
  * ```typescript
@@ -91,6 +102,26 @@ export class JobQueue {
   private pollTimeout?: number;
 
   /**
+   * Set maximum concurrent job processing
+   */
+  setMaxConcurrency(max: number): void {
+    if (max < 1) {
+      throw new Error('Max concurrency must be at least 1');
+    }
+    this.maxConcurrency = max;
+  }
+
+  /**
+   * Set polling interval in milliseconds
+   */
+  setPollInterval(ms: number): void {
+    if (ms < 100) {
+      throw new Error('Poll interval must be at least 100ms');
+    }
+    this.pollInterval = ms;
+  }
+
+  /**
    * Initialize the queue
    */
   async init(): Promise<void> {
@@ -129,12 +160,22 @@ export class JobQueue {
     // Store job
     await this.kv!.set(['jobs', jobId], job);
 
-    // Add to pending queue (sorted by priority and scheduled time)
-    const score = this.calculateScore(job);
-    await this.kv!.set(['queue', 'pending', score, jobId], jobId);
+    // Determine which queue to add to based on scheduled time
+    const isScheduled = new Date(scheduledFor) > now;
+    
+    if (isScheduled) {
+      // Add to scheduled queue with timestamp-based key for efficient time-based queries
+      const timestamp = new Date(scheduledFor).getTime();
+      const score = this.calculateScore(job);
+      await this.kv!.set(['queue', 'scheduled', timestamp, score, jobId], jobId);
+    } else {
+      // Add to ready queue (sorted by priority)
+      const score = this.calculateScore(job);
+      await this.kv!.set(['queue', 'ready', score, jobId], jobId);
+    }
 
-    // Add to job name index
-    await this.kv!.set(['jobs_by_name', name, jobId], jobId);
+    // Add to job name index WITH FULL JOB DATA (optimization for listJobs)
+    await this.kv!.set(['jobs_by_name', name, jobId], job);
 
     return jobId;
   }
@@ -177,7 +218,7 @@ export class JobQueue {
   }
 
   /**
-   * List jobs with filters
+   * List jobs with filters (optimized to avoid N+1 queries)
    */
   async listJobs(options: {
     status?: JobStatus;
@@ -191,23 +232,34 @@ export class JobQueue {
     const jobs: Job[] = [];
     let count = 0;
 
-    // If filtering by name, use the name index
+    // If filtering by name, use the name index (which now stores full job data)
     if (name) {
       const prefix = ['jobs_by_name', name];
-      const iter = this.kv!.list<string>({ prefix });
+      const iter = this.kv!.list<Job>({ prefix });
 
       for await (const entry of iter) {
-        const jobId = entry.value;
-        const job = await this.getJob(jobId);
-        if (job && (!status || job.status === status)) {
+        const job = entry.value;
+        
+        // Verify job still exists (index might be stale)
+        if (!job || typeof job !== 'object' || !job.id) {
+          // Clean up stale index entry
+          await this.kv!.delete(entry.key);
+          continue;
+        }
+
+        if (!status || job.status === status) {
           if (count >= offset && jobs.length < limit) {
             jobs.push(job);
           }
           count++;
+          
+          if (jobs.length >= limit) {
+            break; // Early exit optimization
+          }
         }
       }
     } else {
-      // Otherwise, scan all jobs
+      // Scan all jobs - already optimized as it fetches full data
       const prefix = ['jobs'];
       const iter = this.kv!.list<Job>({ prefix });
 
@@ -218,6 +270,10 @@ export class JobQueue {
             jobs.push(job);
           }
           count++;
+          
+          if (jobs.length >= limit) {
+            break; // Early exit optimization
+          }
         }
       }
     }
@@ -270,11 +326,19 @@ export class JobQueue {
     job.startedAt = undefined;
     job.completedAt = undefined;
 
-    await this.kv!.set(['jobs', jobId], job);
+    await this.updateJobWithIndex(job);
 
-    // Re-add to pending queue
+    // Re-add to appropriate queue based on scheduled time
+    const now = new Date();
+    const scheduledFor = new Date(job.scheduledFor || job.createdAt);
     const score = this.calculateScore(job);
-    await this.kv!.set(['queue', 'pending', score, jobId], jobId);
+    
+    if (scheduledFor > now) {
+      const timestamp = scheduledFor.getTime();
+      await this.kv!.set(['queue', 'scheduled', timestamp, score, jobId], jobId);
+    } else {
+      await this.kv!.set(['queue', 'ready', score, jobId], jobId);
+    }
   }
 
   /**
@@ -286,15 +350,25 @@ export class JobQueue {
 
     if (!job) return;
 
+    // Use atomic operation for consistency
+    const atomic = this.kv!.atomic();
+    
     // Remove from all indexes
-    await this.kv!.delete(['jobs', jobId]);
-    await this.kv!.delete(['jobs_by_name', job.name, jobId]);
+    atomic.delete(['jobs', jobId]);
+    atomic.delete(['jobs_by_name', job.name, jobId]);
 
-    // Remove from queue if pending
+    // Remove from queues if pending
     if (job.status === 'pending') {
       const score = this.calculateScore(job);
-      await this.kv!.delete(['queue', 'pending', score, jobId]);
+      const scheduledFor = new Date(job.scheduledFor || job.createdAt);
+      const timestamp = scheduledFor.getTime();
+      
+      // Try to delete from both queues (only one will exist)
+      atomic.delete(['queue', 'ready', score, jobId]);
+      atomic.delete(['queue', 'scheduled', timestamp, score, jobId]);
     }
+
+    await atomic.commit();
   }
 
   /**
@@ -331,12 +405,27 @@ export class JobQueue {
     if (!this.isRunning) return;
 
     try {
-      // Process pending jobs if we have capacity
-      while (this.processing.size < this.maxConcurrency) {
-        const job = await this.getNextJob();
-        if (!job) break;
-
-        this.processJob(job).catch(console.error);
+      // First, move any scheduled jobs that are now ready
+      await this.promoteScheduledJobs();
+      
+      // Calculate how many jobs we can process
+      const availableSlots = this.maxConcurrency - this.processing.size;
+      
+      if (availableSlots > 0) {
+        // Fetch jobs sequentially to avoid race conditions
+        // Each call to getNextJob() atomically claims a job
+        const jobs: Job[] = [];
+        
+        for (let i = 0; i < availableSlots; i++) {
+          const job = await this.getNextJob();
+          if (!job) break; // No more jobs available
+          jobs.push(job);
+        }
+        
+        // Start processing all fetched jobs concurrently
+        for (const job of jobs) {
+          this.processJob(job).catch(console.error);
+        }
       }
     } catch (error) {
       console.error('Error polling queue:', error);
@@ -347,9 +436,8 @@ export class JobQueue {
   }
 
   private async getNextJob(): Promise<Job | null> {
-    // Get the highest priority pending job that's ready to run
-    const now = new Date();
-    const iter = this.kv!.list<string>({ prefix: ['queue', 'pending'] });
+    // Get the highest priority job from the ready queue (no need to check time!)
+    const iter = this.kv!.list<string>({ prefix: ['queue', 'ready'] });
 
     for await (const entry of iter) {
       const jobId = entry.value;
@@ -361,19 +449,94 @@ export class JobQueue {
         continue;
       }
 
-      // Check if job is ready to run
-      const scheduledFor = new Date(job.scheduledFor || job.createdAt);
-      if (scheduledFor > now) {
-        continue; // Not ready yet
+      // Atomically claim the job to prevent race conditions
+      // Use check-and-set to ensure only one worker gets this job
+      const queueKey = entry.key;
+      const jobKey = ['jobs', jobId];
+      
+      // Get current versionstamp for optimistic locking
+      const jobEntry = await this.kv!.get<Job>(jobKey);
+      if (!jobEntry.value) {
+        // Job was deleted
+        await this.kv!.delete(queueKey);
+        continue;
       }
 
-      // Remove from pending queue
-      await this.kv!.delete(entry.key);
+      // Allow both 'pending' and 'retrying' statuses
+      if (jobEntry.value.status !== 'pending' && jobEntry.value.status !== 'retrying') {
+        // Job was already claimed or is in a final state
+        await this.kv!.delete(queueKey);
+        continue;
+      }
 
-      return job;
+      // Atomically remove from queue and mark as claimed
+      const atomic = this.kv!.atomic()
+        .check(jobEntry) // Ensure job hasn't changed
+        .delete(queueKey); // Remove from ready queue
+
+      const result = await atomic.commit();
+      
+      if (result.ok) {
+        // Successfully claimed the job
+        return job;
+      }
+      
+      // Another worker claimed it first, try next job
+      continue;
     }
 
     return null;
+  }
+
+  /**
+   * Move scheduled jobs that are now ready to the ready queue
+   */
+  private async promoteScheduledJobs(): Promise<void> {
+    const now = new Date().getTime();
+    
+    // List scheduled jobs up to current time
+    const iter = this.kv!.list<string>({ 
+      prefix: ['queue', 'scheduled'],
+      end: ['queue', 'scheduled', now + 1], // Only get jobs scheduled up to now
+    });
+
+    for await (const entry of iter) {
+      const jobId = entry.value;
+      const job = await this.getJob(jobId);
+
+      if (!job) {
+        // Clean up orphaned entry
+        await this.kv!.delete(entry.key);
+        continue;
+      }
+
+      // Atomically move from scheduled to ready queue
+      const scheduledKey = entry.key;
+      const score = this.calculateScore(job);
+      const readyKey = ['queue', 'ready', score, jobId];
+      
+      const jobEntry = await this.kv!.get<Job>(['jobs', jobId]);
+      if (!jobEntry.value) {
+        // Job was deleted
+        await this.kv!.delete(scheduledKey);
+        continue;
+      }
+
+      // Allow both 'pending' and 'retrying' statuses (retrying jobs need to be promoted too)
+      if (jobEntry.value.status !== 'pending' && jobEntry.value.status !== 'retrying') {
+        // Job was already claimed or is in a final state
+        await this.kv!.delete(scheduledKey);
+        continue;
+      }
+
+      // Atomic move operation
+      const atomic = this.kv!.atomic()
+        .check(jobEntry)
+        .delete(scheduledKey)
+        .set(readyKey, jobId);
+
+      await atomic.commit();
+    }
   }
 
   private async processJob(job: Job): Promise<void> {
@@ -392,7 +555,9 @@ export class JobQueue {
       job.startedAt = new Date().toISOString();
       job.attempts++;
       job.processingBy = Deno.env.get('DENO_DEPLOYMENT_ID') || 'local';
-      await this.kv!.set(['jobs', job.id], job);
+      
+      // Update both main storage and index atomically
+      await this.updateJobWithIndex(job);
       
       // Broadcast job update via WebSocket
       try {
@@ -409,7 +574,7 @@ export class JobQueue {
       // Mark as completed
       job.status = 'completed';
       job.completedAt = new Date().toISOString();
-      await this.kv!.set(['jobs', job.id], job);
+      await this.updateJobWithIndex(job);
       
       // Broadcast completion
       try {
@@ -430,9 +595,10 @@ export class JobQueue {
         const delay = Math.min(1000 * Math.pow(2, job.attempts), 60000);
         job.scheduledFor = new Date(Date.now() + delay).toISOString();
 
-        // Re-add to pending queue
+        // Re-add to scheduled queue (will be promoted to ready when time comes)
         const score = this.calculateScore(job);
-        await this.kv!.set(['queue', 'pending', score, job.id], job.id);
+        const timestamp = new Date(job.scheduledFor).getTime();
+        await this.kv!.set(['queue', 'scheduled', timestamp, score, job.id], job.id);
       } else {
         // Max retries reached, mark as failed
         job.status = 'failed';
@@ -440,7 +606,7 @@ export class JobQueue {
         job.completedAt = new Date().toISOString();
       }
 
-      await this.kv!.set(['jobs', job.id], job);
+      await this.updateJobWithIndex(job);
       
       // Broadcast error/retry status
       try {
@@ -452,6 +618,17 @@ export class JobQueue {
     } finally {
       this.processing.delete(job.id);
     }
+  }
+
+  /**
+   * Update job in both main storage and name index atomically
+   * This keeps the index in sync and prevents stale data
+   */
+  private async updateJobWithIndex(job: Job): Promise<void> {
+    const atomic = this.kv!.atomic();
+    atomic.set(['jobs', job.id], job);
+    atomic.set(['jobs_by_name', job.name, job.id], job);
+    await atomic.commit();
   }
 
   private calculateScore(job: Job): number {

@@ -252,16 +252,26 @@ export const ThemeStorage = {
   },
 
   /**
-   * Set theme
+   * Set theme (saves to both localStorage and cookie for SSR)
    */
   setTheme(theme: 'light' | 'dark'): boolean {
-    return StorageService.set(StorageKeys.THEME, theme);
+    const success = StorageService.set(StorageKeys.THEME, theme);
+    // Also save to cookie so server can read it for SSR
+    if (success && typeof document !== 'undefined') {
+      document.cookie = `theme=${theme}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+    return success;
   },
 
   /**
    * Remove theme preference (use system default)
    */
   clearTheme(): boolean {
-    return StorageService.remove(StorageKeys.THEME);
+    const success = StorageService.remove(StorageKeys.THEME);
+    // Also clear cookie
+    if (success && typeof document !== 'undefined') {
+      document.cookie = 'theme=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+    }
+    return success;
   },
 };

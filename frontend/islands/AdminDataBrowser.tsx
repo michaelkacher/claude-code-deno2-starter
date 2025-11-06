@@ -4,7 +4,7 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 
 interface Model {
   name: string;
@@ -33,6 +33,12 @@ export default function AdminDataBrowser() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterProperty, setFilterProperty] = useState('');
   const [filterValue, setFilterValue] = useState('');
+  const [debouncedFilterValue, setDebouncedFilterValue] = useState('');
+  
+  const debounceTimerRef = useRef<number | null>(null);
+  
+  // Debounce time: 500ms
+  const DEBOUNCE_DELAY_MS = 500;
 
   // Fetch available models on mount
   useEffect(() => {
@@ -41,12 +47,32 @@ export default function AdminDataBrowser() {
     }
   }, []);
 
-  // Fetch model data when selection or filters change
+  // Debounce filter value changes
+  useEffect(() => {
+    // Clear existing timer
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedFilterValue(filterValue);
+    }, DEBOUNCE_DELAY_MS);
+
+    // Cleanup on unmount or when filterValue changes
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [filterValue]);
+
+  // Fetch model data when selection or filters change (using debounced value)
   useEffect(() => {
     if (IS_BROWSER && selectedModel) {
       fetchModelData();
     }
-  }, [selectedModel, currentPage, filterProperty, filterValue]);
+  }, [selectedModel, currentPage, filterProperty, debouncedFilterValue]);
 
   const fetchModels = async () => {
     try {
@@ -85,9 +111,9 @@ export default function AdminDataBrowser() {
         limit: '20',
       });
 
-      if (filterProperty && filterValue) {
+      if (filterProperty && debouncedFilterValue) {
         params.append('filterProperty', filterProperty);
-        params.append('filterValue', filterValue);
+        params.append('filterValue', debouncedFilterValue);
       }
 
       const response = await fetch(`${apiUrl}/api/admin/data/${selectedModel}?${params}`, {

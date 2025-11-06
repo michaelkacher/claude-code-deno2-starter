@@ -22,6 +22,15 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
     setError('');
     setIsLoading(true);
 
+    // Clear any existing auth cookies before logging in
+    // This prevents issues with stale/expired tokens
+    if (IS_BROWSER) {
+      console.log('🧹 [Login] Clearing existing auth cookies');
+      document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Strict';
+      TokenStorage.clearAuth();
+    }
+
     try {
       const apiUrl = IS_BROWSER 
         ? window.location.origin.replace(':3000', ':8000')

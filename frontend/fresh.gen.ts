@@ -33,6 +33,7 @@ import * as $EmailVerificationBanner from "./islands/EmailVerificationBanner.tsx
 import * as $ImageUpload from "./islands/ImageUpload.tsx";
 import * as $LoginForm from "./islands/LoginForm.tsx";
 import * as $MobileMenuToggle from "./islands/MobileMenuToggle.tsx";
+import * as $Navigation from "./islands/Navigation.tsx";
 import * as $NotificationBell from "./islands/NotificationBell.tsx";
 import * as $NotificationList from "./islands/NotificationList.tsx";
 import * as $ResetPasswordForm from "./islands/ResetPasswordForm.tsx";
@@ -79,6 +80,7 @@ const manifest = {
     "./islands/ImageUpload.tsx": $ImageUpload,
     "./islands/LoginForm.tsx": $LoginForm,
     "./islands/MobileMenuToggle.tsx": $MobileMenuToggle,
+    "./islands/Navigation.tsx": $Navigation,
     "./islands/NotificationBell.tsx": $NotificationBell,
     "./islands/NotificationList.tsx": $NotificationList,
     "./islands/ResetPasswordForm.tsx": $ResetPasswordForm,

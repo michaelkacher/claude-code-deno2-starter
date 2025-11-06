@@ -5,7 +5,7 @@
  */
 
 import { MiddlewareHandler } from '$fresh/server.ts';
-import { isTokenExpired, isValidJwtStructure } from '../lib/jwt.ts';
+import { decodeJwt, isTokenExpired, isValidJwtStructure } from '../lib/jwt.ts';
 
 // Routes that don't require authentication
 const publicRoutes = [
@@ -38,6 +38,33 @@ const allowedPaths = [
 export const handler: MiddlewareHandler = async (req, ctx) => {
     const url = new URL(req.url);
     const pathname = url.pathname;
+    
+    // Extract user info and theme from cookies for all requests
+    const cookies = req.headers.get('cookie') || '';
+    const authToken = cookies.split(';')
+      .map(c => c.trim())
+      .find(c => c.startsWith('auth_token='))
+      ?.split('=')[1];
+    
+    const themeCookie = cookies.split(';')
+      .map(c => c.trim())
+      .find(c => c.startsWith('theme='))
+      ?.split('=')[1];
+    
+    // Store user data in context state for _app.tsx to access
+    ctx.state.userEmail = null;
+    ctx.state.userRole = null;
+    ctx.state.initialTheme = themeCookie === 'dark' || themeCookie === 'light' ? themeCookie : null;
+    
+    if (authToken) {
+      try {
+        const payload = decodeJwt(authToken);
+        ctx.state.userEmail = payload.email || null;
+        ctx.state.userRole = payload.role || null;
+      } catch (_e) {
+        // Invalid token
+      }
+    }
     
     // Check if auth is disabled via environment variable (defaults to true if not set)
     const disableAuthEnv = Deno.env.get('DISABLE_AUTH');
@@ -77,13 +104,6 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
     if (isAllowedPath) {
       return await ctx.next();
     }
-
-    // Check for auth token in cookie
-    const cookies = req.headers.get('cookie') || '';
-    const authToken = cookies.split(';')
-      .map(c => c.trim())
-      .find(c => c.startsWith('auth_token='))
-      ?.split('=')[1];
 
     // If no token, redirect to login
     if (!authToken) {

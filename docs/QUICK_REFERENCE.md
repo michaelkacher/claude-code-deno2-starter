@@ -68,6 +68,41 @@ DELETE /api/resource/:id         // Delete
 ['posts', postId]                    // Post by ID
 ['posts_by_user', userId, postId]    // User's posts
 ['comments', postId, commentId]      // Post's comments
+
+// Composite indexes (for fast multi-field queries)
+['users_by_role', role, timestamp, userId]              // Query by role
+['users_by_role_verified', role, verified, timestamp]   // Query by role + verified
+['notifications_by_user_read', userId, read, timestamp] // Unread notifications
+['jobs_by_name_status', name, status, priority]         // Jobs by name + status
+```
+
+### Composite Index Queries (100x-1000x faster)
+
+```typescript
+import { CompositeIndexManager } from './lib/composite-indexes.ts';
+
+// ❌ SLOW: Full table scan
+const allUsers = kv.list({ prefix: ['users'] });
+for await (const entry of allUsers) {
+  if (entry.value.role === 'admin') admins.push(entry.value);
+}
+
+// ✅ FAST: Indexed query (O(log n) instead of O(n))
+const admins = await CompositeIndexManager.queryUsers({ role: 'admin' });
+
+// Multi-field query (role + emailVerified)
+const verifiedAdmins = await CompositeIndexManager.queryUsers({ 
+  role: 'admin', 
+  emailVerified: true 
+});
+
+// Unread notifications
+const unread = await CompositeIndexManager.queryNotifications({ 
+  userId: '123',
+  read: false 
+});
+
+// See docs/COMPOSITE_INDEXES.md for full guide
 ```
 
 ### Response Format

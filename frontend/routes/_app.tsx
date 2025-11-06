@@ -1,20 +1,33 @@
 import { type PageProps } from "$fresh/server.ts";
 import ErrorBoundary from "../components/ErrorBoundary.tsx";
-import Navigation from "../components/Navigation.tsx";
 import ThemeProvider from "../components/ThemeProvider.tsx";
 import EmailVerificationBanner from "../islands/EmailVerificationBanner.tsx";
+import Navigation from "../islands/Navigation.tsx";
 import { getSiteName } from "../lib/config.ts";
 
-export default function App({ Component, url }: PageProps) {
-  // Check if auth is disabled (can be string 'true' or boolean true, defaults to true if not set)
-  const disableAuthEnv = Deno.env.get('DISABLE_AUTH');
-  const disableAuth = disableAuthEnv === 'true' || disableAuthEnv === true || disableAuthEnv === undefined;
+interface AppState {
+  userEmail?: string | null;
+  userRole?: string | null;
+  initialTheme?: 'light' | 'dark' | null;
+}
+
+export default function App({ Component, url, state }: PageProps<unknown, AppState>) {
+  const siteName = getSiteName();
   
-  // Don't show email verification banner on login or signup pages, or when auth is disabled
+  // Get user data from middleware state
+  const userEmail = state?.userEmail || null;
+  const userRole = state?.userRole || null;
+  const initialTheme = state?.initialTheme || null;
+  
+  // Check if auth is disabled
+  const disableAuthEnv = typeof Deno !== 'undefined' ? Deno.env.get('DISABLE_AUTH') : undefined;
+  const disableAuth = disableAuthEnv === 'true' || disableAuthEnv === undefined;
+  
+  // Don't show email verification banner on login or signup pages
   const isAuthPage = url.pathname === '/login' || url.pathname === '/signup';
   const showEmailBanner = !isAuthPage && !disableAuth;
-
-  const siteName = getSiteName();
+  
+  console.log('🎨 _app.tsx App component render', { userEmail, userRole, initialTheme, url: url.pathname });
   
   return (
     <html>
@@ -38,7 +51,7 @@ export default function App({ Component, url }: PageProps) {
         }} />
       </head>
       <body style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
-        <Navigation />
+        <Navigation userEmail={userEmail} userRole={userRole} initialTheme={initialTheme} />
         {showEmailBanner && <EmailVerificationBanner />}
         <ErrorBoundary>
           <Component />

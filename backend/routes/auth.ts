@@ -26,7 +26,6 @@ import {
 } from '../types/user.ts';
 
 const auth = new Hono();
-const kv = await getKv();
 
 // Get CSRF token endpoint (for login/signup forms)
 auth.get('/csrf-token', (c: Context) => {
@@ -41,6 +40,7 @@ auth.get('/csrf-token', (c: Context) => {
 // Apply CSRF protection, strict body size limit and rate limiting to login endpoint
 auth.post('/login', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, validateBody(LoginSchema), async (c: Context) => {
   try {
+    const kv = await getKv();
     const { email, password } = c.get('validatedBody') as { email: string; password: string };
 
     // Get user by email
@@ -118,6 +118,7 @@ auth.post('/login', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits.
 // Apply CSRF protection, strict body size limit and rate limiting to signup endpoint
 auth.post('/signup', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits.strict, rateLimiters.signup, validateBody(SignupSchema), async (c: Context) => {
   try {
+    const kv = await getKv();
     const { email, password, name } = c.get('validatedBody') as { email: string; password: string; name: string };
 
     // Check if user already exists
@@ -442,6 +443,7 @@ auth.get('/verify', async (c: Context) => {
 // Verify email with token
 auth.get('/verify-email', async (c: Context) => {
   try {
+    const kv = await getKv();
     const token = c.req.query('token');
     
     if (!token) {
@@ -534,6 +536,7 @@ auth.get('/verify-email', async (c: Context) => {
 // Resend verification email
 auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Context) => {
   try {
+    const kv = await getKv();
     const body = await c.req.json();
     const { email } = body;
 
@@ -614,6 +617,7 @@ auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Cont
 // Forgot password - request reset email
 auth.post('/forgot-password', rateLimiters.passwordReset, validateBody(PasswordResetRequestSchema), async (c: Context) => {
   try {
+    const kv = await getKv();
     const { email } = c.get('validatedBody') as { email: string };
 
     // Get user by email
@@ -672,6 +676,7 @@ auth.post('/forgot-password', rateLimiters.passwordReset, validateBody(PasswordR
 // Validate reset token
 auth.get('/validate-reset-token', async (c: Context) => {
   try {
+    const kv = await getKv();
     const token = c.req.query('token');
     
     if (!token) {
@@ -720,6 +725,7 @@ auth.get('/validate-reset-token', async (c: Context) => {
 // Reset password with token
 auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSchema.extend({ twoFactorCode: z.string().optional() })), async (c: Context) => {
   try {
+    const kv = await getKv();
     const { token, password, twoFactorCode } = c.get('validatedBody') as { token: string; password: string; twoFactorCode?: string };
 
     // Get reset token data
@@ -851,9 +857,12 @@ auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSc
  * Requires valid JWT token
  */
 auth.get('/me', cacheStrategies.userProfile(), async (c: Context) => {
+  const kv = await getKv();
+  
   try {
     // Get token from Authorization header
     const authHeader = c.req.header('Authorization');
+    
     if (!authHeader?.startsWith('Bearer ')) {
       return c.json({
         error: {

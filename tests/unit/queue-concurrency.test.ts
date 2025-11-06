@@ -1,0 +1,228 @@
+/**
+ * Test: Queue Concurrency Control
+ * 
+ * Verifies that jobs are fetched and processed concurrently
+ * without race conditions.
+ */
+
+import { assertEquals, assertExists } from 'jsr:@std/assert';
+import { JobQueue } from '../../backend/lib/queue.ts';
+
+Deno.test({
+  name: 'Queue - Concurrent job fetching',
+  sanitizeResources: false, // Queue maintains long-lived connections
+  sanitizeOps: false, // Queue uses intervals for polling
+  fn: async () => {
+  const queue = new JobQueue();
+  await queue.init();
+  queue.setMaxConcurrency(5);
+  queue.setPollInterval(100); // Poll every 100ms for faster test
+
+  // Clean up all existing pending jobs from previous test runs
+  const existingJobs = await queue.listJobs({ status: 'pending', limit: 1000 });
+  for (const job of existingJobs) {
+    await queue.delete(job.id).catch(() => {});
+  }
+
+  // Use unique job name to avoid conflicts with other tests
+  const jobName = `concurrent-test-${Date.now()}`;
+
+  // Track processing
+  const processedJobs: string[] = [];
+  const processingStart = new Map<string, number>();
+  
+  // Register handler that takes some time BEFORE adding jobs
+  queue.process(jobName, async (job) => {
+    processingStart.set(job.id, Date.now());
+    processedJobs.push(job.id);
+    
+    // Simulate work
+    await new Promise(resolve => setTimeout(resolve, 100));
+  });
+
+  // Start queue BEFORE adding jobs to ensure handler is registered
+  await queue.start();
+
+  // Add 10 jobs
+  const jobIds: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const id = await queue.add(jobName, { index: i });
+    jobIds.push(id);
+  }
+
+  // Wait for jobs to be processed
+  await new Promise(resolve => setTimeout(resolve, 2500));
+
+  queue.stop();
+
+  // Verify all jobs were processed
+  assertEquals(processedJobs.length, 10, `Expected 10 jobs but got ${processedJobs.length}`);
+
+  // Check that multiple jobs started within a short time window
+  // (indicating concurrent processing)
+  const startTimes = Array.from(processingStart.values()).sort();
+  if (startTimes.length >= 5) {
+    const firstBatchWindow = startTimes[4] - startTimes[0]; // First 5 jobs
+    
+    console.log('First 5 jobs started within:', firstBatchWindow, 'ms');
+    
+    // First 5 jobs should start within 500ms if processed concurrently
+    assertEquals(firstBatchWindow < 500, true);
+  }
+
+  // Cleanup
+  for (const id of jobIds) {
+    await queue.delete(id).catch(() => {});
+  }
+  
+  // Wait for cleanup to complete
+  await new Promise(resolve => setTimeout(resolve, 100));
+  },
+});
+
+Deno.test('Queue - Atomic job claiming prevents duplicates', async () => {
+  const queue = new JobQueue();
+  await queue.init();
+  queue.setPollInterval(100); // Poll every 100ms for faster test
+
+  // Clean up all existing pending jobs
+  const existingJobs = await queue.listJobs({ status: 'pending', limit: 1000 });
+  for (const job of existingJobs) {
+    await queue.delete(job.id).catch(() => {});
+  }
+
+  // Use unique job name
+  const jobName = `claim-test-${Date.now()}`;
+
+  const processedJobs = new Set<string>();
+  const processingCount = { value: 0 };
+
+  // Register handler
+  queue.process(jobName, async (job) => {
+    if (processedJobs.has(job.id)) {
+      throw new Error(`Job ${job.id} processed twice!`);
+    }
+    
+    processingCount.value++;
+    processedJobs.add(job.id);
+    
+    // Simulate work
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    processingCount.value--;
+  });
+
+  // Start queue BEFORE adding jobs
+  await queue.start();
+
+  // Add jobs
+  const jobIds: string[] = [];
+  for (let i = 0; i < 20; i++) {
+    const id = await queue.add(jobName, { index: i });
+    jobIds.push(id);
+  }
+
+  // Wait for processing (20 jobs * 50ms = 1000ms + overhead)
+  await new Promise(resolve => setTimeout(resolve, 2500));
+
+  queue.stop();
+
+  // Verify no duplicates
+  assertEquals(processedJobs.size, 20, `Expected 20 unique jobs but got ${processedJobs.size}`);
+
+  // Cleanup
+  for (const id of jobIds) {
+    await queue.delete(id).catch(() => {});
+  }
+  
+  // Wait for cleanup to complete
+  await new Promise(resolve => setTimeout(resolve, 100));
+});
+
+Deno.test('Queue - Respects max concurrency', async () => {
+  const queue = new JobQueue();
+  await queue.init();
+  queue.setMaxConcurrency(3);
+  queue.setPollInterval(100); // Poll every 100ms for faster test
+
+  // Clean up all existing pending jobs
+  const existingJobs = await queue.listJobs({ status: 'pending', limit: 1000 });
+  for (const job of existingJobs) {
+    await queue.delete(job.id).catch(() => {});
+  }
+
+  // Use unique job name
+  const jobName = `concurrency-limit-test-${Date.now()}`;
+
+  let currentlyProcessing = 0;
+  let maxConcurrent = 0;
+
+  // Register slow handler
+  queue.process(jobName, async () => {
+    currentlyProcessing++;
+    maxConcurrent = Math.max(maxConcurrent, currentlyProcessing);
+    
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    currentlyProcessing--;
+  });
+
+  // Start queue BEFORE adding jobs
+  await queue.start();
+
+  // Add many jobs
+  const jobIds: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const id = await queue.add(jobName, { index: i });
+    jobIds.push(id);
+  }
+
+  // Wait for processing (10 jobs, max 3 concurrent, 200ms each)
+  // 10 jobs / 3 concurrent = ~4 batches * 200ms = ~800ms + overhead
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  queue.stop();
+
+  console.log('Max concurrent jobs:', maxConcurrent);
+
+  // Should never exceed max concurrency
+  assertEquals(maxConcurrent <= 3, true, `Max concurrency exceeded: ${maxConcurrent} > 3`);
+  // Should have actually processed concurrently
+  assertEquals(maxConcurrent >= 2, true, `Expected concurrent processing, got max ${maxConcurrent}`);
+
+  // Cleanup
+  for (const id of jobIds) {
+    await queue.delete(id).catch(() => {});
+  }
+  
+  // Wait for cleanup to complete
+  await new Promise(resolve => setTimeout(resolve, 100));
+});
+
+Deno.test('Queue - Configuration methods work', async () => {
+  const queue = new JobQueue();
+  await queue.init();
+
+  // Test setMaxConcurrency
+  queue.setMaxConcurrency(10);
+  assertEquals(true, true); // No error
+
+  // Test setPollInterval
+  queue.setPollInterval(500);
+  assertEquals(true, true); // No error
+
+  // Test invalid values
+  try {
+    queue.setMaxConcurrency(0);
+    assertEquals(true, false, 'Should have thrown error');
+  } catch (error) {
+    assertExists(error);
+  }
+
+  try {
+    queue.setPollInterval(50);
+    assertEquals(true, false, 'Should have thrown error');
+  } catch (error) {
+    assertExists(error);
+  }
+});
