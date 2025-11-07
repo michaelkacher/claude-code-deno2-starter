@@ -123,6 +123,32 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
 
-    // Token is valid
+    // Verify JWT signature server-side by calling backend API
+    try {
+      const backendUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
+      const verifyResponse = await fetch(`${backendUrl}/auth/verify`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      if (!verifyResponse.ok) {
+        // Token verification failed (invalid signature, blacklisted, or other error)
+        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=invalid`;
+        return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
+      }
+
+      // Token verified successfully - update context with verified data
+      const verifiedData = await verifyResponse.json();
+      ctx.state.userEmail = verifiedData.data?.user?.email || null;
+      ctx.state.userRole = verifiedData.data?.user?.role || null;
+    } catch (_error) {
+      // Network error or backend unavailable - redirect to login
+      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=error`;
+      return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
+    }
+
+    // Token is valid and verified
     return await ctx.next();
 };
