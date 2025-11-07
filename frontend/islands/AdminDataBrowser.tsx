@@ -76,10 +76,9 @@ export default function AdminDataBrowser() {
 
   const fetchModels = async () => {
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
       const accessToken = localStorage.getItem('access_token');
 
-      const response = await fetch(`${apiUrl}/api/admin/data/models`, {
+      const response = await fetch(`/api/admin/data/models`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -103,7 +102,6 @@ export default function AdminDataBrowser() {
     setError('');
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
       const accessToken = localStorage.getItem('access_token');
 
       const params = new URLSearchParams({
@@ -116,7 +114,7 @@ export default function AdminDataBrowser() {
         params.append('filterValue', debouncedFilterValue);
       }
 
-      const response = await fetch(`${apiUrl}/api/admin/data/${selectedModel}?${params}`, {
+      const response = await fetch(`/api/admin/data/${selectedModel}?${params}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },

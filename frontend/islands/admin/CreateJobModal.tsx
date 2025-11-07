@@ -63,10 +63,10 @@ export default function CreateJobModal({ onClose, onJobCreated }: CreateJobModal
   const loading = useSignal(false);
   const error = useSignal<string | null>(null);
 
-  // Get API URL
+  // Get API URL (now using same-origin Fresh API)
   const getApiUrl = () => {
-    if (!IS_BROWSER) return 'http://localhost:8000';
-    return window.location.origin.replace(':3000', ':8000');
+    if (!IS_BROWSER) return '';
+    return '';
   };
 
   // Handle template change
@@ -99,7 +99,7 @@ export default function CreateJobModal({ onClose, onJobCreated }: CreateJobModal
 
       const apiUrl = getApiUrl();
       const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      const response = await fetch(`${apiUrl}/api/jobs/jobs`, {
+      const response = await fetch(`${apiUrl}/api/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

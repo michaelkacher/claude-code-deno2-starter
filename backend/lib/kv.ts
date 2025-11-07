@@ -49,9 +49,22 @@ class KvConnectionManager {
    * Create a new KV connection
    */
   private async connect(): Promise<Deno.Kv> {
-    const path = env.DENO_KV_PATH
+    let path = env.DENO_KV_PATH
       ? env.DENO_KV_PATH
       : (env.DENO_ENV === 'production' ? undefined : './data/local.db');
+
+    // If path is relative, resolve it as an absolute path from the project root
+    // This file is at backend/lib/kv.ts, so project root is ../../ from here
+    if (path && !path.startsWith('/') && !path.match(/^[a-zA-Z]:\\/)) {
+      // Get the directory of this file (backend/lib/)
+      const kvFileDir = new URL('.', import.meta.url).pathname;
+      // Go up two levels to project root: backend/lib -> backend -> root
+      const projectRoot = new URL('../../', import.meta.url).pathname;
+      // Remove leading ./ from path and join with project root
+      const cleanPath = path.startsWith('./') ? path.substring(2) : path;
+      // On Windows, convert URL pathname to proper Windows path
+      path = (projectRoot + cleanPath).replace(/^\/([A-Za-z]:)/, '$1');
+    }
 
     try {
       const kv = await Deno.openKv(path);

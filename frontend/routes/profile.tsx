@@ -26,12 +26,9 @@ export const handler: Handlers<ProfileData> = {
       throw new AuthenticationError('Authentication required', 'missing_token');
     }
 
-    // Get API URL from environment
-    const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
-    
-    // Fetch user profile from backend with error handling
+    // Fetch user profile from Fresh API with error handling
     const { data, error } = await handleApiFetch<{ user: ProfileData['user'] }>(
-      `${apiUrl}/auth/me`,
+      `/api/auth/me`,
       {
         headers: {
           'Authorization': `Bearer ${authToken}`,

@@ -275,11 +275,11 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
     }
 
     try {
+      const token = localStorage.getItem('access_token');
       const wsUrl = window.location.origin
         .replace('http://', 'ws://')
-        .replace('https://', 'wss://')
-        .replace(':3000', ':8000');
-      wsRef.current = new WebSocket(`${wsUrl}/api/notifications/ws`);
+        .replace('https://', 'wss://');
+      wsRef.current = new WebSocket(`${wsUrl}/api/notifications/ws?token=${encodeURIComponent(token || '')}`);
 
       wsRef.current.onopen = () => {
         // Connection opened, wait for auth_required message
@@ -419,9 +419,7 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
       setIsNotificationsLoading(true);
     }
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
-
-      const response = await fetch(`${apiUrl}/api/notifications?limit=5`, {
+      const response = await fetch(`/api/notifications?limit=5`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -456,9 +454,7 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
     }
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
-
-      const response = await fetch(`${apiUrl}/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -489,9 +485,7 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
     cleanupWebSocket();
     
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
-      
-      await fetch(`${apiUrl}/api/auth/logout`, {
+      await fetch(`/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });

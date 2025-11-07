@@ -10,6 +10,46 @@ import * as $admin_middleware from "./routes/admin/_middleware.ts";
 import * as $admin_data from "./routes/admin/data.tsx";
 import * as $admin_jobs from "./routes/admin/jobs.tsx";
 import * as $admin_users from "./routes/admin/users.tsx";
+import * as $api_2fa_disable from "./routes/api/2fa/disable.ts";
+import * as $api_2fa_enable from "./routes/api/2fa/enable.ts";
+import * as $api_2fa_regenerate_backup_codes from "./routes/api/2fa/regenerate-backup-codes.ts";
+import * as $api_2fa_setup from "./routes/api/2fa/setup.ts";
+import * as $api_2fa_status from "./routes/api/2fa/status.ts";
+import * as $api_2fa_verify from "./routes/api/2fa/verify.ts";
+import * as $api_middleware from "./routes/api/_middleware.ts";
+import * as $api_admin_data_model_ from "./routes/api/admin/data/[model].ts";
+import * as $api_admin_data_models from "./routes/api/admin/data/models.ts";
+import * as $api_admin_stats from "./routes/api/admin/stats.ts";
+import * as $api_admin_users_id_ from "./routes/api/admin/users/[id].ts";
+import * as $api_admin_users_id_index from "./routes/api/admin/users/[id]/index.ts";
+import * as $api_admin_users_id_role from "./routes/api/admin/users/[id]/role.ts";
+import * as $api_admin_users_id_sessions from "./routes/api/admin/users/[id]/sessions.ts";
+import * as $api_admin_users_id_verify_email from "./routes/api/admin/users/[id]/verify-email.ts";
+import * as $api_admin_users_index from "./routes/api/admin/users/index.ts";
+import * as $api_auth_csrf_token from "./routes/api/auth/csrf-token.ts";
+import * as $api_auth_forgot_password from "./routes/api/auth/forgot-password.ts";
+import * as $api_auth_login from "./routes/api/auth/login.ts";
+import * as $api_auth_logout from "./routes/api/auth/logout.ts";
+import * as $api_auth_me from "./routes/api/auth/me.ts";
+import * as $api_auth_refresh from "./routes/api/auth/refresh.ts";
+import * as $api_auth_resend_verification from "./routes/api/auth/resend-verification.ts";
+import * as $api_auth_reset_password from "./routes/api/auth/reset-password.ts";
+import * as $api_auth_signup from "./routes/api/auth/signup.ts";
+import * as $api_auth_verify_email from "./routes/api/auth/verify-email.ts";
+import * as $api_auth_verify from "./routes/api/auth/verify.ts";
+import * as $api_jobs_id_delete from "./routes/api/jobs/[id]/delete.ts";
+import * as $api_jobs_id_index from "./routes/api/jobs/[id]/index.ts";
+import * as $api_jobs_id_retry from "./routes/api/jobs/[id]/retry.ts";
+import * as $api_jobs_create from "./routes/api/jobs/create.ts";
+import * as $api_jobs_index from "./routes/api/jobs/index.ts";
+import * as $api_jobs_stats from "./routes/api/jobs/stats.ts";
+import * as $api_notifications_id_index from "./routes/api/notifications/[id]/index.ts";
+import * as $api_notifications_id_read from "./routes/api/notifications/[id]/read.ts";
+import * as $api_notifications_create from "./routes/api/notifications/create.ts";
+import * as $api_notifications_index from "./routes/api/notifications/index.ts";
+import * as $api_notifications_read_all from "./routes/api/notifications/read-all.ts";
+import * as $api_notifications_unread_count from "./routes/api/notifications/unread-count.ts";
+import * as $api_notifications_ws from "./routes/api/notifications/ws.ts";
 import * as $design_system from "./routes/design-system.tsx";
 import * as $error from "./routes/error.tsx";
 import * as $forgot_password from "./routes/forgot-password.tsx";
@@ -56,6 +96,49 @@ const manifest = {
     "./routes/admin/data.tsx": $admin_data,
     "./routes/admin/jobs.tsx": $admin_jobs,
     "./routes/admin/users.tsx": $admin_users,
+    "./routes/api/2fa/disable.ts": $api_2fa_disable,
+    "./routes/api/2fa/enable.ts": $api_2fa_enable,
+    "./routes/api/2fa/regenerate-backup-codes.ts":
+      $api_2fa_regenerate_backup_codes,
+    "./routes/api/2fa/setup.ts": $api_2fa_setup,
+    "./routes/api/2fa/status.ts": $api_2fa_status,
+    "./routes/api/2fa/verify.ts": $api_2fa_verify,
+    "./routes/api/_middleware.ts": $api_middleware,
+    "./routes/api/admin/data/[model].ts": $api_admin_data_model_,
+    "./routes/api/admin/data/models.ts": $api_admin_data_models,
+    "./routes/api/admin/stats.ts": $api_admin_stats,
+    "./routes/api/admin/users/[id].ts": $api_admin_users_id_,
+    "./routes/api/admin/users/[id]/index.ts": $api_admin_users_id_index,
+    "./routes/api/admin/users/[id]/role.ts": $api_admin_users_id_role,
+    "./routes/api/admin/users/[id]/sessions.ts": $api_admin_users_id_sessions,
+    "./routes/api/admin/users/[id]/verify-email.ts":
+      $api_admin_users_id_verify_email,
+    "./routes/api/admin/users/index.ts": $api_admin_users_index,
+    "./routes/api/auth/csrf-token.ts": $api_auth_csrf_token,
+    "./routes/api/auth/forgot-password.ts": $api_auth_forgot_password,
+    "./routes/api/auth/login.ts": $api_auth_login,
+    "./routes/api/auth/logout.ts": $api_auth_logout,
+    "./routes/api/auth/me.ts": $api_auth_me,
+    "./routes/api/auth/refresh.ts": $api_auth_refresh,
+    "./routes/api/auth/resend-verification.ts": $api_auth_resend_verification,
+    "./routes/api/auth/reset-password.ts": $api_auth_reset_password,
+    "./routes/api/auth/signup.ts": $api_auth_signup,
+    "./routes/api/auth/verify-email.ts": $api_auth_verify_email,
+    "./routes/api/auth/verify.ts": $api_auth_verify,
+    "./routes/api/jobs/[id]/delete.ts": $api_jobs_id_delete,
+    "./routes/api/jobs/[id]/index.ts": $api_jobs_id_index,
+    "./routes/api/jobs/[id]/retry.ts": $api_jobs_id_retry,
+    "./routes/api/jobs/create.ts": $api_jobs_create,
+    "./routes/api/jobs/index.ts": $api_jobs_index,
+    "./routes/api/jobs/stats.ts": $api_jobs_stats,
+    "./routes/api/notifications/[id]/index.ts": $api_notifications_id_index,
+    "./routes/api/notifications/[id]/read.ts": $api_notifications_id_read,
+    "./routes/api/notifications/create.ts": $api_notifications_create,
+    "./routes/api/notifications/index.ts": $api_notifications_index,
+    "./routes/api/notifications/read-all.ts": $api_notifications_read_all,
+    "./routes/api/notifications/unread-count.ts":
+      $api_notifications_unread_count,
+    "./routes/api/notifications/ws.ts": $api_notifications_ws,
     "./routes/design-system.tsx": $design_system,
     "./routes/error.tsx": $error,
     "./routes/forgot-password.tsx": $forgot_password,

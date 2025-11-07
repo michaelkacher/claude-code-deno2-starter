@@ -32,18 +32,14 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
     }
 
     try {
-      const apiUrl = IS_BROWSER 
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
-      
       // Get CSRF token first
-      const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
+      const csrfResponse = await fetch(`/api/auth/csrf-token`, {
         credentials: 'include',
       });
       const csrfData = await csrfResponse.json();
       const csrfToken = csrfData.data.csrfToken;
       
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
+      const response = await fetch(`/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

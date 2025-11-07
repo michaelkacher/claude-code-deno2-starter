@@ -1,19 +1,12 @@
 {
   "name": "@your-org/web-project-starter",
   "version": "0.1.0",
-  "exports": "./backend/main.ts",
   "tasks": {
-    "dev": "deno run --allow-net --allow-read --allow-env --allow-run --allow-write --allow-ffi --watch dev.ts",
-    "dev:backend": "deno run --unstable-kv --allow-net --allow-read --allow-env --allow-write --allow-ffi --watch backend/main.ts",
-    "dev:frontend": "cd frontend && deno task start",
-    "start": "deno run --unstable-kv --allow-net --allow-read --allow-env --allow-write --allow-ffi backend/main.ts",
-    "start:frontend": "cd frontend && deno task preview",
-    "build": "deno task build:backend && deno task build:frontend",
-    "build:backend": "deno compile --unstable-kv --allow-net --allow-read --allow-env --allow-write --output=./dist/backend backend/main.ts",
-    "build:frontend": "cd frontend && DENO_ENV=production deno task build",
-    "preview": "DENO_ENV=production deno run --allow-net --allow-read ./dist/backend",
-    "deploy": "deployctl deploy --project=your-project-name --prod --env=DENO_ENV:production backend/main.ts",
-    "deploy:preview": "deployctl deploy --project=your-project-name --env=DENO_ENV:production backend/main.ts",
+    "dev": "cd frontend && deno task start",
+    "start": "cd frontend && deno task start",
+    "build": "cd frontend && deno task build",
+    "preview": "cd frontend && deno task preview",
+    "deploy": "deployctl deploy --project=your-project-name --prod --entrypoint=frontend/main.ts",
     "test": "deno test --allow-read --allow-env --allow-net --allow-write --unstable-kv",
     "test:watch": "deno test --allow-read --allow-env --allow-net --allow-write --unstable-kv --watch",
     "test:coverage": "deno test --allow-read --allow-env --allow-net --allow-write --unstable-kv --coverage=coverage",
@@ -36,7 +29,7 @@
   },
   "deploy": {
     "project": "your-project-name",
-    "entrypoint": "backend/main.ts",
+    "entrypoint": "frontend/main.ts",
     "exclude": [
       "dist",
       "coverage",
@@ -49,7 +42,6 @@
   "imports": {
     "@/": "./backend/",
     "@std/": "jsr:@std/",
-    "hono": "jsr:@hono/hono@^4",
     "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
     "playwright/test": "npm:@playwright/test@^1.48"
   },
@@ -102,6 +94,5 @@
     "dist",
     "coverage"
   ],
-  "nodeModulesDir": "none",
   "lock": true
 }

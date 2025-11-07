@@ -81,6 +81,9 @@ export const handler: Handlers<AdminUsersData> = {
     // User data is injected by middleware - guaranteed to be admin
     const currentUser = ctx.state.user as User;
     const token = ctx.state.token as string;
+    
+    console.log("👤 [Admin Users] currentUser:", currentUser ? `${currentUser.email} (${currentUser.role})` : "null");
+    console.log("🔑 [Admin Users] token:", token ? "present" : "null");
 
     // Double-check admin role
     if (!hasRole(currentUser?.role, 'admin')) {
@@ -96,8 +99,6 @@ export const handler: Handlers<AdminUsersData> = {
         }
       );
     }
-
-    const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
 
     // Get query params for filtering/pagination
     const url = new URL(req.url);
@@ -117,9 +118,11 @@ export const handler: Handlers<AdminUsersData> = {
     });
 
     // Fetch users list and stats in parallel with error handling
+    // Convert relative URLs to absolute for server-side fetch
+    const baseUrl = new URL(req.url).origin;
     const [usersResult, statsResult] = await Promise.all([
       handleApiFetch<{ users: User[]; pagination: AdminUsersData['pagination'] }>(
-        `${apiUrl}/admin/users?${queryParams}`,
+        `${baseUrl}/api/admin/users?${queryParams}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -127,7 +130,7 @@ export const handler: Handlers<AdminUsersData> = {
         }
       ),
       handleApiFetch<AdminUsersData['stats']>(
-        `${apiUrl}/admin/stats`,
+        `${baseUrl}/api/admin/stats`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

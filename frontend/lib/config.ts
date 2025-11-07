@@ -140,7 +140,7 @@ export const defaultConfig: SiteConfig = {
   },
 
   api: {
-    baseUrl: "http://localhost:8000/api",
+    baseUrl: "/api",
     timeout: 10000,
     retries: 3,
   },

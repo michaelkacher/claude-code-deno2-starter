@@ -4,10 +4,17 @@
 /// <reference lib="dom.asynciterable" />
 /// <reference lib="deno.ns" />
 
-import "$std/dotenv/load.ts";
+import { load } from "$std/dotenv/mod.ts";
+
+// Load .env from parent directory (project root)
+await load({ envPath: "../.env", export: true });
+
+// Initialize background services (job queue, scheduler, workers)
+import { initializeBackgroundServices } from "../backend/startup.ts";
+await initializeBackgroundServices();
 
 import { start } from "$fresh/server.ts";
-import manifest from "./fresh.gen.ts";
 import config from "./fresh.config.ts";
+import manifest from "./fresh.gen.ts";
 
 await start(manifest, config);

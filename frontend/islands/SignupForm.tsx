@@ -64,8 +64,8 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
 
     try {
       const apiUrl = IS_BROWSER 
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
+        ? window.location.origin
+        : 'http://localhost:3000';
       
       // Get CSRF token first
       const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
@@ -239,3 +239,4 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
     </form>
   );
 }
+
