@@ -14,7 +14,7 @@
  * After first admin is created, remove INITIAL_ADMIN_EMAIL from env vars.
  */
 
-import { getKv } from './kv.ts';
+import { UserRepository } from '../repositories/index.ts';
 
 /**
  * Setup initial admin user if specified in environment
@@ -40,26 +40,16 @@ export async function setupInitialAdmin(): Promise<void> {
   console.log(`🔍 Checking for initial admin setup: ${initialAdminEmail}`);
 
   try {
-    const kv = await getKv();
+    const userRepo = new UserRepository();
     
     // Check if user exists
-    const userByEmailEntry = await kv.get(['users_by_email', initialAdminEmail]);
+    const user = await userRepo.findByEmail(initialAdminEmail);
     
-    if (!userByEmailEntry.value) {
+    if (!user) {
       console.warn(`⚠️  INITIAL_ADMIN_EMAIL set to "${initialAdminEmail}" but user not found.`);
       console.warn(`   Please sign up with this email first, then restart the server.`);
       return;
     }
-
-    const userId = userByEmailEntry.value as string;
-    const userEntry = await kv.get(['users', userId]);
-    
-    if (!userEntry.value) {
-      console.error(`❌ User data not found for ID: ${userId}`);
-      return;
-    }
-
-    const user = userEntry.value as any;
 
     // Check if already admin
     if (user.role === 'admin') {
@@ -69,20 +59,14 @@ export async function setupInitialAdmin(): Promise<void> {
     }
 
     // Promote to admin
-    const updatedUser = {
-      ...user,
-      role: 'admin',
-      updatedAt: new Date().toISOString(),
-    };
-
-    await kv.set(['users', userId], updatedUser);
+    await userRepo.update(user.id, { role: 'admin' });
     
     console.log(`\n┌─────────────────────────────────────────────────────┐`);
     console.log(`│ ✅ INITIAL ADMIN CREATED                            │`);
     console.log(`├─────────────────────────────────────────────────────┤`);
     console.log(`│ Email: ${initialAdminEmail.padEnd(42)} │`);
     console.log(`│ Name:  ${user.name.padEnd(42)} │`);
-    console.log(`│ ID:    ${userId.substring(0, 42).padEnd(42)} │`);
+    console.log(`│ ID:    ${user.id.substring(0, 42).padEnd(42)} │`);
     console.log(`├─────────────────────────────────────────────────────┤`);
     console.log(`│ ⚠️  IMPORTANT: Remove INITIAL_ADMIN_EMAIL from      │`);
     console.log(`│    your environment variables now for security.    │`);

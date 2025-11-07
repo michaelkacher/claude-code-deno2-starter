@@ -8,12 +8,10 @@ import { z } from 'zod';
 import { bodySizeLimits } from '../lib/body-limit.ts';
 import { csrfProtection } from '../lib/csrf.ts';
 import { verifyToken } from '../lib/jwt.ts';
-import { getKv } from '../lib/kv.ts';
-import { hashPassword } from '../lib/password.ts';
 import { generateQRCodeDataURL, generateQRCodeURL, generateSecret, verifyTOTP } from '../lib/totp.ts';
+import { UserRepository } from '../repositories/index.ts';
 
 const twoFactor = new Hono();
-const kv = await getKv();
 
 // Validation schemas
 const SetupSchema = z.object({
@@ -39,6 +37,8 @@ const DisableSchema = z.object({
  */
 twoFactor.get('/status', async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
+    
     // Get access token from Authorization header
     const authHeader = c.req.header('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -48,13 +48,11 @@ twoFactor.get('/status', async (c: Context) => {
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
     
-    // Get user from database
-    const userEntry = await kv.get(['users', payload.userId]);
-    if (!userEntry.value) {
+    // Get user from database (use 'sub' not 'userId')
+    const user = await userRepo.findById(payload.sub as string);
+    if (!user) {
       return c.json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } }, 404);
     }
-
-    const user = userEntry.value as any;
     
     return c.json({
       data: {
@@ -74,6 +72,8 @@ twoFactor.get('/status', async (c: Context) => {
  */
 twoFactor.post('/setup', csrfProtection(), bodySizeLimits.json, async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
+    
     // Get access token from Authorization header
     const authHeader = c.req.header('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -83,13 +83,11 @@ twoFactor.post('/setup', csrfProtection(), bodySizeLimits.json, async (c: Contex
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
     
-    // Get user from database
-    const userEntry = await kv.get(['users', payload.userId]);
-    if (!userEntry.value) {
+    // Get user from database (use 'sub' not 'userId')
+    const user = await userRepo.findById(payload.sub as string);
+    if (!user) {
       return c.json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } }, 404);
     }
-
-    const user = userEntry.value as any;
     
     // Verify password for additional security
     const body = await c.req.json();
@@ -112,11 +110,10 @@ twoFactor.post('/setup', csrfProtection(), bodySizeLimits.json, async (c: Contex
     
     // Store secret temporarily (not enabled yet)
     // We'll enable it only after user verifies they can generate codes
-    user.twoFactorSecret = secret;
-    user.twoFactorEnabled = false; // Not enabled until verified
-    user.updatedAt = new Date().toISOString();
-    
-    await kv.set(['users', user.id], user);
+    await userRepo.update(user.id, {
+      twoFactorSecret: secret,
+      twoFactorEnabled: false, // Not enabled until verified
+    });
     
     return c.json({
       data: {
@@ -141,6 +138,8 @@ twoFactor.post('/setup', csrfProtection(), bodySizeLimits.json, async (c: Contex
  */
 twoFactor.post('/enable', csrfProtection(), bodySizeLimits.json, async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
+    
     // Get access token from Authorization header
     const authHeader = c.req.header('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -150,13 +149,11 @@ twoFactor.post('/enable', csrfProtection(), bodySizeLimits.json, async (c: Conte
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
     
-    // Get user from database
-    const userEntry = await kv.get(['users', payload.userId]);
-    if (!userEntry.value) {
+    // Get user from database (use 'sub' not 'userId')
+    const user = await userRepo.findById(payload.sub as string);
+    if (!user) {
       return c.json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } }, 404);
     }
-
-    const user = userEntry.value as any;
     
     // Verify code
     const body = await c.req.json();
@@ -179,11 +176,7 @@ twoFactor.post('/enable', csrfProtection(), bodySizeLimits.json, async (c: Conte
     );
     
     // Enable 2FA
-    user.twoFactorEnabled = true;
-    user.twoFactorBackupCodes = hashedBackupCodes;
-    user.updatedAt = new Date().toISOString();
-    
-    await kv.set(['users', user.id], user);
+    await userRepo.enable2FA(user.id, user.twoFactorSecret!, hashedBackupCodes);
     
     return c.json({
       data: {
@@ -207,6 +200,7 @@ twoFactor.post('/enable', csrfProtection(), bodySizeLimits.json, async (c: Conte
  */
 twoFactor.post('/verify', csrfProtection(), bodySizeLimits.json, async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
     const body = await c.req.json();
     const { code } = VerifySchema.parse(body);
     
@@ -217,12 +211,10 @@ twoFactor.post('/verify', csrfProtection(), bodySizeLimits.json, async (c: Conte
     }
     
     // Get user from database
-    const userEntry = await kv.get(['users', userId]);
-    if (!userEntry.value) {
+    const user = await userRepo.findById(userId);
+    if (!user) {
       return c.json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } }, 404);
     }
-
-    const user = userEntry.value as any;
     
     if (!user.twoFactorEnabled || !user.twoFactorSecret) {
       return c.json({ error: { code: '2FA_NOT_ENABLED', message: '2FA is not enabled for this user' } }, 400);
@@ -251,18 +243,20 @@ twoFactor.post('/verify', csrfProtection(), bodySizeLimits.json, async (c: Conte
         
         if (isValid) {
           // Remove used backup code
-          user.twoFactorBackupCodes.splice(i, 1);
-          user.updatedAt = new Date().toISOString();
-          await kv.set(['users', user.id], user);
+          const updatedBackupCodes = [...user.twoFactorBackupCodes];
+          updatedBackupCodes.splice(i, 1);
+          await userRepo.update(user.id, {
+            twoFactorBackupCodes: updatedBackupCodes,
+          });
           
           return c.json({
             data: {
               verified: true,
               method: 'backup',
-              remainingBackupCodes: user.twoFactorBackupCodes.length,
-              message: user.twoFactorBackupCodes.length === 0 
+              remainingBackupCodes: updatedBackupCodes.length,
+              message: updatedBackupCodes.length === 0 
                 ? 'Warning: This was your last backup code. Please generate new ones.'
-                : `Backup code used. ${user.twoFactorBackupCodes.length} remaining.`
+                : `Backup code used. ${updatedBackupCodes.length} remaining.`
             }
           });
         }
@@ -285,6 +279,8 @@ twoFactor.post('/verify', csrfProtection(), bodySizeLimits.json, async (c: Conte
  */
 twoFactor.post('/disable', csrfProtection(), bodySizeLimits.json, async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
+    
     // Get access token from Authorization header
     const authHeader = c.req.header('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -295,12 +291,10 @@ twoFactor.post('/disable', csrfProtection(), bodySizeLimits.json, async (c: Cont
     const payload = await verifyToken(token);
     
     // Get user from database
-    const userEntry = await kv.get(['users', payload.userId]);
-    if (!userEntry.value) {
+    const user = await userRepo.findById(payload.sub as string);
+    if (!user) {
       return c.json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } }, 404);
     }
-
-    const user = userEntry.value as any;
     
     // Verify password and code
     const body = await c.req.json();
@@ -324,12 +318,7 @@ twoFactor.post('/disable', csrfProtection(), bodySizeLimits.json, async (c: Cont
     }
     
     // Disable 2FA
-    user.twoFactorEnabled = false;
-    user.twoFactorSecret = null;
-    user.twoFactorBackupCodes = [];
-    user.updatedAt = new Date().toISOString();
-    
-    await kv.set(['users', user.id], user);
+    await userRepo.disable2FA(user.id);
     
     return c.json({
       data: {

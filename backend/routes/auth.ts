@@ -6,8 +6,7 @@ import { cacheStrategies } from '../lib/cache-control.ts';
 import { csrfProtection, setCsrfToken } from '../lib/csrf.ts';
 import { sendPasswordResetEmail, sendVerificationEmail } from '../lib/email.ts';
 import { createAccessToken, createRefreshToken, verifyToken } from '../lib/jwt.ts';
-import { getKv } from '../lib/kv.ts';
-import { hashPassword, verifyPassword } from '../lib/password.ts';
+import { verifyPassword } from '../lib/password.ts';
 import { rateLimiters } from '../lib/rate-limit.ts';
 import {
   blacklistToken,
@@ -18,6 +17,7 @@ import {
   verifyRefreshToken,
 } from '../lib/token-revocation.ts';
 import { validateBody } from '../middleware/validate.ts';
+import { TokenRepository, UserRepository } from '../repositories/index.ts';
 import {
   LoginSchema,
   PasswordResetRequestSchema,
@@ -40,21 +40,20 @@ auth.get('/csrf-token', (c: Context) => {
 // Apply CSRF protection, strict body size limit and rate limiting to login endpoint
 auth.post('/login', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits.strict, rateLimiters.auth, validateBody(LoginSchema), async (c: Context) => {
   try {
-    const kv = await getKv();
+    const userRepo = new UserRepository();
     const { email, password } = c.get('validatedBody') as { email: string; password: string };
 
     // Get user by email
-    const userKey = await kv.get(['users_by_email', email]);
+    const user = await userRepo.findByEmail(email);
     
     // Use constant-time approach: always verify password even if user doesn't exist
     // This prevents timing attacks that could reveal valid email addresses
-    const userExists = !!userKey.value;
-    const userId = userKey.value as string || 'dummy_id';
-    const userEntry = await kv.get(['users', userId]);
-    const user = userEntry.value || { password: '$2a$10$dummyhashtopreventtimingattack' };
+    const userExists = !!user;
+    const dummyUser = { password: '$2a$10$dummyhashtopreventtimingattack' };
+    const passwordToVerify = user?.password || dummyUser.password;
 
     // Verify password using bcrypt (constant time operation)
-    const passwordMatches = await verifyPassword(password, user.password);
+    const passwordMatches = await verifyPassword(password, passwordToVerify);
 
     // Check both conditions together to maintain constant timing
     if (!userExists || !passwordMatches) {
@@ -118,12 +117,13 @@ auth.post('/login', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits.
 // Apply CSRF protection, strict body size limit and rate limiting to signup endpoint
 auth.post('/signup', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits.strict, rateLimiters.signup, validateBody(SignupSchema), async (c: Context) => {
   try {
-    const kv = await getKv();
+    const userRepo = new UserRepository();
+    const tokenRepo = new TokenRepository();
     const { email, password, name } = c.get('validatedBody') as { email: string; password: string; name: string };
 
     // Check if user already exists
-    const existingUserKey = await kv.get(['users_by_email', email]);
-    if (existingUserKey.value) {
+    const existingUser = await userRepo.findByEmail(email);
+    if (existingUser) {
       return c.json({
         error: {
           code: 'CONFLICT',
@@ -132,32 +132,21 @@ auth.post('/signup', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits
       }, 409);
     }
 
-    // Hash password using bcrypt
-    const hashedPassword = await hashPassword(password);
-
-    // Create user
-    const userId = crypto.randomUUID();
-    const now = new Date().toISOString();
-    const user = {
-      id: userId,
-      email,
-      password: hashedPassword,
-      name,
-      role: 'user',
-      emailVerified: false,
-      emailVerifiedAt: null,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    // Store user atomically
-    const result = await kv
-      .atomic()
-      .set(['users', userId], user)
-      .set(['users_by_email', email], userId)
-      .commit();
-
-    if (!result.ok) {
+    // Create user (password hashing handled by repository)
+    let user;
+    try {
+      user = await userRepo.create({
+        email,
+        password,
+        name,
+        role: 'user',
+        emailVerified: false,
+        emailVerifiedAt: null,
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        twoFactorBackupCodes: [],
+      });
+    } catch (error) {
       return c.json({
         error: {
           code: 'INTERNAL_ERROR',
@@ -168,16 +157,15 @@ auth.post('/signup', cacheStrategies.noCache(), csrfProtection(), bodySizeLimits
 
     // Generate verification token
     const verificationToken = crypto.randomUUID();
-    const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 24 hours
 
     // Store verification token
-    await kv.set(['email_verification', verificationToken], {
-      userId: user.id,
-      email: user.email,
+    await tokenRepo.storeEmailVerificationToken(
+      verificationToken,
+      user.id,
+      user.email,
       expiresAt
-    }, {
-      expireIn: 24 * 60 * 60 * 1000 // Auto-delete after 24 hours
-    });
+    );
 
     // Send verification email (don't block signup if this fails)
     try {
@@ -443,7 +431,8 @@ auth.get('/verify', async (c: Context) => {
 // Verify email with token
 auth.get('/verify-email', async (c: Context) => {
   try {
-    const kv = await getKv();
+    const userRepo = new UserRepository();
+    const tokenRepo = new TokenRepository();
     const token = c.req.query('token');
     
     if (!token) {
@@ -455,15 +444,10 @@ auth.get('/verify-email', async (c: Context) => {
       }, 400);
     }
 
-    // Get verification data from KV
-    const verificationKey = ['email_verification', token];
-    const verificationEntry = await kv.get<{
-      userId: string;
-      email: string;
-      expiresAt: number;
-    }>(verificationKey);
+    // Get verification data
+    const verificationData = await tokenRepo.getEmailVerificationToken(token);
 
-    if (!verificationEntry.value) {
+    if (!verificationData) {
       return c.json({
         error: {
           code: 'INVALID_TOKEN',
@@ -472,22 +456,11 @@ auth.get('/verify-email', async (c: Context) => {
       }, 400);
     }
 
-    const { userId, email, expiresAt } = verificationEntry.value;
+    const { userId } = verificationData;
 
-    // Check if token has expired
-    if (Date.now() > expiresAt) {
-      await kv.delete(verificationKey);
-      return c.json({
-        error: {
-          code: 'TOKEN_EXPIRED',
-          message: 'Verification token has expired. Please request a new one.'
-        }
-      }, 400);
-    }
-
-    // Get user and update verification status
-    const userEntry = await kv.get(['users', userId]);
-    if (!userEntry.value) {
+    // Get user
+    const user = await userRepo.findById(userId);
+    if (!user) {
       return c.json({
         error: {
           code: 'USER_NOT_FOUND',
@@ -496,30 +469,20 @@ auth.get('/verify-email', async (c: Context) => {
       }, 404);
     }
 
-    const user = userEntry.value as any;
-    const now = new Date().toISOString();
-    
-    const updatedUser = {
-      ...user,
-      emailVerified: true,
-      emailVerifiedAt: now,
-      updatedAt: now
-    };
-
-    // Update user atomically
-    await kv.set(['users', userId], updatedUser);
+    // Update user verification status
+    const updatedUser = await userRepo.verifyEmail(userId);
 
     // Delete verification token
-    await kv.delete(verificationKey);
+    await tokenRepo.deleteEmailVerificationToken(token);
 
     return c.json({
       data: {
         message: 'Email verified successfully!',
         user: {
-          id: updatedUser.id,
-          email: updatedUser.email,
-          name: updatedUser.name,
-          emailVerified: updatedUser.emailVerified
+          id: updatedUser!.id,
+          email: updatedUser!.email,
+          name: updatedUser!.name,
+          emailVerified: updatedUser!.emailVerified
         }
       }
     });
@@ -536,7 +499,8 @@ auth.get('/verify-email', async (c: Context) => {
 // Resend verification email
 auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Context) => {
   try {
-    const kv = await getKv();
+    const userRepo = new UserRepository();
+    const tokenRepo = new TokenRepository();
     const body = await c.req.json();
     const { email } = body;
 
@@ -550,8 +514,8 @@ auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Cont
     }
 
     // Get user by email
-    const userKey = await kv.get(['users_by_email', email]);
-    if (!userKey.value) {
+    const user = await userRepo.findByEmail(email);
+    if (!user) {
       // Don't reveal if email exists or not
       return c.json({
         data: {
@@ -559,10 +523,6 @@ auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Cont
         }
       });
     }
-
-    const userId = userKey.value as string;
-    const userEntry = await kv.get(['users', userId]);
-    const user = userEntry.value as any;
 
     // Check if already verified
     if (user.emailVerified) {
@@ -576,16 +536,15 @@ auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Cont
 
     // Generate new verification token
     const verificationToken = crypto.randomUUID();
-    const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 24 hours
 
     // Store verification token
-    await kv.set(['email_verification', verificationToken], {
-      userId: user.id,
-      email: user.email,
+    await tokenRepo.storeEmailVerificationToken(
+      verificationToken,
+      user.id,
+      user.email,
       expiresAt
-    }, {
-      expireIn: 24 * 60 * 60 * 1000 // Auto-delete after 24 hours
-    });
+    );
 
     // Send verification email
     const result = await sendVerificationEmail(user.email, user.name, verificationToken);
@@ -617,14 +576,15 @@ auth.post('/resend-verification', rateLimiters.emailVerification, async (c: Cont
 // Forgot password - request reset email
 auth.post('/forgot-password', rateLimiters.passwordReset, validateBody(PasswordResetRequestSchema), async (c: Context) => {
   try {
-    const kv = await getKv();
+    const userRepo = new UserRepository();
+    const tokenRepo = new TokenRepository();
     const { email } = c.get('validatedBody') as { email: string };
 
     // Get user by email
-    const userKey = await kv.get(['users_by_email', email]);
+    const user = await userRepo.findByEmail(email);
     
     // Always return success (don't reveal if email exists - security best practice)
-    if (!userKey.value) {
+    if (!user) {
       return c.json({
         data: {
           message: 'If an account exists with this email, a password reset link will be sent.'
@@ -632,23 +592,17 @@ auth.post('/forgot-password', rateLimiters.passwordReset, validateBody(PasswordR
       });
     }
 
-    const userId = userKey.value as string;
-    const userEntry = await kv.get(['users', userId]);
-    const user = userEntry.value as any;
-
     // Generate reset token
     const resetToken = crypto.randomUUID();
-    const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour
+    const expiresAt = Math.floor(Date.now() / 1000) + (60 * 60); // 1 hour
 
     // Store reset token
-    await kv.set(['password_reset', resetToken], {
-      userId: user.id,
-      email: user.email,
-      expiresAt,
-      createdAt: new Date().toISOString()
-    }, {
-      expireIn: 60 * 60 * 1000 // Auto-delete after 1 hour
-    });
+    await tokenRepo.storePasswordResetToken(
+      resetToken,
+      user.id,
+      user.email,
+      expiresAt
+    );
 
     // Send reset email
     try {
@@ -676,7 +630,8 @@ auth.post('/forgot-password', rateLimiters.passwordReset, validateBody(PasswordR
 // Validate reset token
 auth.get('/validate-reset-token', async (c: Context) => {
   try {
-    const kv = await getKv();
+    const userRepo = new UserRepository();
+    const tokenRepo = new TokenRepository();
     const token = c.req.query('token');
     
     if (!token) {
@@ -688,26 +643,16 @@ auth.get('/validate-reset-token', async (c: Context) => {
       }, 400);
     }
 
-    const resetEntry = await kv.get(['password_reset', token]);
+    const resetData = await tokenRepo.getPasswordResetToken(token);
     
-    if (!resetEntry.value) {
+    if (!resetData) {
       return c.json({
         data: { valid: false, reason: 'invalid' }
       });
     }
 
-    const { expiresAt } = resetEntry.value as any;
-    
-    if (Date.now() > expiresAt) {
-      return c.json({
-        data: { valid: false, reason: 'expired' }
-      });
-    }
-
     // Check if user has 2FA enabled
-    const { userId } = resetEntry.value as any;
-    const userEntry = await kv.get(['users', userId]);
-    const user = userEntry.value as any;
+    const user = await userRepo.findById(resetData.userId);
     
     return c.json({
       data: { 
@@ -725,18 +670,14 @@ auth.get('/validate-reset-token', async (c: Context) => {
 // Reset password with token
 auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSchema.extend({ twoFactorCode: z.string().optional() })), async (c: Context) => {
   try {
-    const kv = await getKv();
+    const userRepo = new UserRepository();
+    const tokenRepo = new TokenRepository();
     const { token, password, twoFactorCode } = c.get('validatedBody') as { token: string; password: string; twoFactorCode?: string };
 
     // Get reset token data
-    const resetKey = ['password_reset', token];
-    const resetEntry = await kv.get<{
-      userId: string;
-      email: string;
-      expiresAt: number;
-    }>(resetKey);
+    const resetData = await tokenRepo.getPasswordResetToken(token);
 
-    if (!resetEntry.value) {
+    if (!resetData) {
       return c.json({
         error: {
           code: 'INVALID_TOKEN',
@@ -745,22 +686,11 @@ auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSc
       }, 400);
     }
 
-    const { userId, expiresAt } = resetEntry.value;
-
-    // Check expiry
-    if (Date.now() > expiresAt) {
-      await kv.delete(resetKey);
-      return c.json({
-        error: {
-          code: 'TOKEN_EXPIRED',
-          message: 'Reset token has expired. Please request a new one.'
-        }
-      }, 400);
-    }
+    const { userId } = resetData;
 
     // Get user
-    const userEntry = await kv.get(['users', userId]);
-    if (!userEntry.value) {
+    const user = await userRepo.findById(userId);
+    if (!user) {
       return c.json({
         error: {
           code: 'USER_NOT_FOUND',
@@ -768,8 +698,6 @@ auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSc
         }
       }, 404);
     }
-
-    const user = userEntry.value as any;
 
     // Check if 2FA is enabled
     if (user.twoFactorEnabled && user.twoFactorSecret) {
@@ -817,21 +745,11 @@ auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSc
       }
     }
 
-    // Hash new password
-    const hashedPassword = await hashPassword(password);
-
-    // Update user with new password
-    const now = new Date().toISOString();
-    const updatedUser = {
-      ...user,
-      password: hashedPassword,
-      updatedAt: now
-    };
-
-    await kv.set(['users', userId], updatedUser);
+    // Update user with new password (hash handled by repository)
+    await userRepo.updatePassword(userId, password);
 
     // Delete reset token (single-use)
-    await kv.delete(resetKey);
+    await tokenRepo.deletePasswordResetToken(token);
 
     // Revoke all refresh tokens for security
     await revokeAllUserTokens(userId);
@@ -857,7 +775,7 @@ auth.post('/reset-password', bodySizeLimits.strict, validateBody(PasswordResetSc
  * Requires valid JWT token
  */
 auth.get('/me', cacheStrategies.userProfile(), async (c: Context) => {
-  const kv = await getKv();
+  const userRepo = new UserRepository();
   
   try {
     // Get token from Authorization header
@@ -887,9 +805,9 @@ auth.get('/me', cacheStrategies.userProfile(), async (c: Context) => {
     const payload = await verifyToken(token);
 
     // Get user from database
-    const userEntry = await kv.get(['users', payload.sub]);
+    const user = await userRepo.findById(payload.sub as string);
     
-    if (!userEntry.value) {
+    if (!user) {
       return c.json({
         error: {
           code: 'USER_NOT_FOUND',
@@ -897,8 +815,6 @@ auth.get('/me', cacheStrategies.userProfile(), async (c: Context) => {
         }
       }, 404);
     }
-
-    const user = userEntry.value as any;
     
     // Remove password from response
     const { password, ...userWithoutPassword } = user;

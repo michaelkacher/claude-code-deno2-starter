@@ -7,14 +7,13 @@ import { Context, Hono } from 'hono';
 import { z } from 'zod';
 import { requireAdmin } from '../lib/admin-auth.ts';
 import { cacheStrategies } from '../lib/cache-control.ts';
-import { getKv } from '../lib/kv.ts';
 import { getPaginationParams } from '../lib/pagination.ts';
 import { revokeAllUserTokens } from '../lib/token-revocation.ts';
 import { validateParams, validateQuery } from '../middleware/validate.ts';
+import { TokenRepository, UserRepository } from '../repositories/index.ts';
 import { ListUsersQuerySchema, UserIdParamSchema } from '../types/user.ts';
 
 const admin = new Hono();
-const kv = await getKv();
 
 // All admin routes require admin role
 admin.use('*', requireAdmin());
@@ -25,6 +24,8 @@ admin.use('*', requireAdmin());
  */
 admin.get('/users', cacheStrategies.adminData(), validateQuery(ListUsersQuerySchema), async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
+    
     // Get pagination params with enforced limits
     const pagination = getPaginationParams(c, { maxLimit: 100, defaultLimit: 10 });
     
@@ -38,43 +39,42 @@ admin.get('/users', cacheStrategies.adminData(), validateQuery(ListUsersQuerySch
     const page = query.page || 1;
     const searchLower = query.search?.toLowerCase() || '';
 
-    const users: any[] = [];
-    const allUsers = kv.list({ prefix: ['users'] });
+    // Get all users using repository
+    const allUsersResult = await userRepo.listUsers({ limit: 10000 });
+    let users = allUsersResult.items;
 
-    for await (const entry of allUsers) {
-      const user = entry.value as any;
-      
-      // Apply filters
-      if (searchLower && !(
+    // Apply filters
+    if (searchLower) {
+      users = users.filter(user => 
         user.email.toLowerCase().includes(searchLower) ||
         user.name.toLowerCase().includes(searchLower) ||
         user.id.toLowerCase().includes(searchLower)
-      )) {
-        continue;
-      }
-
-      if (query.role && user.role !== query.role) {
-        continue;
-      }
-
-      if (query.emailVerified !== undefined && user.emailVerified !== query.emailVerified) {
-        continue;
-      }
-
-      // Don't send password hash to frontend
-      const { password, ...userWithoutPassword } = user;
-      users.push(userWithoutPassword);
+      );
     }
 
+    if (query.role) {
+      users = users.filter(user => user.role === query.role);
+    }
+
+    if (query.emailVerified !== undefined) {
+      users = users.filter(user => user.emailVerified === query.emailVerified);
+    }
+
+    // Remove password from results
+    const usersWithoutPassword = users.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+
     // Sort by creation date (newest first)
-    users.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    usersWithoutPassword.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Pagination with enforced limits
-    const total = users.length;
+    const total = usersWithoutPassword.length;
     const totalPages = Math.ceil(total / pagination.limit);
     const startIndex = (page - 1) * pagination.limit;
     const endIndex = startIndex + pagination.limit;
-    const paginatedUsers = users.slice(startIndex, endIndex);
+    const paginatedUsers = usersWithoutPassword.slice(startIndex, endIndex);
 
     return c.json({
       data: {
@@ -105,10 +105,13 @@ admin.get('/users', cacheStrategies.adminData(), validateQuery(ListUsersQuerySch
  */
 admin.get('/users/:id', async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
+    const tokenRepo = new TokenRepository();
     const userId = c.req.param('id');
-    const userEntry = await kv.get(['users', userId]);
+    
+    const user = await userRepo.findById(userId);
 
-    if (!userEntry.value) {
+    if (!user) {
       return c.json({
         error: {
           code: 'USER_NOT_FOUND',
@@ -117,15 +120,11 @@ admin.get('/users/:id', async (c: Context) => {
       }, 404);
     }
 
-    const user = userEntry.value as any;
     const { password, ...userWithoutPassword } = user;
 
     // Get user's refresh tokens count
-    const refreshTokens = kv.list({ prefix: ['refresh_tokens', userId] });
-    let activeSessionsCount = 0;
-    for await (const _token of refreshTokens) {
-      activeSessionsCount++;
-    }
+    const refreshTokens = await tokenRepo.listUserRefreshTokens(userId);
+    const activeSessionsCount = refreshTokens.length;
 
     return c.json({
       data: {
@@ -149,14 +148,16 @@ admin.get('/users/:id', async (c: Context) => {
  */
 admin.patch('/users/:id/role', async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
     const userId = c.req.param('id');
     const body = await c.req.json();
     const { role } = z.object({
       role: z.enum(['admin', 'user'])
     }).parse(body);
 
-    const userEntry = await kv.get(['users', userId]);
-    if (!userEntry.value) {
+    const updatedUser = await userRepo.update(userId, { role });
+    
+    if (!updatedUser) {
       return c.json({
         error: {
           code: 'USER_NOT_FOUND',
@@ -164,15 +165,6 @@ admin.patch('/users/:id/role', async (c: Context) => {
         }
       }, 404);
     }
-
-    const user = userEntry.value as any;
-    const updatedUser = {
-      ...user,
-      role,
-      updatedAt: new Date().toISOString()
-    };
-
-    await kv.set(['users', userId], updatedUser);
 
     const { password, ...userWithoutPassword } = updatedUser;
 
@@ -198,10 +190,12 @@ admin.patch('/users/:id/role', async (c: Context) => {
  */
 admin.patch('/users/:id/verify-email', async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
     const userId = c.req.param('id');
-    const userEntry = await kv.get(['users', userId]);
+    
+    const user = await userRepo.findById(userId);
 
-    if (!userEntry.value) {
+    if (!user) {
       return c.json({
         error: {
           code: 'USER_NOT_FOUND',
@@ -209,8 +203,6 @@ admin.patch('/users/:id/verify-email', async (c: Context) => {
         }
       }, 404);
     }
-
-    const user = userEntry.value as any;
     
     if (user.emailVerified) {
       return c.json({
@@ -221,17 +213,9 @@ admin.patch('/users/:id/verify-email', async (c: Context) => {
       }, 400);
     }
 
-    const now = new Date().toISOString();
-    const updatedUser = {
-      ...user,
-      emailVerified: true,
-      emailVerifiedAt: now,
-      updatedAt: now
-    };
+    const updatedUser = await userRepo.verifyEmail(userId);
 
-    await kv.set(['users', userId], updatedUser);
-
-    const { password, ...userWithoutPassword } = updatedUser;
+    const { password, ...userWithoutPassword } = updatedUser!;
 
     return c.json({
       data: {
@@ -255,10 +239,12 @@ admin.patch('/users/:id/verify-email', async (c: Context) => {
  */
 admin.post('/users/:id/revoke-sessions', async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
     const userId = c.req.param('id');
-    const userEntry = await kv.get(['users', userId]);
+    
+    const user = await userRepo.findById(userId);
 
-    if (!userEntry.value) {
+    if (!user) {
       return c.json({
         error: {
           code: 'USER_NOT_FOUND',
@@ -290,6 +276,7 @@ admin.post('/users/:id/revoke-sessions', async (c: Context) => {
  */
 admin.delete('/users/:id', validateParams(UserIdParamSchema), async (c: Context) => {
   try {
+    const userRepo = new UserRepository();
     const { id: userId } = c.get('validatedParams') as { id: string };
     const currentUser = c.get('user');
 
@@ -303,32 +290,15 @@ admin.delete('/users/:id', validateParams(UserIdParamSchema), async (c: Context)
       }, 403);
     }
 
-    const userEntry = await kv.get(['users', userId]);
-    if (!userEntry.value) {
+    const deleted = await userRepo.deleteUser(userId);
+    
+    if (!deleted) {
       return c.json({
         error: {
           code: 'USER_NOT_FOUND',
           message: 'User not found'
         }
       }, 404);
-    }
-
-    const user = userEntry.value as any;
-
-    // Delete user data atomically
-    const atomic = kv.atomic();
-    atomic.delete(['users', userId]);
-    atomic.delete(['users_by_email', user.email]);
-    
-    const result = await atomic.commit();
-
-    if (!result.ok) {
-      return c.json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to delete user'
-        }
-      }, 500);
     }
 
     // Revoke all user sessions
@@ -355,40 +325,25 @@ admin.delete('/users/:id', validateParams(UserIdParamSchema), async (c: Context)
  */
 admin.get('/stats', cacheStrategies.adminData(), async (c: Context) => {
   try {
-    let totalUsers = 0;
-    let verifiedUsers = 0;
-    let adminUsers = 0;
-    let recentSignups = 0;
+    const userRepo = new UserRepository();
+    const stats = await userRepo.getStats();
 
+    // Calculate recent signups (last 24 hours)
     const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-    const users = kv.list({ prefix: ['users'] });
-
-    for await (const entry of users) {
-      const user = entry.value as any;
-      totalUsers++;
-      
-      if (user.emailVerified) {
-        verifiedUsers++;
-      }
-      
-      if (user.role === 'admin') {
-        adminUsers++;
-      }
-      
-      if (new Date(user.createdAt).getTime() > oneDayAgo) {
-        recentSignups++;
-      }
-    }
+    const allUsers = await userRepo.listUsers({ limit: 10000 });
+    const recentSignups = allUsers.items.filter(user => 
+      new Date(user.createdAt).getTime() > oneDayAgo
+    ).length;
 
     return c.json({
       data: {
-        totalUsers,
-        verifiedUsers,
-        unverifiedUsers: totalUsers - verifiedUsers,
-        adminUsers,
-        regularUsers: totalUsers - adminUsers,
+        totalUsers: stats.totalUsers,
+        verifiedUsers: stats.verifiedCount,
+        unverifiedUsers: stats.totalUsers - stats.verifiedCount,
+        adminUsers: stats.adminCount,
+        regularUsers: stats.userCount,
         recentSignups24h: recentSignups,
-        verificationRate: totalUsers > 0 ? Math.round((verifiedUsers / totalUsers) * 100) : 0
+        verificationRate: stats.totalUsers > 0 ? Math.round((stats.verifiedCount / stats.totalUsers) * 100) : 0
       }
     });
   } catch (error) {

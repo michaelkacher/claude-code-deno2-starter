@@ -79,43 +79,61 @@ export default function MyIsland() {
 - Auth check in `frontend/routes/_middleware.ts`
 - Protected routes redirect to `/login?redirect=/original-path`
 
-### Deno KV Patterns
+### Repository Pattern (PREFERRED)
+**Always use repositories for data access instead of direct KV operations**
+
+```typescript
+import { UserRepository, TokenRepository, NotificationRepository, JobRepository } from './repositories/index.ts';
+
+// Initialize repositories
+const userRepo = new UserRepository();
+const tokenRepo = new TokenRepository();
+
+// User operations
+const user = await userRepo.findByEmail(email);
+const newUser = await userRepo.create(userData);
+await userRepo.update(userId, { name: 'New Name' });
+
+// Token operations
+await tokenRepo.storeRefreshToken(userId, tokenId, expiresAt);
+const isValid = await tokenRepo.verifyRefreshToken(userId, tokenId);
+await tokenRepo.blacklistToken(tokenId, userId, expiresAt);
+
+// Notification operations
+const notificationRepo = new NotificationRepository();
+await notificationRepo.create(userId, 'success', 'Title', 'Message');
+const unread = await notificationRepo.getUnreadCount(userId);
+
+// Job operations
+const jobRepo = new JobRepository();
+const job = await jobRepo.create('job-name', jobData, { priority: 10 });
+await jobRepo.updateStatus(jobId, 'completed');
+```
+
+### Direct Deno KV (LEGACY - avoid in new code)
 ```typescript
 import { getKv } from './lib/kv.ts';
 const kv = await getKv();
 
-// Get
-const entry = await kv.get(['users', userId]);
-const user = entry.value;
-
-// Set
-await kv.set(['users', userId], userData);
-
-// List with prefix
-const entries = kv.list({ prefix: ['users'] });
-for await (const entry of entries) {
-  console.log(entry.key, entry.value);
-}
-
-// Atomic transaction
-await kv.atomic()
-  .set(['users', userId], user)
-  .set(['users_by_email', email], userId)
-  .commit();
+// Only use direct KV for:
+// 1. Non-entity data (cache, temporary data)
+// 2. Complex operations not covered by repositories
+// 3. Performance-critical paths (with benchmarks)
 ```
 
 ## Important Guidelines
 
 ### When Writing Backend Code
-1. Always use `payload.sub` to get user ID from JWT (NOT `payload.userId`)
-2. Mount more specific routes BEFORE general routes (e.g., `/api/admin/data` before `/api/admin`)
-3. Include CORS for all methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
-4. **Use validation middleware** - Import `validateBody/validateQuery/validateParams` from `backend/middleware/validate.ts`
-5. Define Zod schemas in `backend/types/` files (e.g., `SignupSchema`, `ListUsersQuerySchema`)
-6. Use `c.json()` for responses, not `c.text()` or `Response`
-7. Add rate limiting to sensitive endpoints
-8. **Use structured logging** - Import `createLogger` from `backend/lib/logger.ts`, NOT console.log
-9. All admin routes automatically protected by `frontend/routes/admin/_middleware.ts`
+1. **Use Repository Pattern** - Import from `backend/repositories/index.ts`, NOT direct `getKv()` calls
+2. Always use `payload.sub` to get user ID from JWT (NOT `payload.userId`)
+3. Mount more specific routes BEFORE general routes (e.g., `/api/admin/data` before `/api/admin`)
+4. Include CORS for all methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+5. **Use validation middleware** - Import `validateBody/validateQuery/validateParams` from `backend/middleware/validate.ts`
+6. Define Zod schemas in `backend/types/` files (e.g., `SignupSchema`, `ListUsersQuerySchema`)
+7. Use `c.json()` for responses, not `c.text()` or `Response`
+8. Add rate limiting to sensitive endpoints
+9. **Use structured logging** - Import `createLogger` from `backend/lib/logger.ts`, NOT console.log
+10. All admin routes automatically protected by `frontend/routes/admin/_middleware.ts`
 
 ### When Writing Frontend Code
 1. Use Islands for client-side interactivity (state, event handlers)
@@ -141,6 +159,14 @@ await kv.atomic()
 5. Fresh requires `deno.json` workspace configuration
 
 ## File Organization
+
+### Backend Repositories (`/backend/repositories`)
+- `base-repository.ts` - Base class with common CRUD operations
+- `user-repository.ts` - User data access (findByEmail, create, update, etc.)
+- `token-repository.ts` - Token management (refresh, blacklist, password reset, email verification)
+- `notification-repository.ts` - Notification CRUD and queries
+- `job-repository.ts` - Background job management
+- `index.ts` - Repository exports and factory
 
 ### Backend Routes (`/backend/routes`)
 - `auth.ts` - Login, signup, logout, password reset, email verification

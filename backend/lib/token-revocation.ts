@@ -1,11 +1,14 @@
 /**
  * Token Revocation System
  * 
- * Implements token blacklisting for logout and revocation
+ * Thin wrapper around TokenRepository for backward compatibility
  * Uses Deno KV with automatic expiration
  */
 
-import { getKv } from './kv.ts';
+import { TokenRepository } from '../repositories/index.ts';
+
+// Singleton repository instance
+const tokenRepo = new TokenRepository();
 
 /**
  * Add a token to the blacklist
@@ -13,21 +16,7 @@ import { getKv } from './kv.ts';
  * @param expiresAt - Token expiration timestamp
  */
 export async function blacklistToken(tokenId: string, expiresAt: number): Promise<void> {
-  const kv = await getKv();
-  
-  // Calculate TTL (time until token naturally expires)
-  const now = Date.now();
-  const ttlMs = Math.max(0, expiresAt * 1000 - now);
-  
-  // Store in blacklist with automatic expiration
-  await kv.set(
-    ['token_blacklist', tokenId],
-    {
-      blacklistedAt: new Date().toISOString(),
-      expiresAt: new Date(expiresAt * 1000).toISOString(),
-    },
-    { expireIn: ttlMs }
-  );
+  await tokenRepo.blacklistToken(tokenId, '', expiresAt);
 }
 
 /**
@@ -36,9 +25,7 @@ export async function blacklistToken(tokenId: string, expiresAt: number): Promis
  * @returns true if token is blacklisted
  */
 export async function isTokenBlacklisted(tokenId: string): Promise<boolean> {
-  const kv = await getKv();
-  const entry = await kv.get(['token_blacklist', tokenId]);
-  return entry.value !== null;
+  return await tokenRepo.isTokenBlacklisted(tokenId);
 }
 
 /**
@@ -52,20 +39,7 @@ export async function storeRefreshToken(
   tokenId: string,
   expiresAt: number
 ): Promise<void> {
-  const kv = await getKv();
-  
-  const ttlMs = Math.max(0, expiresAt * 1000 - Date.now());
-  
-  await kv.set(
-    ['refresh_tokens', userId, tokenId],
-    {
-      tokenId,
-      userId,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(expiresAt * 1000).toISOString(),
-    },
-    { expireIn: ttlMs }
-  );
+  await tokenRepo.storeRefreshToken(userId, tokenId, expiresAt);
 }
 
 /**
@@ -75,9 +49,7 @@ export async function storeRefreshToken(
  * @returns true if refresh token is valid
  */
 export async function verifyRefreshToken(userId: string, tokenId: string): Promise<boolean> {
-  const kv = await getKv();
-  const entry = await kv.get(['refresh_tokens', userId, tokenId]);
-  return entry.value !== null;
+  return await tokenRepo.verifyRefreshToken(userId, tokenId);
 }
 
 /**
@@ -86,8 +58,7 @@ export async function verifyRefreshToken(userId: string, tokenId: string): Promi
  * @param tokenId - Refresh token ID
  */
 export async function revokeRefreshToken(userId: string, tokenId: string): Promise<void> {
-  const kv = await getKv();
-  await kv.delete(['refresh_tokens', userId, tokenId]);
+  await tokenRepo.revokeRefreshToken(userId, tokenId);
 }
 
 /**
@@ -95,16 +66,5 @@ export async function revokeRefreshToken(userId: string, tokenId: string): Promi
  * @param userId - User ID
  */
 export async function revokeAllUserTokens(userId: string): Promise<void> {
-  const kv = await getKv();
-  
-  // List all refresh tokens for this user
-  const entries = kv.list<{ tokenId: string }>({ prefix: ['refresh_tokens', userId] });
-  
-  // Delete all tokens
-  const deleteOperations: Promise<void>[] = [];
-  for await (const entry of entries) {
-    deleteOperations.push(kv.delete(entry.key));
-  }
-  
-  await Promise.all(deleteOperations);
+  await tokenRepo.revokeAllUserRefreshTokens(userId);
 }

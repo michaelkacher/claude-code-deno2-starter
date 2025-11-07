@@ -3,6 +3,7 @@
  * Manages real-time notification delivery via WebSocket connections
  */
 
+import { UserRepository } from '../repositories/index.ts';
 import { NotificationService } from '../services/notifications.ts';
 import { verifyToken } from './jwt.ts';
 import { getKv } from './kv.ts';
@@ -152,9 +153,9 @@ export function setupWebSocketConnection() {
             authenticated = true;
 
             // Check if user is admin
-            const kv = await getKv();
-            const userEntry = await kv.get(['users', userId]);
-            const isAdmin = userEntry.value?.role === 'admin';
+            const userRepo = new UserRepository();
+            const user = await userRepo.findById(userId);
+            const isAdmin = user?.role === 'admin';
 
             logger.info('User authenticated', { userId, isAdmin });
 

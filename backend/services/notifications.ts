@@ -1,54 +1,32 @@
-import { getKv } from '../lib/kv.ts';
+import { NotificationRepository } from '../repositories/index.ts';
 import type {
-    CreateNotificationRequest,
-    NotificationData,
+  CreateNotificationRequest,
+  NotificationData,
 } from '../types/notifications.ts';
 
 /**
  * NotificationService
- * Handles CRUD operations for user notifications using Deno KV
+ * Thin wrapper around NotificationRepository for backward compatibility
  * 
  * Key Structure:
  * - ['notifications', userId, notificationId] -> NotificationData
  * - ['notifications_by_user', userId, timestamp, notificationId] -> null (for listing by date)
  */
 export class NotificationService {
+  private static repo = new NotificationRepository();
   /**
    * Create a new notification for a user
    */
   static async create(
     data: CreateNotificationRequest,
   ): Promise<NotificationData> {
-    const kv = await getKv();
-    const notificationId = crypto.randomUUID();
-    const now = new Date().toISOString();
-
-    const notification: NotificationData = {
-      id: notificationId,
-      userId: data.userId,
-      type: data.type,
-      title: data.title,
-      message: data.message,
-      link: data.link,
-      read: false,
-      createdAt: now,
-    };
-
-    // Atomic transaction: store notification + create index for listing + trigger signal
-    const result = await kv.atomic()
-      .set(['notifications', data.userId, notificationId], notification)
-      .set(
-        ['notifications_by_user', data.userId, now, notificationId],
-        null,
-      ) // Secondary index
-      .set(['notification_updates', data.userId], now) // Signal for watchers
-      .commit();
-
-    if (!result.ok) {
-      throw new Error('Failed to create notification');
-    }
-
-    return notification;
+    return await this.repo.create(
+      data.userId,
+      data.type,
+      data.title,
+      data.message,
+      data.link,
+    );
   }
 
   /**
@@ -58,69 +36,18 @@ export class NotificationService {
     userId: string,
     options: { limit?: number; offset?: number } = {},
   ): Promise<NotificationData[]> {
-    const kv = await getKv();
-    const limit = options.limit || 50;
-    const offset = options.offset || 0;
-
-    const notifications: NotificationData[] = [];
-
-    // List by secondary index (sorted by timestamp)
-    const entries = kv.list<null>({
-      prefix: ['notifications_by_user', userId],
-    }, {
-      reverse: true, // Newest first
-      limit: limit + offset,
+    const result = await this.repo.listUserNotifications(userId, {
+      limit: options.limit || 50,
+      cursor: options.offset ? String(options.offset) : undefined,
     });
-
-    let count = 0;
-    for await (const entry of entries) {
-      // Skip offset entries
-      if (count < offset) {
-        count++;
-        continue;
-      }
-
-      // Extract notificationId from key
-      const notificationId = entry.key[3] as string;
-
-      // Get full notification data
-      const notificationEntry = await kv.get<NotificationData>([
-        'notifications',
-        userId,
-        notificationId,
-      ]);
-
-      if (notificationEntry.value) {
-        notifications.push(notificationEntry.value);
-      }
-
-      count++;
-      if (notifications.length >= limit) {
-        break;
-      }
-    }
-
-    return notifications;
+    return result.items;
   }
 
   /**
    * Get count of unread notifications for a user
    */
   static async getUnreadCount(userId: string): Promise<number> {
-    const kv = await getKv();
-    let count = 0;
-
-    const entries = kv.list<NotificationData>({
-      prefix: ['notifications', userId],
-    });
-
-    for await (const entry of entries) {
-      if (entry.value && !entry.value.read) {
-        count++;
-      }
-    }
-
-    return count;
+    return await this.repo.getUnreadCount(userId);
   }
 
   /**
@@ -130,72 +57,14 @@ export class NotificationService {
     userId: string,
     notificationId: string,
   ): Promise<NotificationData | null> {
-    const kv = await getKv();
-
-    // Get current notification
-    const entry = await kv.get<NotificationData>([
-      'notifications',
-      userId,
-      notificationId,
-    ]);
-
-    if (!entry.value) {
-      return null;
-    }
-
-    // Update with read status
-    const now = new Date().toISOString();
-    const updatedNotification: NotificationData = {
-      ...entry.value,
-      read: true,
-      readAt: now,
-    };
-
-    // Update notification and trigger signal
-    const result = await kv.atomic()
-      .set(['notifications', userId, notificationId], updatedNotification)
-      .set(['notification_updates', userId], now)
-      .commit();
-
-    if (!result.ok) {
-      throw new Error('Failed to mark notification as read');
-    }
-
-    return updatedNotification;
+    return await this.repo.markAsRead(userId, notificationId);
   }
 
   /**
    * Mark all notifications as read for a user
    */
   static async markAllAsRead(userId: string): Promise<number> {
-    const kv = await getKv();
-    let count = 0;
-
-    const entries = kv.list<NotificationData>({
-      prefix: ['notifications', userId],
-    });
-
-    const now = new Date().toISOString();
-
-    for await (const entry of entries) {
-      if (entry.value && !entry.value.read) {
-        const updatedNotification: NotificationData = {
-          ...entry.value,
-          read: true,
-          readAt: now,
-        };
-
-        await kv.set(entry.key, updatedNotification);
-        count++;
-      }
-    }
-
-    // Trigger signal after all updates
-    if (count > 0) {
-      await kv.set(['notification_updates', userId], now);
-    }
-
-    return count;
+    return await this.repo.markAllAsRead(userId);
   }
 
   /**
@@ -205,52 +74,19 @@ export class NotificationService {
     userId: string,
     notificationId: string,
   ): Promise<boolean> {
-    const kv = await getKv();
-
-    // Get notification to find its timestamp for index cleanup
-    const entry = await kv.get<NotificationData>([
-      'notifications',
-      userId,
-      notificationId,
-    ]);
-
-    if (!entry.value) {
-      return false;
-    }
-
-    // Atomic transaction: delete notification + index + trigger signal
-    const now = new Date().toISOString();
-    const result = await kv.atomic()
-      .delete(['notifications', userId, notificationId])
-      .delete([
-        'notifications_by_user',
-        userId,
-        entry.value.createdAt,
-        notificationId,
-      ])
-      .set(['notification_updates', userId], now)
-      .commit();
-
-    return result.ok;
+    return await this.repo.deleteNotification(userId, notificationId);
   }
 
   /**
    * Delete all notifications for a user (useful for cleanup/testing)
    */
   static async deleteAllForUser(userId: string): Promise<number> {
-    const kv = await getKv();
     let count = 0;
-
-    // Get all notifications
-    const entries = kv.list<NotificationData>({
-      prefix: ['notifications', userId],
-    });
-
-    for await (const entry of entries) {
-      if (entry.value) {
-        await this.deleteNotification(userId, entry.value.id);
-        count++;
-      }
+    const result = await this.repo.listUserNotifications(userId, { limit: 1000 });
+    
+    for (const notification of result.items) {
+      const deleted = await this.deleteNotification(userId, notification.id);
+      if (deleted) count++;
     }
 
     return count;
