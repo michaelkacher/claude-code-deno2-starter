@@ -3,8 +3,7 @@ import {
   extractAuthToken,
   handleApiFetch,
   logError,
-  redirectToLogin,
-  withErrorHandler,
+  withErrorHandler
 } from "../lib/error-handler.ts";
 import { AuthenticationError, getUserMessage } from "../lib/errors.ts";
 

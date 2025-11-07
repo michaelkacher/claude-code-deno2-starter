@@ -5,14 +5,12 @@
 
 import { HandlerContext } from '$fresh/server.ts';
 import {
-  AppError,
-  AuthenticationError,
-  AuthorizationError,
-  getUserMessage,
-  isOperationalError,
-  logAppError,
-  NetworkError,
-  toAppError,
+    AppError,
+    AuthenticationError,
+    AuthorizationError,
+    logAppError,
+    NetworkError,
+    toAppError
 } from './errors.ts';
 
 export interface ErrorResponse {
