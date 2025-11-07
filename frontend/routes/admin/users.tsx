@@ -16,9 +16,9 @@ import {
   handleApiFetch,
   hasRole,
   logError,
-  redirectToLogin,
   withErrorHandler,
 } from '../../lib/error-handler.ts';
+import { AuthorizationError, getUserMessage } from '../../lib/errors.ts';
 
 interface User {
   id: string;
@@ -84,11 +84,17 @@ export const handler: Handlers<AdminUsersData> = {
 
     // Double-check admin role
     if (!hasRole(currentUser?.role, 'admin')) {
-      logError(new Error('Non-admin user attempted to access admin panel'), {
-        userId: currentUser?.id,
-        email: currentUser?.email,
-      });
-      return redirectToLogin(new URL(req.url).pathname, 'insufficient_permissions');
+      // Throw AuthorizationError - withErrorHandler will handle redirect
+      throw new AuthorizationError(
+        'Admin access required',
+        'admin',
+        currentUser?.role,
+        {
+          userId: currentUser?.id,
+          email: currentUser?.email,
+          attemptedPath: new URL(req.url).pathname,
+        }
+      );
     }
 
     const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
@@ -132,19 +138,21 @@ export const handler: Handlers<AdminUsersData> = {
 
     // Check for errors
     if (usersResult.error || statsResult.error) {
-      const error = usersResult.error || statsResult.error || 'Failed to load admin data';
+      const error = usersResult.error || statsResult.error;
       
-      logError(new Error(error), {
-        context: 'admin_users_page',
-        usersError: usersResult.error,
-        statsError: statsResult.error,
-      });
+      if (error) {
+        logError(error, {
+          context: 'admin_users_page',
+          usersError: usersResult.error?.message,
+          statsError: statsResult.error?.message,
+        });
 
-      return ctx.render({
-        ...defaultData,
-        currentUser,
-        error,
-      });
+        return ctx.render({
+          ...defaultData,
+          currentUser,
+          error: getUserMessage(error),
+        });
+      }
     }
 
     // Success - return data

@@ -6,6 +6,7 @@ import {
   redirectToLogin,
   withErrorHandler,
 } from "../lib/error-handler.ts";
+import { AuthenticationError, getUserMessage } from "../lib/errors.ts";
 
 interface ProfileData {
   user: {
@@ -23,7 +24,7 @@ export const handler: Handlers<ProfileData> = {
     const authToken = extractAuthToken(req);
 
     if (!authToken) {
-      return redirectToLogin(new URL(req.url).pathname, 'auth_required');
+      throw new AuthenticationError('Authentication required', 'missing_token');
     }
 
     // Get API URL from environment
@@ -40,18 +41,18 @@ export const handler: Handlers<ProfileData> = {
     );
 
     if (error) {
-      logError(new Error(error), {
+      logError(error, {
         context: 'profile_fetch',
         url: req.url,
       });
 
-      // If auth error, redirect to login
-      if (error.includes('401') || error.includes('Unauthorized')) {
-        return redirectToLogin(new URL(req.url).pathname, 'session_expired');
+      // If auth error, throw to be handled by withErrorHandler
+      if (error instanceof AuthenticationError) {
+        throw error;
       }
 
-      // Otherwise render with error
-      return ctx.render({ user: null, error });
+      // Otherwise render with error message
+      return ctx.render({ user: null, error: getUserMessage(error) });
     }
 
     return ctx.render({ user: data?.user || null });
