@@ -127,7 +127,8 @@ export default function JobDashboard() {
       if (!response.ok) throw new Error('Failed to fetch jobs');
 
       const data = await response.json();
-      jobs.value = data.data;
+      console.log('[JobDashboard] Fetched jobs response:', data);
+      jobs.value = data.data?.jobs || [];
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch jobs';
       console.error('Failed to fetch jobs:', err);
@@ -180,7 +181,8 @@ export default function JobDashboard() {
       if (!response.ok) throw new Error('Failed to fetch schedules');
 
       const data = await response.json();
-      schedules.value = data.data;
+      console.log('[JobDashboard] Fetched schedules response:', data);
+      schedules.value = data.data?.schedules || [];
     } catch (err) {
       console.error('Failed to fetch schedules:', err);
     }

@@ -45,7 +45,19 @@ export const handler: Handlers<unknown, AppState> = {
         updatedAt: user.updatedAt,
       }));
 
-      return successResponse(sanitizedUsers);
+      console.log('[Admin Users API] Returning users:', sanitizedUsers.length);
+
+      return successResponse({
+        users: sanitizedUsers,
+        pagination: {
+          page: 1,
+          limit,
+          total: sanitizedUsers.length,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: false,
+        },
+      });
     } catch (error) {
       if (error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);

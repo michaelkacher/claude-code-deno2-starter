@@ -5,8 +5,8 @@
  * This demonstrates how to create a scheduled worker using cron expressions.
  */
 
-import { scheduler, CronPatterns } from '../lib/scheduler.ts';
 import { queue } from '../lib/queue.ts';
+import { CronPatterns, scheduler } from '../lib/scheduler.ts';
 import { getStorage } from '../lib/storage.ts';
 
 // ============================================================================
@@ -93,6 +93,8 @@ async function cleanupExpiredSessions(): Promise<void> {
  * Call this function during server startup
  */
 export function registerCleanupWorker(): void {
+  console.log('🧹 [CleanupWorker] Registering cleanup schedules...');
+  
   // Clean up temp files every hour
   scheduler.schedule(
     'cleanup-temp-files',
@@ -100,6 +102,7 @@ export function registerCleanupWorker(): void {
     cleanupTempFiles,
     { enabled: true },
   );
+  console.log('🧹 [CleanupWorker] Registered: cleanup-temp-files');
 
   // Clean up old jobs daily at 3 AM
   scheduler.schedule(
@@ -108,6 +111,7 @@ export function registerCleanupWorker(): void {
     cleanupOldJobs,
     { enabled: true },
   );
+  console.log('🧹 [CleanupWorker] Registered: cleanup-old-jobs');
 
   // Clean up expired sessions every 6 hours
   scheduler.schedule(
@@ -116,6 +120,7 @@ export function registerCleanupWorker(): void {
     cleanupExpiredSessions,
     { enabled: true },
   );
+  console.log('🧹 [CleanupWorker] Registered: cleanup-expired-sessions');
 
   console.log('🧹 Cleanup worker registered');
 }

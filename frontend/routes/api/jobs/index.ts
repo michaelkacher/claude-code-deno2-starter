@@ -25,14 +25,14 @@ export const handler: Handlers<unknown, AppState> = {
       const cursor = url.searchParams.get("cursor") || undefined;
 
       const jobRepo = new JobRepository();
-      const result = await jobRepo.list({
+      const result = await jobRepo.listJobs({
         status: status as any,
         limit,
         cursor,
       });
 
       return successResponse({
-        jobs: result.jobs,
+        jobs: result.items,
         cursor: result.cursor,
         hasMore: result.hasMore,
       });

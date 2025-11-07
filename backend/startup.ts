@@ -18,6 +18,7 @@ const logger = createLogger('Startup');
  * Call this once when the server starts
  */
 export async function initializeBackgroundServices() {
+  console.log('🚀 [Startup] initializeBackgroundServices() CALLED');
   try {
     // Setup initial admin if specified (only runs if DISABLE_AUTH=false)
     logger.info('Setting up initial admin user...');
@@ -26,6 +27,7 @@ export async function initializeBackgroundServices() {
     // Register all workers and scheduled tasks
     logger.info('Registering job workers...');
     registerAllWorkers();
+    logger.info('Workers registered successfully');
 
     // Start the job queue processor
     logger.info('Starting job queue...');

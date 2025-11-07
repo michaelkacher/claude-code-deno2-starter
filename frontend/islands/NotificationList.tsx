@@ -45,8 +45,9 @@ export default function NotificationList() {
 
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
+        console.log('[NotificationList] API response:', data);
+        setNotifications(data.data?.notifications || []);
+        setUnreadCount(data.data?.unreadCount || 0);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);

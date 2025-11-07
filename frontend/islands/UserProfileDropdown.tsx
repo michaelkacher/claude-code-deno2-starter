@@ -428,8 +428,8 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
 
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data.notifications || []);
-        updateUnreadCount(data.unreadCount || 0);
+        setNotifications(data.data?.notifications || []);
+        updateUnreadCount(data.data?.unreadCount || 0);
       } else if (response.status === 401) {
         // Token is invalid, clean up auth state
         handleLogout();

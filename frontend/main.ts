@@ -11,7 +11,14 @@ await load({ envPath: "../.env", export: true });
 
 // Initialize background services (job queue, scheduler, workers)
 import { initializeBackgroundServices } from "../backend/startup.ts";
-await initializeBackgroundServices();
+console.log('🔵 [main.ts] About to call initializeBackgroundServices()...');
+try {
+  await initializeBackgroundServices();
+  console.log('✅ [main.ts] initializeBackgroundServices() completed successfully');
+} catch (error) {
+  console.error('❌ [main.ts] initializeBackgroundServices() failed:', error);
+  throw error; // Re-throw to prevent server from starting with broken services
+}
 
 import { start } from "$fresh/server.ts";
 import config from "./fresh.config.ts";

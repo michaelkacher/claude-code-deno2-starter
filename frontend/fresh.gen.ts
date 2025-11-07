@@ -42,6 +42,10 @@ import * as $api_jobs_id_index from "./routes/api/jobs/[id]/index.ts";
 import * as $api_jobs_id_retry from "./routes/api/jobs/[id]/retry.ts";
 import * as $api_jobs_create from "./routes/api/jobs/create.ts";
 import * as $api_jobs_index from "./routes/api/jobs/index.ts";
+import * as $api_jobs_schedules_name_disable from "./routes/api/jobs/schedules/[name]/disable.ts";
+import * as $api_jobs_schedules_name_enable from "./routes/api/jobs/schedules/[name]/enable.ts";
+import * as $api_jobs_schedules_name_trigger from "./routes/api/jobs/schedules/[name]/trigger.ts";
+import * as $api_jobs_schedules_index from "./routes/api/jobs/schedules/index.ts";
 import * as $api_jobs_stats from "./routes/api/jobs/stats.ts";
 import * as $api_notifications_id_index from "./routes/api/notifications/[id]/index.ts";
 import * as $api_notifications_id_read from "./routes/api/notifications/[id]/read.ts";
@@ -77,6 +81,7 @@ import * as $MobileMenuToggle from "./islands/MobileMenuToggle.tsx";
 import * as $Navigation from "./islands/Navigation.tsx";
 import * as $NotificationBell from "./islands/NotificationBell.tsx";
 import * as $NotificationList from "./islands/NotificationList.tsx";
+import * as $ProfileSettings from "./islands/ProfileSettings.tsx";
 import * as $ResetPasswordForm from "./islands/ResetPasswordForm.tsx";
 import * as $SignupForm from "./islands/SignupForm.tsx";
 import * as $TwoFactorSetup from "./islands/TwoFactorSetup.tsx";
@@ -130,6 +135,13 @@ const manifest = {
     "./routes/api/jobs/[id]/retry.ts": $api_jobs_id_retry,
     "./routes/api/jobs/create.ts": $api_jobs_create,
     "./routes/api/jobs/index.ts": $api_jobs_index,
+    "./routes/api/jobs/schedules/[name]/disable.ts":
+      $api_jobs_schedules_name_disable,
+    "./routes/api/jobs/schedules/[name]/enable.ts":
+      $api_jobs_schedules_name_enable,
+    "./routes/api/jobs/schedules/[name]/trigger.ts":
+      $api_jobs_schedules_name_trigger,
+    "./routes/api/jobs/schedules/index.ts": $api_jobs_schedules_index,
     "./routes/api/jobs/stats.ts": $api_jobs_stats,
     "./routes/api/notifications/[id]/index.ts": $api_notifications_id_index,
     "./routes/api/notifications/[id]/read.ts": $api_notifications_id_read,
@@ -168,6 +180,7 @@ const manifest = {
     "./islands/Navigation.tsx": $Navigation,
     "./islands/NotificationBell.tsx": $NotificationBell,
     "./islands/NotificationList.tsx": $NotificationList,
+    "./islands/ProfileSettings.tsx": $ProfileSettings,
     "./islands/ResetPasswordForm.tsx": $ResetPasswordForm,
     "./islands/SignupForm.tsx": $SignupForm,
     "./islands/TwoFactorSetup.tsx": $TwoFactorSetup,

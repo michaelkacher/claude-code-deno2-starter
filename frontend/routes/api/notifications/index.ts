@@ -24,10 +24,14 @@ export const handler: Handlers<unknown, AppState> = {
       const cursor = url.searchParams.get("cursor") || undefined;
 
       const notificationRepo = new NotificationRepository();
-      const result = await notificationRepo.list(user.sub, { limit, cursor });
+      const result = await notificationRepo.listUserNotifications(user.sub, { limit, cursor });
+      const unreadCount = await notificationRepo.getUnreadCount(user.sub);
+
+      console.log('[Notifications API] User:', user.sub, 'Found notifications:', result.items?.length || 0, 'Unread:', unreadCount);
 
       return successResponse({
-        notifications: result.notifications,
+        notifications: result.items,
+        unreadCount,
         cursor: result.cursor,
         hasMore: result.hasMore,
       });

@@ -31,7 +31,7 @@ interface Data {
   error?: string;
 }
 
-const API_BASE = "http://localhost:8000/api/v1";
+const API_BASE = "/api/v1";
 
 export const handler: Handlers<Data> = {
   async GET(req, ctx) {
