@@ -7,7 +7,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { setupWebSocketConnection } from "../../../../backend/lib/notification-websocket.ts";
+import { setupWebSocketConnection } from "../../../../shared/lib/notification-websocket.ts";
 
 export const handler: Handlers = {
   GET(req) {

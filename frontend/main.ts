@@ -6,11 +6,11 @@
 
 import { load } from "$std/dotenv/mod.ts";
 
-// Load .env from parent directory (project root)
+// Load .env FIRST - before any other imports that might read env vars
 await load({ envPath: "../.env", export: true });
 
 // Initialize background services (job queue, scheduler, workers)
-import { initializeBackgroundServices } from "../backend/startup.ts";
+import { initializeBackgroundServices } from "../shared/startup.ts";
 console.log('🔵 [main.ts] About to call initializeBackgroundServices()...');
 try {
   await initializeBackgroundServices();

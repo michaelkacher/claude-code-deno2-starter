@@ -4,7 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { scheduler } from "../../../../../backend/lib/scheduler.ts";
+import { scheduler } from "../../../../../shared/lib/scheduler.ts";
 import {
     errorResponse,
     requireAdmin,

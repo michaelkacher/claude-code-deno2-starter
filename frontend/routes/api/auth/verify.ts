@@ -4,7 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { verifyToken } from "../../../../backend/lib/jwt.ts";
+import { verifyToken } from "../../../../shared/lib/jwt.ts";
 import {
     errorResponse,
     successResponse,

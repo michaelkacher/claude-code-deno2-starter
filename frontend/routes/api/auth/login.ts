@@ -5,9 +5,9 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { createAccessToken, createRefreshToken } from "../../../../backend/lib/jwt.ts";
-import { verifyPassword } from "../../../../backend/lib/password.ts";
-import { TokenRepository, UserRepository } from "../../../../backend/repositories/index.ts";
+import { createAccessToken, createRefreshToken } from "../../../../shared/lib/jwt.ts";
+import { verifyPassword } from "../../../../shared/lib/password.ts";
+import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     parseJsonBody,

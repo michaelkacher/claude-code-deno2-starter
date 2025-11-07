@@ -16,7 +16,7 @@
     "lint:fix": "deno lint --fix",
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
-    "type-check": "deno check backend/**/*.ts && cd frontend && deno check **/*.ts **/*.tsx",
+    "type-check": "deno check shared/**/*.ts && cd frontend && deno check **/*.ts **/*.tsx",
     "clean": "rm -rf dist coverage .fresh frontend/_fresh",
     "kv:seed": "deno run --allow-read --allow-write --allow-env scripts/seed-local-kv.ts",
     "kv:reset": "deno run --allow-read --allow-write scripts/reset-local-kv.ts",
@@ -40,7 +40,7 @@
     ]
   },
   "imports": {
-    "@/": "./backend/",
+    "@/": "./shared/",
     "@std/": "jsr:@std/",
     "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
     "playwright/test": "npm:@playwright/test@^1.48"
@@ -81,8 +81,8 @@
   },
   "test": {
     "include": [
-      "backend/**/*_test.ts",
-      "backend/**/*.test.ts",
+      "shared/**/*_test.ts",
+      "shared/**/*.test.ts",
       "tests/**/*.test.ts"
     ],
     "exclude": [

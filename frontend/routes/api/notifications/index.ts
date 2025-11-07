@@ -4,7 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { NotificationRepository } from "../../../../backend/repositories/index.ts";
+import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     requireUser,

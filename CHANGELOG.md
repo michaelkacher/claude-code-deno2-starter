@@ -2,6 +2,125 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2025-11-07
+
+### Architecture - Pure Fresh Migration Complete ✅
+
+#### Completed Full Migration from Hono to Fresh
+- **Migration**: All 45 API endpoints migrated from Hono backend to Fresh API routes
+- **Single Server**: Eliminated separate backend server - everything runs on Fresh at port 3000
+- **Background Services**: Queue, scheduler, and workers now initialize with Fresh server
+- **Authentication**: JWT-based auth fully functional with environment loading fixes
+
+#### Folder Rename: backend → shared
+
+**Problem**: `backend/` folder name implied separate backend server (confusing for Pure Fresh architecture)  
+**Solution**: Renamed to `shared/` to clarify code is shared between Fresh API routes and background workers  
+**Impact**: No separate backend server exists - Fresh serves both pages and API endpoints on single port (3000)
+
+**Changes Made:**
+- Renamed `backend/` → `shared/` folder
+- Updated 100+ import statements from `backend/` to `shared/`
+- Updated `deno.json` import map: `"@/": "./shared/"`
+- Updated `.github/copilot-instructions.md` to reflect Pure Fresh architecture
+- Files Updated: Frontend API routes, scripts, test files, documentation
+
+**Folder Structure:**
+- `/shared` - Server-side code (repositories, workers, lib, config, types)
+- `/frontend` - Fresh routes, islands, components, static files
+- Single server at `http://localhost:3000` (no separate :8000 backend)
+
+**Import Pattern:**
+```typescript
+// Old
+import { UserRepository } from "../../../../backend/repositories/index.ts";
+
+// New
+import { UserRepository } from "../../../../shared/repositories/index.ts";
+```
+
+#### Environment Loading Fix
+
+**Problem**: JWT_SECRET not available in route handlers despite being in .env  
+**Root Cause**: `shared/config/env.ts` validated env vars before `.env` file was loaded  
+**Solution**: Load `.env` in `fresh.config.ts` (the first file Fresh loads)
+
+**Files Modified:**
+- `frontend/fresh.config.ts` - Added `.env` loading at the top (CRITICAL FIX)
+- `frontend/dev.ts` - Load `.env` before other imports
+- `frontend/main.ts` - Load `.env` before other imports
+
+**Impact**: JWT authentication now works correctly, login functional
+
+#### Documentation Updates
+
+**Updated Files:**
+- `README.md` - Pure Fresh architecture, single server, updated commands
+- `COMMANDS.md` - Updated for single port, removed backend-specific commands
+- `docs/architecture.md` - Pure Fresh architecture diagram and explanation
+- `.github/copilot-instructions.md` - Fresh patterns, repository usage, security
+- `.claude/agents/backend-agent.md` - Migration note, Fresh Handler patterns
+- `.claude/agents/_full/backend-agent.md` - Updated with Fresh examples
+- `deno.json` - Updated `type-check` and test paths
+
+**Migration Notes:**
+- All code changes are import path updates only
+- No functional changes to code behavior
+- Background services still initialize from `frontend/dev.ts`
+- Repository pattern remains unchanged
+
+**Architecture Now:**
+```
+Fresh Server (localhost:3000)
+├── Pages & Islands (frontend/routes, frontend/islands)
+├── API Endpoints (frontend/routes/api)
+└── Background Services (queue, scheduler)
+           ↓ all use
+    /shared folder (repositories, workers, lib)
+```
+
+## [Unreleased] - 2025-11-05
+
+### Architecture - Folder Rename: backend → shared
+
+#### Pure Fresh Architecture Clarification
+- **Problem**: `backend/` folder name implied separate backend server (confusing for Pure Fresh architecture)
+- **Solution**: Renamed to `shared/` to clarify code is shared between Fresh API routes and background workers
+- **Impact**: No separate backend server exists - Fresh serves both pages and API endpoints on single port (3000)
+
+#### Changes Made
+- **Renamed**: `backend/` → `shared/` folder
+- **Updated**: All 100+ import statements from `backend/` to `shared/`
+- **Updated**: `deno.json` import map: `"@/": "./shared/"`
+- **Updated**: `.github/copilot-instructions.md` to reflect Pure Fresh architecture
+- **Files Updated**:
+  - Frontend API routes (all `frontend/routes/api/**/*.ts`)
+  - Scripts (all `scripts/*.ts`)
+  - Test files (all `tests/unit/*.test.ts`)
+  - Documentation references
+
+#### Technical Details
+
+**Folder Structure:**
+- `/shared` - Server-side code (repositories, workers, lib, config, types)
+- `/frontend` - Fresh routes, islands, components, static files
+- Single server at `http://localhost:3000` (no separate :8000 backend)
+
+**Import Pattern:**
+```typescript
+// Old
+import { UserRepository } from "../../../../backend/repositories/index.ts";
+
+// New
+import { UserRepository } from "../../../../shared/repositories/index.ts";
+```
+
+#### Migration Notes
+- All code changes are import path updates only
+- No functional changes to code behavior
+- Background services still initialize from `frontend/dev.ts`
+- Repository pattern remains unchanged
+
 ## [Unreleased] - 2025-11-05
 
 ### Performance - Navigation Bar Converted to Island

@@ -11,7 +11,7 @@ import {
     getPaginationParams,
     PAGINATION_CONFIG,
     parseCursor,
-} from '../../backend/lib/pagination.ts';
+} from '../../shared/lib/pagination.ts';
 
 // Mock Hono context
 function createMockContext(query: Record<string, string> = {}) {

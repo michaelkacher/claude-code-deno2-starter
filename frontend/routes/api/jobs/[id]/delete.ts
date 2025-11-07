@@ -4,7 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { JobRepository } from "../../../../../backend/repositories/index.ts";
+import { JobRepository } from "../../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     requireAdmin,

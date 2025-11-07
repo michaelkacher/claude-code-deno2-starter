@@ -20,7 +20,7 @@ import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { setupTestKv } from '../helpers/kv-test.ts';
 
 // TODO: Import the service to test
-// import { FeatureService } from '../../backend/services/[feature].ts';
+// import { FeatureService } from '../../shared/services/[feature].ts';
 
 Deno.test('[FeatureService] - business rule: [describe the rule]', async () => {
   const { kv, cleanup } = await setupTestKv();

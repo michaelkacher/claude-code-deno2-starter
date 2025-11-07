@@ -4,18 +4,15 @@
 
 ### Starting Development
 ```bash
-# Start everything (recommended)
+# Start Fresh server with background services
 deno task dev
-
-# Start individually
-deno task dev:backend    # API server on port 8000
-deno task dev:frontend   # Fresh app on port 3000
 ```
 
 **Access Points:**
-- Backend API: http://localhost:8000
-- API Health: http://localhost:8000/api/health
-- Frontend App: http://localhost:3000
+- Fresh App: http://localhost:3000
+- API Endpoints: http://localhost:3000/api/*
+- API Health: http://localhost:3000/api/health
+- API Docs: http://localhost:3000/api/docs
 
 ### Common Development Tasks
 
@@ -31,30 +28,21 @@ deno task test:watch     # Run tests on file changes
 deno task test:coverage  # Generate coverage report
 
 # Type checking
-deno task type-check     # Check types in backend and frontend
+deno task type-check     # Check types in shared and frontend
 ```
 
 ## Production Workflow
 
 ### Building for Production
 ```bash
-# Build everything
+# Build for production
 deno task build
-
-# Build individually
-deno task build:backend    # Compile to executable in ./dist/backend
-deno task build:frontend   # Build static assets in ./frontend/_fresh
 ```
 
 ### Running Production Build
 ```bash
-# Run backend
+# Run production server
 deno task preview
-# or
-./dist/backend
-
-# Run frontend (serve static files)
-deno task start:frontend
 ```
 
 ## Cleanup
@@ -80,12 +68,16 @@ deno task clean
 
 ### Port Already in Use
 ```bash
+# Kill process on port 3000
+deno task kill-ports
+
+# Or manually:
 # On Windows
-netstat -ano | findstr :8000
+netstat -ano | findstr :3000
 taskkill /PID <PID> /F
 
 # On Mac/Linux
-lsof -ti:8000 | xargs kill -9
+lsof -ti:3000 | xargs kill -9
 ```
 
 ### Clean Start

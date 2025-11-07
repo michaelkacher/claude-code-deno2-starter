@@ -5,8 +5,8 @@
  * Run with: deno run --allow-env --allow-read --allow-write --unstable-kv scripts/test-realtime-notification.ts
  */
 
-import { notifyUser } from '../backend/lib/notification-websocket.ts';
-import { NotificationService } from '../backend/services/notifications.ts';
+import { notifyUser } from '../shared/lib/notification-websocket.ts';
+import { NotificationService } from '../shared/services/notifications.ts';
 
 // Use the test@example.com user
 const userId = 'adb04da8-e1f5-482f-a118-e216e056b133';

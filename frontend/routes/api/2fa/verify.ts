@@ -5,8 +5,8 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { verifyTOTP } from "../../../../backend/lib/totp.ts";
-import { UserRepository } from "../../../../backend/repositories/index.ts";
+import { verifyTOTP } from "../../../../shared/lib/totp.ts";
+import { UserRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     parseJsonBody,

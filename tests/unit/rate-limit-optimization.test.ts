@@ -6,8 +6,8 @@
 
 import { Hono } from 'hono';
 import { assertEquals, assertExists } from 'jsr:@std/assert';
-import { getKv } from '../../backend/lib/kv.ts';
-import { createRateLimiter } from '../../backend/lib/rate-limit.ts';
+import { getKv } from '../../shared/lib/kv.ts';
+import { createRateLimiter } from '../../shared/lib/rate-limit.ts';
 import '../../tests/setup.ts';
 
 // Set KV path to project root for tests

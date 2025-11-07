@@ -4,8 +4,8 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createAccessToken, verifyToken } from "../../../../backend/lib/jwt.ts";
-import { TokenRepository, UserRepository } from "../../../../backend/repositories/index.ts";
+import { createAccessToken, verifyToken } from "../../../../shared/lib/jwt.ts";
+import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     getCookie,

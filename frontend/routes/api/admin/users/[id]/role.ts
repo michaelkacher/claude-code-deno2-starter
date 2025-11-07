@@ -5,7 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { UserRepository } from "../../../../../../backend/repositories/index.ts";
+import { UserRepository } from "../../../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     parseJsonBody,

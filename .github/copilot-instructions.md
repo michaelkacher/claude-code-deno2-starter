@@ -8,27 +8,27 @@
 
 ## Project Overview
 
-This is a **Deno 2 + Fresh 1.7.3** full-stack application with Hono backend API, featuring:
+This is a **Deno 2 + Fresh 1.7.3** Pure Fresh application featuring:
 - **Runtime**: Deno 2 with TypeScript
-- **Backend**: Hono framework at `http://localhost:8000`
-- **Frontend**: Fresh SSR framework at `http://localhost:3000`
+- **Framework**: Fresh 1.7.3 SSR (single server at `http://localhost:3000`)
 - **Database**: Deno KV (key-value store)
 - **Authentication**: JWT-based with dual tokens (access + refresh), 2FA support
 - **UI**: Tailwind CSS with Fresh Islands architecture
+- **Background Jobs**: Queue and scheduler system for async tasks
 
 ## Tech Stack
 
-### Backend (`/backend`)
-- **Framework**: Hono (lightweight edge-first framework)
+### Shared Code (`/shared`)
+- **Framework**: Fresh API routes (replaced Hono)
 - **Database**: Deno KV with model prefixes: `users`, `users_by_email`, `refresh_tokens`, `token_blacklist`, `password_reset`, `email_verification`
 - **Auth**: JWT (access tokens 15min, refresh tokens 30 days), bcrypt for passwords
 - **2FA**: TOTP-based (RFC 6238), 6-digit codes, 8-char backup codes
 - **Security**: CORS, CSP headers, rate limiting, body size limits
-- **API Docs**: OpenAPI 3.1 spec with Swagger UI and ReDoc
+- **Background Jobs**: Queue workers (email, report, webhook, cleanup), job scheduler
 
 ### Frontend (`/frontend`)
 - **Framework**: Fresh 1.7.3 (Preact-based SSR)
-- **Architecture**: Islands for interactivity, server-side routes for pages
+- **Architecture**: Islands for interactivity, server-side routes for pages and API endpoints
 - **Styling**: Tailwind CSS
 - **State**: Preact hooks (useState, useEffect) in islands
 - **Auth**: Server-side middleware, localStorage for client-side token storage
@@ -36,25 +36,25 @@ This is a **Deno 2 + Fresh 1.7.3** full-stack application with Hono backend API,
 ## Development Commands
 
 ```bash
-deno task dev          # Start both servers (backend:8000, frontend:3000)
+deno task dev          # Start Fresh server at :3000 with background services
 deno task kill-ports   # Kill processes on ports 3000 and 8000
 deno task test         # Run all tests
 ```
 
 ## Code Patterns
 
-### Backend Route Structure
+### Fresh API Route Structure
 ```typescript
-import { Hono } from 'hono';
-const app = new Hono();
+import { Handlers } from "$fresh/server.ts";
+import type { AppState } from "../lib/fresh-helpers.ts";
 
-app.get('/endpoint', async (c) => {
-  // Validate input with Zod
-  // Query Deno KV
-  // Return c.json({ data: {...} })
-});
-
-export default app;
+export const handler: Handlers<unknown, AppState> = {
+  async GET(req, ctx) {
+    // Validate input with Zod
+    // Query Deno KV
+    // Return successResponse({ data: {...} })
+  }
+};
 ```
 
 ### Frontend Island Structure
@@ -124,15 +124,15 @@ const kv = await getKv();
 ## Important Guidelines
 
 ### When Writing Backend Code
-1. **Use Repository Pattern** - Import from `backend/repositories/index.ts`, NOT direct `getKv()` calls
+1. **Use Repository Pattern** - Import from `shared/repositories/index.ts`, NOT direct `getKv()` calls
 2. Always use `payload.sub` to get user ID from JWT (NOT `payload.userId`)
 3. Mount more specific routes BEFORE general routes (e.g., `/api/admin/data` before `/api/admin`)
 4. Include CORS for all methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
-5. **Use validation middleware** - Import `validateBody/validateQuery/validateParams` from `backend/middleware/validate.ts`
-6. Define Zod schemas in `backend/types/` files (e.g., `SignupSchema`, `ListUsersQuerySchema`)
+5. **Use validation middleware** - Import `validateBody/validateQuery/validateParams` from `shared/middleware/validate.ts`
+6. Define Zod schemas in `shared/types/` files (e.g., `SignupSchema`, `ListUsersQuerySchema`)
 7. Use `c.json()` for responses, not `c.text()` or `Response`
 8. Add rate limiting to sensitive endpoints
-9. **Use structured logging** - Import `createLogger` from `backend/lib/logger.ts`, NOT console.log
+9. **Use structured logging** - Import `createLogger` from `shared/lib/logger.ts`, NOT console.log
 10. All admin routes automatically protected by `frontend/routes/admin/_middleware.ts`
 
 ### When Writing Frontend Code
@@ -160,7 +160,7 @@ const kv = await getKv();
 
 ## File Organization
 
-### Backend Repositories (`/backend/repositories`)
+### Backend Repositories (`/shared/repositories`)
 - `base-repository.ts` - Base class with common CRUD operations
 - `user-repository.ts` - User data access (findByEmail, create, update, etc.)
 - `token-repository.ts` - Token management (refresh, blacklist, password reset, email verification)
@@ -191,7 +191,7 @@ const kv = await getKv();
 ## Common Issues & Solutions
 
 ### "Route not found" errors
-- Check route mounting order in `backend/main.ts`
+- Check route mounting order in `frontend/main.ts`
 - More specific routes must come before general routes
 
 ### JWT "expected string, number..." errors
@@ -199,11 +199,11 @@ const kv = await getKv();
 - Check JWT creation uses `sub` claim
 
 ### CORS errors
-- Add method to `allowMethods` array in `backend/main.ts`
+- Add method to `allowMethods` array in `frontend/main.ts`
 - Include `credentials: true` in fetch calls
 
 ### CSP blocking external scripts
-- Add domains to CSP in `backend/lib/security-headers.ts`
+- Add domains to CSP in `shared/lib/security-headers.ts`
 - Update both DEV_CSP and DEFAULT_CSP
 
 ### Fresh Islands not rendering
@@ -220,9 +220,9 @@ const kv = await getKv();
 
 ## Documentation
 
-- API docs: `http://localhost:8000/api/docs` (Swagger UI)
-- API docs: `http://localhost:8000/api/redoc` (ReDoc)
-- OpenAPI spec: `backend/openapi.json`
+- API docs: `http://localhost:3000/api/docs` (Swagger UI)
+- API docs: `http://localhost:3000/api/redoc` (ReDoc)
+- OpenAPI spec: `shared/openapi.json`
 - Feature docs: `features/` directory
 - Architecture: `docs/architecture.md`
 

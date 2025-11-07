@@ -4,8 +4,8 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { generateQRCodeDataURL, generateQRCodeURL, generateSecret } from "../../../../backend/lib/totp.ts";
-import { UserRepository } from "../../../../backend/repositories/index.ts";
+import { generateQRCodeDataURL, generateQRCodeURL, generateSecret } from "../../../../shared/lib/totp.ts";
+import { UserRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     requireUser,

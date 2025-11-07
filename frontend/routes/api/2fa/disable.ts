@@ -5,8 +5,8 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { verifyPassword } from "../../../../backend/lib/password.ts";
-import { UserRepository } from "../../../../backend/repositories/index.ts";
+import { verifyPassword } from "../../../../shared/lib/password.ts";
+import { UserRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     parseJsonBody,

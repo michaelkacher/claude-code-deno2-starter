@@ -7,7 +7,7 @@
 import { assertEquals, assertRejects, assertThrows } from 'jsr:@std/assert';
 
 // TODO: Import the function/class to test
-// import { functionName } from '../../backend/lib/[feature].ts';
+// import { functionName } from '../../shared/lib/[feature].ts';
 
 Deno.test('[FeatureName] - [functionName] - happy path', () => {
   // Arrange

@@ -5,7 +5,7 @@
  */
 
 import type { FreshContext } from "$fresh/server.ts";
-import { verifyToken } from "../../../backend/lib/jwt.ts";
+import { verifyToken } from "../../../shared/lib/jwt.ts";
 import type { AppState } from "../../lib/fresh-helpers.ts";
 
 /**

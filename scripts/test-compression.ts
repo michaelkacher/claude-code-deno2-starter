@@ -10,7 +10,7 @@
  * - Testing different content types
  */
 
-import { env } from '../backend/config/env.ts';
+import { env } from '../shared/config/env.ts';
 
 const API_URL = env.API_URL || 'http://localhost:8000/api';
 

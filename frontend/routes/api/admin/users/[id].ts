@@ -4,7 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { TokenRepository, UserRepository } from "../../../../../backend/repositories/index.ts";
+import { TokenRepository, UserRepository } from "../../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     requireAdmin,

@@ -5,8 +5,8 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { notifyUser } from "../../../../backend/lib/notification-websocket.ts";
-import { NotificationRepository } from "../../../../backend/repositories/index.ts";
+import { notifyUser } from "../../../../shared/lib/notification-websocket.ts";
+import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
     parseJsonBody,

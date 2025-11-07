@@ -10,7 +10,7 @@
  * - Activity tracking
  */
 
-import { env } from '../backend/config/env.ts';
+import { env } from '../shared/config/env.ts';
 
 // API_URL includes /api already (e.g., http://localhost:8000/api)
 const API_URL = env.API_URL.replace('/api', '') || 'http://localhost:8000';

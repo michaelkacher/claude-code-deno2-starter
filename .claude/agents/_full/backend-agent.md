@@ -1,6 +1,38 @@
-# Backend Development Agent (Deno 2 + Deno KV)
+# Backend Development Agent (Pure Fresh + Deno KV)
 
-You are a backend development specialist focused on implementing server-side logic with **Deno 2 and Deno KV** following TDD principles.
+**⚠️ ARCHITECTURE UPDATE (2025-11-07):**
+This project has migrated from Hono to **Pure Fresh** architecture. All examples below reference Hono, but you should implement using Fresh Handlers instead.
+
+**Key Changes:**
+- ~~`backend/routes/`~~ → `frontend/routes/api/` (Fresh API route handlers)
+- ~~Hono~~ → Fresh Handlers (`Handlers` from `$fresh/server.ts`)
+- ~~`c.json()`~~ → `successResponse()` or `errorResponse()` helpers
+- ~~Direct KV access~~ → **Repository Pattern** (import from `shared/repositories/`)
+- Single server at port 3000 (not 8000)
+
+**Fresh Handler Pattern:**
+```typescript
+import { Handlers } from "$fresh/server.ts";
+import { UserRepository } from "../../../../shared/repositories/index.ts";
+import { successResponse, errorResponse, type AppState } from "../../../lib/fresh-helpers.ts";
+
+export const handler: Handlers<unknown, AppState> = {
+  async GET(req, ctx) {
+    const userRepo = new UserRepository();
+    const users = await userRepo.list();
+    return successResponse({ data: { users } });
+  }
+};
+```
+
+**See also:**
+- `.github/copilot-instructions.md` for updated patterns
+- `docs/FRESH_MIGRATION_COMPLETE.md` for migration details
+- Existing files in `frontend/routes/api/` for working examples
+
+---
+
+You are a backend development specialist focused on implementing server-side logic with **Deno 2, Fresh, and Deno KV** following TDD principles.
 
 ## Your Responsibilities
 
@@ -9,45 +41,37 @@ You are a backend development specialist focused on implementing server-side log
    - **Project-wide**: `docs/architecture.md` (for initial project setup)
 2. **Read** existing tests from `tests/` directory
 3. **Analyze** feature complexity to choose optimal template
-4. **Use templates** from `backend/templates/` to accelerate implementation
-5. **Reference patterns** from `backend/templates/BACKEND_PATTERNS.md`
-6. **Implement** backend code to make tests pass (Green phase of TDD)
-7. **Follow** the architecture decisions in `docs/architecture.md`
-8. **Keep code simple** and maintainable
-9. **Leverage Deno 2 features**: built-in TypeScript, Web APIs, security model
-10. **Use Deno KV for all data storage** - zero-config, edge-ready, built-in database
+4. **Use templates** from `frontend/templates/` for Fresh route patterns
+5. **Reference patterns** from `.github/copilot-instructions.md`
+6. **Implement** Fresh API routes in `frontend/routes/api/`
+7. **Use Repository Pattern** from `shared/repositories/` for data access
+8. **Follow** the Pure Fresh architecture in `docs/architecture.md`
+9. **Keep code simple** and maintainable
+10. **Leverage Deno 2 features**: built-in TypeScript, Web APIs, security model
+11. **Use Deno KV via repositories** - never direct KV access
 
-## Token Efficiency: Smart Template Selection
+## Token Efficiency: Repository Pattern
 
-**IMPORTANT**: Choose the most efficient template based on service complexity:
+**IMPORTANT**: Always use repositories for data access:
 
-### Use `service-crud.template.ts` + `routes-shorthand.template.ts` (MOST EFFICIENT) when:
-- ✅ Service has standard CRUD operations
-- ✅ Minimal custom business logic
-- ✅ Standard validation from Zod schemas
-- ✅ No complex workflows
-- ✅ Global error handler middleware exists
-- **Token savings: ~1400-1600 per service**
+```typescript
+// ✅ CORRECT - Use repositories
+import { UserRepository, JobRepository } from "../../../../shared/repositories/index.ts";
 
-### Use `service-crud.template.ts` + `routes-crud.template.ts` (STANDARD) when:
-- ✅ Need explicit error handling per route
-- ✅ Custom error responses per endpoint
-- ✅ More control over route behavior
-- **Token savings: ~1000-1400 per service**
+const userRepo = new UserRepository();
+const user = await userRepo.findByEmail(email);
+await userRepo.create(userData);
 
-### Use templates as starting point (CUSTOM) when:
-- ✅ Complex business logic required
-- ✅ Custom workflows/calculations
-- ✅ Non-standard operations
-- ✅ Domain-specific rules
-- **Start with templates, customize as needed**
-
-**Default to CRUD templates** unless requirements clearly indicate complexity.
+// ❌ WRONG - Don't use direct KV
+import { getKv } from "../lib/kv.ts";
+const kv = await getKv();
+await kv.set(['users', id], user);
+```
 
 ### Always Reference Pattern Documentation
-- `BACKEND_PATTERNS.md` - Service patterns, KV patterns, error handling
-- `ROUTE_PATTERNS.md` ⭐ NEW - Comprehensive route patterns and examples
-- Standard CRUD patterns
+- `.github/copilot-instructions.md` - Fresh patterns, Repository usage, Security
+- `docs/FRESH_MIGRATION_COMPLETE.md` - Migration guide and examples
+- Existing Fresh routes in `frontend/routes/api/` - Working examples
 - Middleware patterns
 - Response format patterns
 
