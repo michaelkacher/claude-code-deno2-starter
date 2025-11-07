@@ -11,6 +11,7 @@ import * as $admin_data from "./routes/admin/data.tsx";
 import * as $admin_jobs from "./routes/admin/jobs.tsx";
 import * as $admin_users from "./routes/admin/users.tsx";
 import * as $design_system from "./routes/design-system.tsx";
+import * as $error from "./routes/error.tsx";
 import * as $forgot_password from "./routes/forgot-password.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $lib_token_refresh from "./routes/lib/token-refresh.ts";
@@ -56,6 +57,7 @@ const manifest = {
     "./routes/admin/jobs.tsx": $admin_jobs,
     "./routes/admin/users.tsx": $admin_users,
     "./routes/design-system.tsx": $design_system,
+    "./routes/error.tsx": $error,
     "./routes/forgot-password.tsx": $forgot_password,
     "./routes/index.tsx": $index,
     "./routes/lib/token-refresh.ts": $lib_token_refresh,

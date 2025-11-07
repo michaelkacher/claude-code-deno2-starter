@@ -1,5 +1,11 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { getCookies } from "$std/http/cookie.ts";
+import {
+  extractAuthToken,
+  handleApiFetch,
+  logError,
+  redirectToLogin,
+  withErrorHandler,
+} from "../lib/error-handler.ts";
 
 interface ProfileData {
   user: {
@@ -9,69 +15,81 @@ interface ProfileData {
     emailVerified: boolean;
     twoFactorEnabled: boolean;
   } | null;
+  error?: string;
 }
 
 export const handler: Handlers<ProfileData> = {
-  async GET(req, ctx) {
-    const cookies = getCookies(req.headers);
-    const authToken = cookies.auth_token || 
-                     req.headers.get('authorization')?.replace('Bearer ', '');
+  GET: withErrorHandler(async (req, ctx) => {
+    const authToken = extractAuthToken(req);
 
     if (!authToken) {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          'Location': '/login?redirect=' + encodeURIComponent(req.url)
-        }
-      });
+      return redirectToLogin(new URL(req.url).pathname, 'auth_required');
     }
 
-    try {
-      // Get API URL from environment
-      const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
-      
-      // Fetch user profile from backend
-      const response = await fetch(`${apiUrl}/auth/me`, {
+    // Get API URL from environment
+    const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
+    
+    // Fetch user profile from backend with error handling
+    const { data, error } = await handleApiFetch<{ user: ProfileData['user'] }>(
+      `${apiUrl}/auth/me`,
+      {
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
+      }
+    );
+
+    if (error) {
+      logError(new Error(error), {
+        context: 'profile_fetch',
+        url: req.url,
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        return ctx.render({ user: result.data.user });
-      } else {
-        // Auth failed, redirect to login
-        return new Response(null, {
-          status: 302,
-          headers: {
-            'Location': '/login?redirect=' + encodeURIComponent(req.url)
-          }
-        });
+      // If auth error, redirect to login
+      if (error.includes('401') || error.includes('Unauthorized')) {
+        return redirectToLogin(new URL(req.url).pathname, 'session_expired');
       }
-    } catch (error) {
-      console.error('Profile fetch error:', error);
-      return ctx.render({ user: null });
+
+      // Otherwise render with error
+      return ctx.render({ user: null, error });
     }
-  },
+
+    return ctx.render({ user: data?.user || null });
+  }),
 };
 
 export default function Profile({ data }: PageProps<ProfileData>) {
-  const { user } = data;
+  const { user, error } = data;
 
   if (!user) {
     return (
       <div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div class="sm:mx-auto sm:w-full sm:max-w-md">
-          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Unable to load profile
-          </h2>
-          <p class="mt-2 text-center text-sm text-gray-600">
-            Please try{' '}
-            <a href="/login" class="font-medium text-blue-600 hover:text-blue-500">
-              logging in again
-            </a>
-          </p>
+          <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div class="text-center">
+              <svg class="mx-auto h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h2 class="mt-4 text-center text-2xl font-bold text-gray-900">
+                Unable to load profile
+              </h2>
+              {error && (
+                <div class="mt-3 bg-red-50 border border-red-200 rounded-md p-3">
+                  <p class="text-sm text-red-800">{error}</p>
+                </div>
+              )}
+              <p class="mt-4 text-center text-sm text-gray-600">
+                Please try{' '}
+                <a href="/login" class="font-medium text-blue-600 hover:text-blue-500">
+                  logging in again
+                </a>
+                {' or '}
+                <a href="/" class="font-medium text-blue-600 hover:text-blue-500">
+                  return home
+                </a>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );

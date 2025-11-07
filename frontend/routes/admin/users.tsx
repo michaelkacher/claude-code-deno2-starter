@@ -12,6 +12,13 @@ import {
 } from '../../components/common/index.ts';
 import AdminHeaderActions from '../../islands/AdminHeaderActions.tsx';
 import AdminUserTable from '../../islands/AdminUserTable.tsx';
+import {
+  handleApiFetch,
+  hasRole,
+  logError,
+  redirectToLogin,
+  withErrorHandler,
+} from '../../lib/error-handler.ts';
 
 interface User {
   id: string;
@@ -47,86 +54,107 @@ interface AdminUsersData {
   error?: string;
 }
 
+const defaultData: AdminUsersData = {
+  users: [],
+  pagination: {
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  },
+  stats: {
+    totalUsers: 0,
+    verifiedUsers: 0,
+    unverifiedUsers: 0,
+    adminUsers: 0,
+    regularUsers: 0,
+    recentSignups24h: 0,
+    verificationRate: 0,
+  },
+  currentUser: {} as User,
+};
+
 export const handler: Handlers<AdminUsersData> = {
-  async GET(req, ctx) {
+  GET: withErrorHandler(async (req, ctx) => {
     // User data is injected by middleware - guaranteed to be admin
     const currentUser = ctx.state.user as User;
     const token = ctx.state.token as string;
 
+    // Double-check admin role
+    if (!hasRole(currentUser?.role, 'admin')) {
+      logError(new Error('Non-admin user attempted to access admin panel'), {
+        userId: currentUser?.id,
+        email: currentUser?.email,
+      });
+      return redirectToLogin(new URL(req.url).pathname, 'insufficient_permissions');
+    }
+
     const apiUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
 
-    try {
+    // Get query params for filtering/pagination
+    const url = new URL(req.url);
+    const page = url.searchParams.get('page') || '1';
+    const limit = url.searchParams.get('limit') || '50';
+    const search = url.searchParams.get('search') || '';
+    const role = url.searchParams.get('role') || '';
+    const verified = url.searchParams.get('verified') || '';
 
-      // Get query params for filtering/pagination
-      const url = new URL(req.url);
-      const page = url.searchParams.get('page') || '1';
-      const limit = url.searchParams.get('limit') || '50';
-      const search = url.searchParams.get('search') || '';
-      const role = url.searchParams.get('role') || '';
-      const verified = url.searchParams.get('verified') || '';
+    // Build query string
+    const queryParams = new URLSearchParams({
+      page,
+      limit,
+      ...(search && { search }),
+      ...(role && { role }),
+      ...(verified && { verified }),
+    });
 
-      // Build query string
-      const queryParams = new URLSearchParams({
-        page,
-        limit,
-        ...(search && { search }),
-        ...(role && { role }),
-        ...(verified && { verified }),
+    // Fetch users list and stats in parallel with error handling
+    const [usersResult, statsResult] = await Promise.all([
+      handleApiFetch<{ users: User[]; pagination: AdminUsersData['pagination'] }>(
+        `${apiUrl}/admin/users?${queryParams}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      ),
+      handleApiFetch<AdminUsersData['stats']>(
+        `${apiUrl}/admin/stats`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      ),
+    ]);
+
+    // Check for errors
+    if (usersResult.error || statsResult.error) {
+      const error = usersResult.error || statsResult.error || 'Failed to load admin data';
+      
+      logError(new Error(error), {
+        context: 'admin_users_page',
+        usersError: usersResult.error,
+        statsError: statsResult.error,
       });
 
-      // Fetch users list
-      const [usersResponse, statsResponse] = await Promise.all([
-        fetch(`${apiUrl}/admin/users?${queryParams}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }),
-        fetch(`${apiUrl}/admin/stats`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }),
-      ]);
-
-      if (!usersResponse.ok || !statsResponse.ok) {
-        throw new Error('Failed to fetch admin data');
-      }
-
-      const usersData = await usersResponse.json();
-      const statsData = await statsResponse.json();
-
       return ctx.render({
-        users: usersData.data.users,
-        pagination: usersData.data.pagination,
-        stats: statsData.data,
+        ...defaultData,
         currentUser,
-      });
-    } catch (error) {
-      console.error('Admin page error:', error);
-      return ctx.render({
-        users: [],
-        pagination: {
-          page: 1,
-          limit: 50,
-          total: 0,
-          totalPages: 0,
-          hasNext: false,
-          hasPrev: false,
-        },
-        stats: {
-          totalUsers: 0,
-          verifiedUsers: 0,
-          unverifiedUsers: 0,
-          adminUsers: 0,
-          regularUsers: 0,
-          recentSignups24h: 0,
-          verificationRate: 0,
-        },
-        currentUser: {} as User,
-        error: 'Failed to load admin data',
+        error,
       });
     }
-  },
+
+    // Success - return data
+    return ctx.render({
+      users: usersResult.data?.users || [],
+      pagination: usersResult.data?.pagination || defaultData.pagination,
+      stats: statsResult.data || defaultData.stats,
+      currentUser,
+    });
+  }),
 };
 
 export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
