@@ -6,22 +6,20 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useSignal, useComputed } from '@preact/signals';
+import { useComputed, useSignal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { isTokenExpired } from '../lib/jwt.ts';
 import { TokenStorage } from '../lib/storage.ts';
 import {
-  user,
-  accessToken,
-  isAuthenticated,
-  notifications,
-  unreadCount,
-  isWsConnected,
-  setUser,
-  setAccessToken,
-  clearAuth,
-  markNotificationAsRead,
-  type Notification,
+    accessToken,
+    clearAuth,
+    isWsConnected,
+    markNotificationAsRead,
+    notifications,
+    setAccessToken,
+    setUser,
+    unreadCount,
+    user
 } from '../lib/store.ts';
 import { cleanupWebSocket } from '../lib/websocket.ts';
 

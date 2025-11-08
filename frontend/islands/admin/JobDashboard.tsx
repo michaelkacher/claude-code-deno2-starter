@@ -7,9 +7,9 @@
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
+import { TokenStorage } from '../../lib/storage.ts';
 import CreateJobModal from './CreateJobModal.tsx';
 import CreateScheduleModal from './CreateScheduleModal.tsx';
-import { TokenStorage } from '../../lib/storage.ts';
 
 interface Job {
   id: string;

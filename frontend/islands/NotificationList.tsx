@@ -5,16 +5,16 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
+import { useComputed, useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
-import { useSignal, useComputed } from '@preact/signals';
 import {
   accessToken,
-  notifications,
-  unreadCount,
   isWsConnected,
-  markNotificationAsRead as markAsReadGlobal,
   markAllNotificationsAsRead as markAllAsReadGlobal,
+  markNotificationAsRead as markAsReadGlobal,
+  notifications,
   removeNotification as removeNotificationGlobal,
+  unreadCount,
 } from '../lib/store.ts';
 
 export default function NotificationList() {

@@ -3,9 +3,9 @@
  * Interactive examples of all design system components
  */
 
-import DesignSystemShowcase from '../islands/DesignSystemShowcase.tsx';
 import { Head } from '$fresh/runtime.ts';
 import { ContentContainer } from '../components/common/index.ts';
+import DesignSystemShowcase from '../islands/DesignSystemShowcase.tsx';
 
 export default function DesignSystemPage() {
   return (
