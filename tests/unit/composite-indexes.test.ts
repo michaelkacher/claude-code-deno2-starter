@@ -8,7 +8,7 @@
  */
 
 import { assertEquals } from 'jsr:@std/assert';
-import { beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
 import {
     CompositeIndexManager,
     type Job,
@@ -22,6 +22,11 @@ describe('CompositeIndexManager', () => {
   beforeEach(async () => {
     // Create a fresh in-memory KV store for each test
     kv = await Deno.openKv(':memory:');
+  });
+
+  afterEach(async () => {
+    // Clean up KV connection after each test
+    await kv.close();
   });
 
   // ==========================================================================
@@ -105,8 +110,8 @@ describe('CompositeIndexManager', () => {
       await CompositeIndexManager.createUserIndexes(kv, user2);
 
       // Query by role
-      const admins = await CompositeIndexManager.queryUsers({ role: 'admin' });
-      const users = await CompositeIndexManager.queryUsers({ role: 'user' });
+      const admins = await CompositeIndexManager.queryUsers({ role: 'admin' }, kv);
+      const users = await CompositeIndexManager.queryUsers({ role: 'user' }, kv);
 
       assertEquals(admins.length, 1);
       assertEquals(admins[0].id, 'admin1');
@@ -159,7 +164,7 @@ describe('CompositeIndexManager', () => {
       const verifiedAdmins = await CompositeIndexManager.queryUsers({
         role: 'admin',
         emailVerified: true,
-      });
+      }, kv);
 
       assertEquals(verifiedAdmins.length, 1);
       assertEquals(verifiedAdmins[0].id, 'admin-verified');
@@ -168,7 +173,7 @@ describe('CompositeIndexManager', () => {
       const unverifiedUsers = await CompositeIndexManager.queryUsers({
         role: 'user',
         emailVerified: false,
-      });
+      }, kv);
 
       assertEquals(unverifiedUsers.length, 1);
       assertEquals(unverifiedUsers[0].id, 'user-unverified');
@@ -195,12 +200,12 @@ describe('CompositeIndexManager', () => {
       await CompositeIndexManager.updateUserIndexes(kv, oldUser, newUser);
 
       // Query should now find user as admin
-      const admins = await CompositeIndexManager.queryUsers({ role: 'admin' });
+      const admins = await CompositeIndexManager.queryUsers({ role: 'admin' }, kv);
       assertEquals(admins.length, 1);
       assertEquals(admins[0].id, '1');
 
       // Should not find user as regular user
-      const users = await CompositeIndexManager.queryUsers({ role: 'user' });
+      const users = await CompositeIndexManager.queryUsers({ role: 'user' }, kv);
       assertEquals(users.length, 0);
     });
 
@@ -219,7 +224,7 @@ describe('CompositeIndexManager', () => {
       await CompositeIndexManager.deleteUserIndexes(kv, user);
 
       // Query should return empty
-      const users = await CompositeIndexManager.queryUsers({ role: 'user' });
+      const users = await CompositeIndexManager.queryUsers({ role: 'user' }, kv);
       assertEquals(users.length, 0);
     });
 
@@ -242,7 +247,7 @@ describe('CompositeIndexManager', () => {
       const users = await CompositeIndexManager.queryUsers({
         role: 'user',
         limit: 5,
-      });
+      }, kv);
 
       assertEquals(users.length, 5);
     });
@@ -328,7 +333,7 @@ describe('CompositeIndexManager', () => {
       const unread = await CompositeIndexManager.queryNotifications({
         userId: 'user1',
         read: false,
-      });
+      }, kv);
 
       assertEquals(unread.length, 2);
       assertEquals(unread.every((n) => !n.read), true);
@@ -374,7 +379,7 @@ describe('CompositeIndexManager', () => {
       const alerts = await CompositeIndexManager.queryNotifications({
         userId: 'user1',
         type: 'alert',
-      });
+      }, kv);
 
       assertEquals(alerts.length, 2);
       assertEquals(alerts.every((n) => n.type === 'alert'), true);
@@ -409,14 +414,14 @@ describe('CompositeIndexManager', () => {
       const read = await CompositeIndexManager.queryNotifications({
         userId: 'user1',
         read: true,
-      });
+      }, kv);
       assertEquals(read.length, 1);
 
       // Should not find as unread
       const unread = await CompositeIndexManager.queryNotifications({
         userId: 'user1',
         read: false,
-      });
+      }, kv);
       assertEquals(unread.length, 0);
     });
   });
@@ -500,7 +505,7 @@ describe('CompositeIndexManager', () => {
       const failedEmailJobs = await CompositeIndexManager.queryJobs({
         name: 'send-email',
         status: 'failed',
-      });
+      }, kv);
 
       assertEquals(failedEmailJobs.length, 1);
       assertEquals(failedEmailJobs[0].id, 'job2');
@@ -539,7 +544,7 @@ describe('CompositeIndexManager', () => {
       // Query all pending jobs
       const pendingJobs = await CompositeIndexManager.queryJobs({
         status: 'pending',
-      });
+      }, kv);
 
       assertEquals(pendingJobs.length, 2);
       assertEquals(
@@ -569,13 +574,13 @@ describe('CompositeIndexManager', () => {
       // Query should find as completed
       const completed = await CompositeIndexManager.queryJobs({
         status: 'completed',
-      });
+      }, kv);
       assertEquals(completed.length, 1);
 
       // Should not find as pending
       const pending = await CompositeIndexManager.queryJobs({
         status: 'pending',
-      });
+      }, kv);
       assertEquals(pending.length, 0);
     });
   });
@@ -619,14 +624,14 @@ describe('CompositeIndexManager', () => {
       await kv.set(['jobs', job.id], job);
 
       // Rebuild indexes
-      const result = await CompositeIndexManager.rebuildAllIndexes();
+      const result = await CompositeIndexManager.rebuildAllIndexes(kv);
 
       assertEquals(result.users, 1);
       assertEquals(result.notifications, 1);
       assertEquals(result.jobs, 1);
 
       // Verify queries work
-      const users = await CompositeIndexManager.queryUsers({ role: 'user' });
+      const users = await CompositeIndexManager.queryUsers({ role: 'user' }, kv);
       assertEquals(users.length, 1);
     });
 
@@ -647,7 +652,7 @@ describe('CompositeIndexManager', () => {
       await kv.delete(['users', user.id]);
 
       // Cleanup should remove orphaned indexes
-      const cleaned = await CompositeIndexManager.cleanupOrphanedIndexes();
+      const cleaned = await CompositeIndexManager.cleanupOrphanedIndexes(kv);
       assertEquals(cleaned > 0, true);
     });
   });

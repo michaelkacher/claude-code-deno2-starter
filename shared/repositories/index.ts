@@ -35,6 +35,12 @@ export type { NotificationQueryOptions } from './notification-repository.ts';
 export { JobRepository } from './job-repository.ts';
 export type { JobQueryOptions } from './job-repository.ts';
 
+// Import for factory use
+import { JobRepository } from './job-repository.ts';
+import { NotificationRepository } from './notification-repository.ts';
+import { TokenRepository } from './token-repository.ts';
+import { UserRepository } from './user-repository.ts';
+
 /**
  * Repository factory for dependency injection
  * Useful for testing with custom KV instances

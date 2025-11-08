@@ -18,6 +18,7 @@ const publicRoutes = [
   '/design-system',
   '/_frsh/',
   '/api/',
+  '/lib/',
 ];
 
 // Static file extensions and Fresh internals to allow

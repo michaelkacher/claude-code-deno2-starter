@@ -3,15 +3,13 @@
  */
 
 import { assertEquals, assertExists } from 'jsr:@std/assert';
-import { JobScheduler, CronPatterns } from './scheduler.ts';
+import { CronPatterns, JobScheduler } from './scheduler.ts';
 
 Deno.test('Scheduler - schedule a job', () => {
   const scheduler = new JobScheduler();
 
-  let executed = false;
-
   scheduler.schedule('test-job', '* * * * *', async () => {
-    executed = true;
+    // Job execution (for future testing)
   });
 
   const schedules = scheduler.getSchedules();

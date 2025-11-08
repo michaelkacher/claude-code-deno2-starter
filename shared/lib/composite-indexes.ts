@@ -250,8 +250,8 @@ export class CompositeIndexManager {
    * });
    * ```
    */
-  static async queryUsers(options: UserQueryOptions): Promise<User[]> {
-    const kv = await getKv();
+  static async queryUsers(options: UserQueryOptions, kvInstance?: Deno.Kv): Promise<User[]> {
+    const kv = kvInstance || await getKv();
     const {
       role,
       emailVerified,
@@ -476,8 +476,8 @@ export class CompositeIndexManager {
    * });
    * ```
    */
-  static async queryNotifications(options: NotificationQueryOptions): Promise<Notification[]> {
-    const kv = await getKv();
+  static async queryNotifications(options: NotificationQueryOptions, kvInstance?: Deno.Kv): Promise<Notification[]> {
+    const kv = kvInstance || await getKv();
     const { userId, read, type, createdAfter, limit = 50, cursor } = options;
     
     // Choose the appropriate index
@@ -638,8 +638,8 @@ export class CompositeIndexManager {
    * const pendingJobs = await queryJobs({ status: 'pending' });
    * ```
    */
-  static async queryJobs(options: JobQueryOptions): Promise<Job[]> {
-    const kv = await getKv();
+  static async queryJobs(options: JobQueryOptions, kvInstance?: Deno.Kv): Promise<Job[]> {
+    const kv = kvInstance || await getKv();
     const { name, status, priority, limit = 50, cursor } = options;
     
     // Choose the most specific index
@@ -704,12 +704,12 @@ export class CompositeIndexManager {
    * Rebuild all indexes for consistency
    * Use this if indexes get out of sync
    */
-  static async rebuildAllIndexes(): Promise<{
+  static async rebuildAllIndexes(kvInstance?: Deno.Kv): Promise<{
     users: number;
     notifications: number;
     jobs: number;
   }> {
-    const kv = await getKv();
+    const kv = kvInstance || await getKv();
     logger.info('Starting index rebuild');
     
     let userCount = 0;
@@ -755,8 +755,8 @@ export class CompositeIndexManager {
   /**
    * Clean up orphaned indexes (indexes pointing to non-existent records)
    */
-  static async cleanupOrphanedIndexes(): Promise<number> {
-    const kv = await getKv();
+  static async cleanupOrphanedIndexes(kvInstance?: Deno.Kv): Promise<number> {
+    const kv = kvInstance || await getKv();
     let cleaned = 0;
     
     // Clean user indexes

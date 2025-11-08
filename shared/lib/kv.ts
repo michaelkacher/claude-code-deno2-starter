@@ -58,8 +58,6 @@ class KvConnectionManager {
     // If path is relative, resolve it as an absolute path from the project root
     // This file is at shared/lib/kv.ts, so project root is ../../ from here
     if (path && !path.startsWith('/') && !path.match(/^[a-zA-Z]:\\/)) {
-      // Get the directory of this file (shared/lib/)
-      const kvFileDir = new URL('.', import.meta.url).pathname;
       // Go up two levels to project root: shared/lib -> shared -> root
       const projectRoot = new URL('../../', import.meta.url).pathname;
       // Remove leading ./ from path and join with project root

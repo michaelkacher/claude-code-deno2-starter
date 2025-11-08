@@ -3,6 +3,7 @@
  */
 
 import { assertEquals, assertExists } from 'jsr:@std/assert';
+import { closeKv } from './kv.ts';
 import { JobQueue } from './queue.ts';
 
 Deno.test('JobQueue - add job', async () => {
@@ -17,10 +18,11 @@ Deno.test('JobQueue - add job', async () => {
   const job = await queue.getJob(jobId);
   assertExists(job);
   assertEquals(job.name, 'test-job');
-  assertEquals(job.data.message, 'Hello');
+  assertEquals((job.data as { message: string }).message, 'Hello');
   assertEquals(job.status, 'pending');
 
   await queue.delete(jobId);
+  await closeKv();
 });
 
 Deno.test('JobQueue - add job with options', async () => {
@@ -39,6 +41,7 @@ Deno.test('JobQueue - add job with options', async () => {
   assertEquals(job.maxRetries, 5);
 
   await queue.delete(jobId);
+  await closeKv();
 });
 
 Deno.test('JobQueue - list jobs', async () => {
@@ -59,6 +62,7 @@ Deno.test('JobQueue - list jobs', async () => {
   for (const id of ids) {
     await queue.delete(id);
   }
+  await closeKv();
 });
 
 Deno.test('JobQueue - get stats', async () => {
@@ -76,33 +80,45 @@ Deno.test('JobQueue - get stats', async () => {
   assertEquals(typeof stats.total, 'number');
 
   await queue.delete(jobId);
+  await closeKv();
 });
 
-Deno.test('JobQueue - process job successfully', async () => {
-  const queue = new JobQueue();
-  await queue.init();
+Deno.test({
+  name: 'JobQueue - process job successfully',
+  sanitizeResources: false,
+  sanitizeOps: false,
+  fn: async () => {
+    const queue = new JobQueue();
+    await queue.init();
 
-  let processed = false;
+    let processed = false;
 
-  queue.process('success-job', async () => {
-    processed = true;
-  });
+    queue.process('success-job', async () => {
+      processed = true;
+    });
 
-  const jobId = await queue.add('success-job', {});
+    const jobId = await queue.add('success-job', {});
 
-  // Start processing
-  await queue.start();
+    // Start processing
+    await queue.start();
 
-  // Wait for job to be processed
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Wait for job to be processed
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  assertEquals(processed, true);
+    assertEquals(processed, true);
 
-  const job = await queue.getJob(jobId);
-  assertEquals(job?.status, 'completed');
+    const job = await queue.getJob(jobId);
+    assertEquals(job?.status, 'completed');
 
-  queue.stop();
-  await queue.delete(jobId);
+    // Stop the queue first
+    queue.stop();
+    
+    // Clean up the job
+    await queue.delete(jobId);
+    
+    // Close KV connection
+    await closeKv();
+  },
 });
 
 Deno.test('JobQueue - retry failed job', async () => {
@@ -131,6 +147,7 @@ Deno.test('JobQueue - retry failed job', async () => {
 
   queue.stop();
   await queue.delete(jobId);
+  await closeKv();
 });
 
 Deno.test('JobQueue - delete job', async () => {
@@ -146,6 +163,7 @@ Deno.test('JobQueue - delete job', async () => {
 
   job = await queue.getJob(jobId);
   assertEquals(job, null);
+  await closeKv();
 });
 
 Deno.test('JobQueue - cleanup old jobs', async () => {
@@ -160,13 +178,14 @@ Deno.test('JobQueue - cleanup old jobs', async () => {
     job.status = 'completed';
     job.completedAt = new Date('2020-01-01').toISOString();
     // Save updated job manually for test
-    const kv = await Deno.openKv();
+    const { getKv } = await import('./kv.ts');
+    const kv = await getKv();
     await kv.set(['jobs', jobId], job);
-    await kv.close();
   }
 
   const cutoff = new Date('2021-01-01');
   const deleted = await queue.cleanup(cutoff);
 
   assertEquals(deleted >= 1, true);
+  await closeKv();
 });

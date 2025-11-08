@@ -431,8 +431,10 @@ export class JobQueue {
       console.error('Error polling queue:', error);
     }
 
-    // Schedule next poll
-    this.pollTimeout = setTimeout(() => this.poll(), this.pollInterval);
+    // Schedule next poll only if still running
+    if (this.isRunning) {
+      this.pollTimeout = setTimeout(() => this.poll(), this.pollInterval);
+    }
   }
 
   private async getNextJob(): Promise<Job | null> {

@@ -140,12 +140,12 @@ class LoggerImpl implements Logger {
     }
   }
 
-  private sendToErrorTracking(entry: LogEntry): void {
+  private sendToErrorTracking(_entry: LogEntry): void {
     // TODO: Integrate with error tracking service (Sentry, LogTail, etc.)
     // Example:
-    // Sentry.captureException(entry.error, {
-    //   tags: { context: entry.context },
-    //   extra: entry.meta,
+    // Sentry.captureException(_entry.error, {
+    //   tags: { context: _entry.context },
+    //   extra: _entry.meta,
     // });
   }
 

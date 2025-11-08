@@ -149,21 +149,22 @@ export function setupWebSocketConnection() {
           try {
             logger.debug('Verifying token');
             const payload = await verifyToken(data.token);
-            userId = payload.sub;
+            const authenticatedUserId = payload.sub as string;
+            userId = authenticatedUserId;
             authenticated = true;
 
             // Check if user is admin
             const userRepo = new UserRepository();
-            const user = await userRepo.findById(userId);
+            const user = await userRepo.findById(authenticatedUserId);
             const isAdmin = user?.role === 'admin';
 
-            logger.info('User authenticated', { userId, isAdmin });
+            logger.info('User authenticated', { userId: authenticatedUserId, isAdmin });
 
             // Check per-user connection limit
-            const userConnections = clients.get(userId);
+            const userConnections = clients.get(authenticatedUserId);
             if (userConnections && userConnections.size >= MAX_CONNECTIONS_PER_USER) {
               logger.warn('User connection limit reached', {
-                userId,
+                userId: authenticatedUserId,
                 currentConnections: userConnections.size,
                 limit: MAX_CONNECTIONS_PER_USER,
               });
@@ -192,25 +193,26 @@ export function setupWebSocketConnection() {
             const now = Date.now();
 
             // Create client
-            client = {
+            const authenticatedClient: WebSocketClient = {
               socket: ws,
-              userId,
+              userId: authenticatedUserId,
               isAdmin,
               isAlive: true,
               connectionId,
               connectedAt: now,
               lastActivity: now,
             };
+            client = authenticatedClient;
 
             // Store client connection
-            if (!clients.has(userId)) {
-              clients.set(userId, new Map());
+            if (!clients.has(authenticatedUserId)) {
+              clients.set(authenticatedUserId, new Map());
             }
-            clients.get(userId)!.set(connectionId, client);
+            clients.get(authenticatedUserId)!.set(connectionId, authenticatedClient);
             totalConnections++;
 
             logger.debug('Sending connection confirmation', {
-              userId,
+              userId: authenticatedUserId,
               connectionId,
               totalConnections,
             });
@@ -224,22 +226,22 @@ export function setupWebSocketConnection() {
             });
 
             // Send current unread count
-            const unreadCount = await NotificationService.getUnreadCount(userId);
+            const unreadCount = await NotificationService.getUnreadCount(authenticatedUserId);
             sendMessage(ws, {
               type: 'unread_count',
               unreadCount,
             });
 
             // Start watching for notification changes (don't await - runs in background)
-            watchNotifications(userId, connectionId, ws).catch(error => {
-              logger.error('Watch notifications failed', error, { userId, connectionId });
+            watchNotifications(authenticatedUserId, connectionId, ws).catch(error => {
+              logger.error('Watch notifications failed', error, { userId: authenticatedUserId, connectionId });
             });
 
             // Start heartbeat
-            startHeartbeat(client);
-            logger.info('WebSocket setup complete', { userId });
+            startHeartbeat(authenticatedClient);
+            logger.info('WebSocket setup complete', { userId: authenticatedUserId });
           } catch (error) {
-            logger.warn('Authentication failed', error);
+            logger.warn('Authentication failed', { error: error instanceof Error ? error.message : 'Unknown error' });
             sendMessage(ws, {
               type: 'auth_failed',
               message: 'Invalid or expired token',
