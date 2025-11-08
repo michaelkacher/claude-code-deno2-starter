@@ -5,17 +5,20 @@
  * Import and call this function in your main.ts during server startup.
  */
 
+import { createLogger } from '../lib/logger.ts';
 import { registerCleanupWorker } from './cleanup-worker.ts';
 import { registerEmailWorker } from './email-worker.ts';
 import { registerReportWorker } from './report-worker.ts';
 import { registerWebhookWorker } from './webhook-worker.ts';
+
+const logger = createLogger('Workers');
 
 /**
  * Register all workers
  * Call this function once during server initialization
  */
 export function registerAllWorkers(): void {
-  console.log('🔧 Registering background workers...');
+  logger.info('Registering background workers');
 
   // Register job processors
   registerEmailWorker();
@@ -25,28 +28,28 @@ export function registerAllWorkers(): void {
   // Register scheduled tasks
   registerCleanupWorker();
 
-  console.log('✅ All workers registered');
+  logger.info('All workers registered');
 }
 
 // Re-export helper functions for convenience
 export {
-  sendNotificationEmail,
-  sendPasswordResetEmail,
-  sendVerificationEmail,
-  sendWelcomeEmail,
+    sendNotificationEmail,
+    sendPasswordResetEmail,
+    sendVerificationEmail,
+    sendWelcomeEmail
 } from './email-worker.ts';
 
 export {
-  requestAnalyticsReport,
-  requestSalesReport,
-  requestUserActivityReport,
+    requestAnalyticsReport,
+    requestSalesReport,
+    requestUserActivityReport
 } from './report-worker.ts';
 
 export {
-  sendCustomWebhook,
-  sendPaymentWebhook,
-  sendSignedWebhook,
-  sendUserWebhook,
+    sendCustomWebhook,
+    sendPaymentWebhook,
+    sendSignedWebhook,
+    sendUserWebhook
 } from './webhook-worker.ts';
 
 export { triggerFullCleanup } from './cleanup-worker.ts';

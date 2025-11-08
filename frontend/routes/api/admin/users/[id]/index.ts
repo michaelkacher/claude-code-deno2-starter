@@ -6,6 +6,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from "../../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -13,6 +14,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('AdminDeleteUserAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async DELETE(_req, ctx) {
@@ -38,7 +41,7 @@ export const handler: Handlers<unknown, AppState> = {
           return errorResponse("CANNOT_DELETE_SELF", error.message, 400);
         }
       }
-      console.error("Delete user error:", error);
+      logger.error("Delete user error", { error });
       return errorResponse("SERVER_ERROR", "Failed to delete user", 500);
     }
   },

@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { JobRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
@@ -11,6 +12,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('JobStatsAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async GET(req, ctx) {
@@ -26,7 +29,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
-      console.error("Get job stats error:", error);
+      logger.error("Get job stats error", { error });
       return errorResponse("SERVER_ERROR", "Failed to get job stats", 500);
     }
   },

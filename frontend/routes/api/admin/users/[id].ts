@@ -6,6 +6,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from "../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -13,6 +14,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('AdminGetUserAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async GET(_req, ctx) {
@@ -34,7 +37,7 @@ export const handler: Handlers<unknown, AppState> = {
           return errorResponse("USER_NOT_FOUND", error.message, 404);
         }
       }
-      console.error("Get user error:", error);
+      logger.error("Get user error", { error });
       return errorResponse("SERVER_ERROR", "Failed to get user", 500);
     }
   },

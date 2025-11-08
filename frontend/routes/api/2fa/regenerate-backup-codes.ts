@@ -7,14 +7,17 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from "../../../../shared/lib/logger.ts";
 import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
-    errorResponse,
-    parseJsonBody,
-    requireUser,
-    successResponse,
-    type AppState,
+  errorResponse,
+  parseJsonBody,
+  requireUser,
+  successResponse,
+  type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('RegenerateBackupCodesAPI');
 
 const RegenerateCodesSchema = z.object({
   password: z.string().min(1),
@@ -58,7 +61,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error instanceof z.ZodError) {
         return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
       }
-      console.error("Regenerate backup codes error:", error);
+      logger.error("Regenerate backup codes error", { error });
       return errorResponse(
         "SERVER_ERROR",
         "Failed to regenerate backup codes",

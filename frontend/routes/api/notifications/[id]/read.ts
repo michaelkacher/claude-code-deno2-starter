@@ -4,13 +4,16 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../../shared/lib/logger.ts';
 import { NotificationRepository } from "../../../../../shared/repositories/index.ts";
 import {
-    errorResponse,
-    requireUser,
-    successResponse,
-    type AppState,
+  errorResponse,
+  requireUser,
+  successResponse,
+  type AppState,
 } from "../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('MarkAsReadAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async PATCH(req, ctx) {
@@ -37,7 +40,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Authentication required") {
         return errorResponse("UNAUTHORIZED", "Authentication required", 401);
       }
-      console.error("Mark as read error:", error);
+      logger.error("Mark as read error", { error });
       return errorResponse(
         "SERVER_ERROR",
         "Failed to mark notification as read",

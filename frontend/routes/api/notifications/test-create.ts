@@ -7,6 +7,7 @@
  */
 
 import { Handlers } from '$fresh/server.ts';
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { NotificationService } from '../../../../shared/services/notifications.ts';
 import {
     errorResponse,
@@ -15,6 +16,8 @@ import {
     type AppState,
 } from '../../../lib/fresh-helpers.ts';
 
+const logger = createLogger('NotificationsTestAPI');
+
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
     try {
@@ -22,7 +25,7 @@ export const handler: Handlers<unknown, AppState> = {
       const user = requireUser(ctx);
       const userId = user.sub;
 
-      console.log('[Test API] Creating test notifications for user:', userId);
+      logger.debug('Creating test notifications for user', { userId });
 
       // Create test notifications
       const notifications = [];
@@ -73,7 +76,7 @@ export const handler: Handlers<unknown, AppState> = {
         })
       );
 
-      console.log('[Test API] Created', notifications.length, 'test notifications');
+      logger.info('Test notifications created', { count: notifications.length, userId });
 
       return successResponse({
         message: `Created ${notifications.length} test notifications`,
@@ -83,7 +86,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === 'Authentication required') {
         return errorResponse('UNAUTHORIZED', 'Authentication required', 401);
       }
-      console.error('[Test API] Error creating test notifications:', error);
+      logger.error('Error creating test notifications', { error });
       return errorResponse(
         'SERVER_ERROR',
         'Failed to create test notifications',

@@ -5,9 +5,12 @@
  * This demonstrates how to create a scheduled worker using cron expressions.
  */
 
+import { createLogger } from '../lib/logger.ts';
 import { queue } from '../lib/queue.ts';
 import { CronPatterns, scheduler } from '../lib/scheduler.ts';
 import { getStorage } from '../lib/storage.ts';
+
+const logger = createLogger('CleanupWorker');
 
 // ============================================================================
 // Cleanup Tasks
@@ -17,7 +20,7 @@ import { getStorage } from '../lib/storage.ts';
  * Clean up old temporary files from storage
  */
 async function cleanupTempFiles(): Promise<void> {
-  console.log('🧹 Starting temp file cleanup...');
+  logger.info('Starting temp file cleanup');
 
   try {
     const storage = getStorage();
@@ -35,13 +38,13 @@ async function cleanupTempFiles(): Promise<void> {
         await storage.delete(file);
         deletedCount++;
       } catch (error) {
-        console.error(`Failed to delete ${file}:`, error);
+        logger.error('Failed to delete file', { file, error });
       }
     }
 
-    console.log(`✅ Deleted ${deletedCount} temporary files`);
+    logger.info('Temp file cleanup complete', { deletedCount });
   } catch (error) {
-    console.error('❌ Temp file cleanup failed:', error);
+    logger.error('Temp file cleanup failed', { error });
     throw error;
   }
 }
@@ -50,7 +53,7 @@ async function cleanupTempFiles(): Promise<void> {
  * Clean up old completed and failed jobs from the queue
  */
 async function cleanupOldJobs(): Promise<void> {
-  console.log('🧹 Starting job cleanup...');
+  logger.info('Starting job cleanup');
 
   try {
     // Clean up jobs older than 7 days
@@ -59,9 +62,9 @@ async function cleanupOldJobs(): Promise<void> {
 
     const deletedCount = await queue.cleanup(cutoffDate);
 
-    console.log(`✅ Cleaned up ${deletedCount} old jobs`);
+    logger.info('Job cleanup complete', { deletedCount });
   } catch (error) {
-    console.error('❌ Job cleanup failed:', error);
+    logger.error('Job cleanup failed', { error });
     throw error;
   }
 }
@@ -71,15 +74,15 @@ async function cleanupOldJobs(): Promise<void> {
  * This is a stub - implement based on your session storage
  */
 async function cleanupExpiredSessions(): Promise<void> {
-  console.log('🧹 Starting session cleanup...');
+  logger.info('Starting session cleanup');
 
   try {
     // Implement session cleanup logic here
     // Example: Delete sessions with expiry < now
 
-    console.log('✅ Session cleanup complete');
+    logger.info('Session cleanup complete');
   } catch (error) {
-    console.error('❌ Session cleanup failed:', error);
+    logger.error('Session cleanup failed', { error });
     throw error;
   }
 }
@@ -93,7 +96,7 @@ async function cleanupExpiredSessions(): Promise<void> {
  * Call this function during server startup
  */
 export function registerCleanupWorker(): void {
-  console.log('🧹 [CleanupWorker] Registering cleanup schedules...');
+  logger.info('Registering cleanup schedules');
   
   // Clean up temp files every hour
   scheduler.schedule(
@@ -102,7 +105,7 @@ export function registerCleanupWorker(): void {
     cleanupTempFiles,
     { enabled: true },
   );
-  console.log('🧹 [CleanupWorker] Registered: cleanup-temp-files');
+  logger.info('Registered cleanup schedule', { schedule: 'cleanup-temp-files' });
 
   // Clean up old jobs daily at 3 AM
   scheduler.schedule(
@@ -111,7 +114,7 @@ export function registerCleanupWorker(): void {
     cleanupOldJobs,
     { enabled: true },
   );
-  console.log('🧹 [CleanupWorker] Registered: cleanup-old-jobs');
+  logger.info('Registered cleanup schedule', { schedule: 'cleanup-old-jobs' });
 
   // Clean up expired sessions every 6 hours
   scheduler.schedule(
@@ -120,9 +123,9 @@ export function registerCleanupWorker(): void {
     cleanupExpiredSessions,
     { enabled: true },
   );
-  console.log('🧹 [CleanupWorker] Registered: cleanup-expired-sessions');
+  logger.info('Registered cleanup schedule', { schedule: 'cleanup-expired-sessions' });
 
-  console.log('🧹 Cleanup worker registered');
+  logger.info('Cleanup worker registered');
 }
 
 // ============================================================================

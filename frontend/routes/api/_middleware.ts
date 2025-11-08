@@ -6,7 +6,10 @@
 
 import type { FreshContext } from "$fresh/server.ts";
 import { verifyToken } from "../../../shared/lib/jwt.ts";
+import { createLogger } from "../../../shared/lib/logger.ts";
 import type { AppState } from "../../lib/fresh-helpers.ts";
+
+const logger = createLogger('APIMiddleware');
 
 /**
  * Authentication middleware for Fresh API routes
@@ -22,13 +25,11 @@ export async function handler(
   
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
-    // [API Middleware] Bearer token received (not logged)
     if (!token) {
-      console.error("❌ [API Middleware] Token is empty after extraction");
+      logger.error("Token is empty after extraction");
     } else {
       try {
         const payload = await verifyToken(token);
-        // [API Middleware] Token valid, user attached to context
         ctx.state.user = {
           sub: payload.sub as string,
           email: payload.email as string,
@@ -40,7 +41,7 @@ export async function handler(
       } catch (error) {
         // Token invalid or expired - continue without user
         // Routes can decide if auth is required
-        console.error("❌ [API Middleware] Invalid token:", error.message);
+        logger.error("Invalid token", { error: error.message });
       }
     }
   } else {

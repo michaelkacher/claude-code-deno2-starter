@@ -41,6 +41,9 @@
  */
 
 import { getKv } from './kv.ts';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('Queue');
 
 // ============================================================================
 // Types
@@ -424,11 +427,11 @@ export class JobQueue {
         
         // Start processing all fetched jobs concurrently
         for (const job of jobs) {
-          this.processJob(job).catch(console.error);
+          this.processJob(job).catch((error) => logger.error('Process job error', { error, jobId: job.id }));
         }
       }
     } catch (error) {
-      console.error('Error polling queue:', error);
+      logger.error('Error polling queue', { error });
     }
 
     // Schedule next poll only if still running
@@ -545,7 +548,7 @@ export class JobQueue {
     const handler = this.handlers.get(job.name);
 
     if (!handler) {
-      console.warn(`No handler found for job: ${job.name}`);
+      logger.warn('No handler found for job', { jobName: job.name, jobId: job.id });
       return;
     }
 
@@ -567,7 +570,7 @@ export class JobQueue {
         broadcastJobUpdate(job);
       } catch (wsError) {
         // WebSocket broadcast is not critical, just log if it fails
-        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+        logger.debug('WebSocket broadcast failed (non-critical)', { error: wsError });
       }
 
       // Execute handler
@@ -583,10 +586,10 @@ export class JobQueue {
         const { broadcastJobUpdate } = await import('./notification-websocket.ts');
         broadcastJobUpdate(job);
       } catch (wsError) {
-        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+        logger.debug('WebSocket broadcast failed (non-critical)', { error: wsError });
       }
     } catch (error) {
-      console.error(`Job ${job.id} failed:`, error);
+      logger.error('Job failed', { jobId: job.id, error });
 
       // Check if we should retry
       if (job.attempts < job.maxRetries) {

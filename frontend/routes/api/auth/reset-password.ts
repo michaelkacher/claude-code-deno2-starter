@@ -5,6 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -12,6 +13,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('ResetPasswordAPI');
 
 const ResetPasswordSchema = z.object({
   token: z.string().uuid(),
@@ -52,7 +55,7 @@ export const handler: Handlers<unknown, AppState> = {
           400
         );
       }
-      console.error("Reset password error:", error);
+      logger.error("Reset password error", { error });
       return errorResponse("SERVER_ERROR", "Failed to reset password", 500);
     }
   },

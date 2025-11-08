@@ -5,7 +5,10 @@
  * This demonstrates how to create a simple worker that processes email jobs.
  */
 
+import { createLogger } from '../lib/logger.ts';
 import { queue } from '../lib/queue.ts';
+
+const logger = createLogger('EmailWorker');
 
 // ============================================================================
 // Types
@@ -38,10 +41,11 @@ export interface EmailJobData {
  * - Postmark
  */
 async function sendEmail(data: EmailJobData): Promise<void> {
-  console.log('📧 Sending email:');
-  console.log(`  To: ${data.to}`);
-  console.log(`  Subject: ${data.subject}`);
-  console.log(`  Body: ${data.body.substring(0, 100)}...`);
+  logger.info('Sending email', {
+    to: data.to,
+    subject: data.subject,
+    bodyPreview: data.body.substring(0, 100),
+  });
 
   // Simulate email sending delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -51,7 +55,7 @@ async function sendEmail(data: EmailJobData): Promise<void> {
     throw new Error('Simulated email sending failure');
   }
 
-  console.log('✅ Email sent successfully');
+  logger.info('Email sent successfully', { to: data.to });
 }
 
 // ============================================================================
@@ -67,7 +71,7 @@ export function registerEmailWorker(): void {
     await sendEmail(job.data);
   });
 
-  console.log('✉️  Email worker registered');
+  logger.info('Email worker registered');
 }
 
 // ============================================================================

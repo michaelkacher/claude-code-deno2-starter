@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from "../../../../../shared/lib/logger.ts";
 import { JobRepository } from "../../../../../shared/repositories/index.ts";
 import {
     errorResponse,
@@ -11,6 +12,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('DeleteJobAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async DELETE(req, ctx) {
@@ -47,7 +50,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
-      console.error("Delete job error:", error);
+      logger.error("Delete job error", { error });
       return errorResponse("SERVER_ERROR", "Failed to delete job", 500);
     }
   },

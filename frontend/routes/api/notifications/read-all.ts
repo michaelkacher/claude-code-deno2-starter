@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
@@ -11,6 +12,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('ReadAllNotificationsAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
@@ -26,7 +29,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Authentication required") {
         return errorResponse("UNAUTHORIZED", "Authentication required", 401);
       }
-      console.error("Mark all as read error:", error);
+      logger.error("Mark all as read error", { error });
       return errorResponse(
         "SERVER_ERROR",
         "Failed to mark all notifications as read",

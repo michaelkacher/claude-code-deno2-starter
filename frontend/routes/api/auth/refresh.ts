@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -11,6 +12,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('RefreshTokenAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
@@ -47,7 +50,7 @@ export const handler: Handlers<unknown, AppState> = {
         access_token: result.accessToken,
       });
     } catch (error) {
-      console.error("Token refresh error:", error);
+      logger.error("Token refresh error", { error });
       return errorResponse("SERVER_ERROR", "Failed to refresh token", 500);
     }
   },

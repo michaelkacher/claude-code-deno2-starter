@@ -4,6 +4,9 @@
  */
 
 import { Resend } from 'npm:resend@4.0.0';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('Email');
 
 // Initialize Resend client
 let resendClient: Resend | null = null;
@@ -125,7 +128,7 @@ export async function sendVerificationEmail(
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to send verification email:', error);
+    logger.error('Failed to send verification email', { error, email });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to send email',
@@ -188,7 +191,7 @@ This link will expire in 1 hour. If you didn't request a password reset, ignore 
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to send password reset email:', error);
+    logger.error('Failed to send password reset email', { error, email });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to send email',

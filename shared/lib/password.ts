@@ -8,6 +8,9 @@
  */
 
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('Password');
 
 /**
  * Hash a password using bcrypt
@@ -31,7 +34,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     return await bcrypt.compare(password, hash);
   } catch (error) {
     // If hash is invalid format, return false
-    console.error('Password verification error:', error);
+    logger.error('Password verification error', { error });
     return false;
   }
 }

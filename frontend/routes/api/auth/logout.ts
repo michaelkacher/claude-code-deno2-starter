@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
     deleteCookie,
@@ -12,6 +13,8 @@ import {
     requireUser,
     type AppState
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('LogoutAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
@@ -54,7 +57,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error instanceof Error && error.message === "Unauthorized") {
         return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
       }
-      console.error("Logout error:", error);
+      logger.error("Logout error", { error });
       return errorResponse("SERVER_ERROR", "Failed to logout", 500);
     }
   },

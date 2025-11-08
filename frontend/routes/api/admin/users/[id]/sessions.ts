@@ -6,6 +6,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from "../../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -13,6 +14,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('AdminRevokeSessionsAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async DELETE(_req, ctx) {
@@ -31,7 +34,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error instanceof Error && error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
-      console.error("Revoke sessions error:", error);
+      logger.error("Revoke sessions error", { error });
       return errorResponse("SERVER_ERROR", "Failed to revoke sessions", 500);
     }
   },

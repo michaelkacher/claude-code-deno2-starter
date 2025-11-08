@@ -4,13 +4,16 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../../shared/lib/logger.ts';
 import { NotificationRepository } from "../../../../../shared/repositories/index.ts";
 import {
-    errorResponse,
-    requireUser,
-    successResponse,
-    type AppState,
+  errorResponse,
+  requireUser,
+  successResponse,
+  type AppState,
 } from "../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('DeleteNotificationAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async DELETE(req, ctx) {
@@ -45,7 +48,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Authentication required") {
         return errorResponse("UNAUTHORIZED", "Authentication required", 401);
       }
-      console.error("Delete notification error:", error);
+      logger.error("Delete notification error", { error });
       return errorResponse(
         "SERVER_ERROR",
         "Failed to delete notification",

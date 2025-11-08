@@ -5,7 +5,10 @@
  * This demonstrates handling long-running jobs with progress tracking.
  */
 
+import { createLogger } from '../lib/logger.ts';
 import { queue } from '../lib/queue.ts';
+
+const logger = createLogger('ReportWorker');
 
 // ============================================================================
 // Types
@@ -39,7 +42,7 @@ export interface ReportResult {
 async function generateUserActivityReport(
   _data: ReportJobData,
 ): Promise<ReportResult> {
-  console.log('📊 Generating user activity report...');
+  logger.info('Generating user activity report');
 
   // Simulate data fetching and processing
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -69,7 +72,7 @@ async function generateUserActivityReport(
 async function generateSalesReport(
   _data: ReportJobData,
 ): Promise<ReportResult> {
-  console.log('📊 Generating sales report...');
+  logger.info('Generating sales report');
 
   // Simulate long-running report generation
   await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -92,7 +95,7 @@ async function generateSalesReport(
 async function generateAnalyticsReport(
   _data: ReportJobData,
 ): Promise<ReportResult> {
-  console.log('📊 Generating analytics report...');
+  logger.info('Generating analytics report');
 
   await new Promise((resolve) => setTimeout(resolve, 3000));
 
@@ -112,9 +115,12 @@ async function generateAnalyticsReport(
  * Main report generation function
  */
 async function generateReport(data: ReportJobData): Promise<void> {
-  console.log(`📊 Generating ${data.reportType} report for user ${data.userId}`);
-  console.log(`  Date range: ${data.startDate} to ${data.endDate}`);
-  console.log(`  Format: ${data.format}`);
+  logger.info('Generating report', {
+    reportType: data.reportType,
+    userId: data.userId,
+    dateRange: `${data.startDate} to ${data.endDate}`,
+    format: data.format,
+  });
 
   let result: ReportResult;
 
@@ -132,14 +138,15 @@ async function generateReport(data: ReportJobData): Promise<void> {
       throw new Error(`Unknown report type: ${data.reportType}`);
   }
 
-  console.log('✅ Report generated successfully:');
-  console.log(`  Report ID: ${result.reportId}`);
-  console.log(`  Size: ${(result.size / 1024).toFixed(2)} KB`);
-  console.log(`  Rows: ${result.rowCount}`);
+  logger.info('Report generated successfully', {
+    reportId: result.reportId,
+    sizeMB: (result.size / 1024 / 1024).toFixed(2),
+    rowCount: result.rowCount,
+  });
 
   // If email was requested, send notification
   if (data.emailTo) {
-    console.log(`📧 Sending report to ${data.emailTo}`);
+    logger.info('Sending report via email', { emailTo: data.emailTo });
     // In production, you would queue an email job here
     // await queue.add('send-email', {
     //   to: data.emailTo,
@@ -162,7 +169,7 @@ export function registerReportWorker(): void {
     await generateReport(job.data);
   });
 
-  console.log('📊 Report worker registered');
+  logger.info('Report worker registered');
 }
 
 // ============================================================================

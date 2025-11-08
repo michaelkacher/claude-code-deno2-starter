@@ -15,6 +15,9 @@
  */
 
 import { UserRepository } from '../repositories/index.ts';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('InitialAdminSetup');
 
 /**
  * Setup initial admin user if specified in environment
@@ -37,7 +40,7 @@ export async function setupInitialAdmin(): Promise<void> {
     return;
   }
 
-  console.log(`🔍 Checking for initial admin setup: ${initialAdminEmail}`);
+  logger.info('Checking for initial admin setup', { email: initialAdminEmail });
 
   try {
     const userRepo = new UserRepository();
@@ -46,33 +49,26 @@ export async function setupInitialAdmin(): Promise<void> {
     const user = await userRepo.findByEmail(initialAdminEmail);
     
     if (!user) {
-      console.warn(`⚠️  INITIAL_ADMIN_EMAIL set to "${initialAdminEmail}" but user not found.`);
-      console.warn(`   Please sign up with this email first, then restart the server.`);
+      logger.warn('INITIAL_ADMIN_EMAIL user not found. Please sign up first.', { email: initialAdminEmail });
       return;
     }
 
     // Check if already admin
     if (user.role === 'admin') {
-      console.log(`✅ Initial admin already configured: ${initialAdminEmail}`);
-      console.log(`   You can now remove INITIAL_ADMIN_EMAIL from your environment variables.`);
+      logger.info('Initial admin already configured. Remove INITIAL_ADMIN_EMAIL from env.', { email: initialAdminEmail });
       return;
     }
 
     // Promote to admin
     await userRepo.update(user.id, { role: 'admin' });
     
-    console.log(`\n┌─────────────────────────────────────────────────────┐`);
-    console.log(`│ ✅ INITIAL ADMIN CREATED                            │`);
-    console.log(`├─────────────────────────────────────────────────────┤`);
-    console.log(`│ Email: ${initialAdminEmail.padEnd(42)} │`);
-    console.log(`│ Name:  ${user.name.padEnd(42)} │`);
-    console.log(`│ ID:    ${user.id.substring(0, 42).padEnd(42)} │`);
-    console.log(`├─────────────────────────────────────────────────────┤`);
-    console.log(`│ ⚠️  IMPORTANT: Remove INITIAL_ADMIN_EMAIL from      │`);
-    console.log(`│    your environment variables now for security.    │`);
-    console.log(`└─────────────────────────────────────────────────────┘\n`);
+    logger.info('INITIAL ADMIN CREATED - Remove INITIAL_ADMIN_EMAIL from env for security', {
+      email: initialAdminEmail,
+      name: user.name,
+      userId: user.id,
+    });
   } catch (error) {
-    console.error('❌ Failed to setup initial admin:', error);
+    logger.error('Failed to setup initial admin', { error });
     // Don't throw - this is optional setup, shouldn't crash the app
   }
 }

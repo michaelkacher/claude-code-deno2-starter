@@ -26,6 +26,10 @@
  * ```
  */
 
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('Scheduler');
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -252,7 +256,7 @@ export class JobScheduler {
       // Time to run?
       if (now >= schedule.nextRun) {
         this.runSchedule(schedule).catch(error => {
-          console.error(`Error running schedule ${schedule.name}:`, error);
+          logger.error('Error running schedule', { scheduleName: schedule.name, error });
         });
       }
 
@@ -286,7 +290,7 @@ export class JobScheduler {
       schedule.nextRun = CronParser.getNextRun(schedule.cron, schedule.lastRun);
       schedule.runCount++;
     } catch (error) {
-      console.error(`Schedule ${schedule.name} failed:`, error);
+      logger.error('Schedule failed', { scheduleName: schedule.name, error });
 
       // Still calculate next run even if this one failed
       schedule.nextRun = CronParser.getNextRun(

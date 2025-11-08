@@ -6,6 +6,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from "../../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -13,6 +14,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('AdminVerifyEmailAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async POST(_req, ctx) {
@@ -39,7 +42,7 @@ export const handler: Handlers<unknown, AppState> = {
           return errorResponse("ALREADY_VERIFIED", error.message, 400);
         }
       }
-      console.error("Verify email error:", error);
+      logger.error("Verify email error", { error });
       return errorResponse("SERVER_ERROR", "Failed to verify email", 500);
     }
   },

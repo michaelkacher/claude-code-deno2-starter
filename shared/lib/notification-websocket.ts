@@ -528,7 +528,7 @@ function startHeartbeat(client: WebSocketClient) {
 export function notifyUser(userId: string, notification: any) {
   const userConnections = clients.get(userId);
   
-  console.log('[WebSocket] notifyUser called:', {
+  logger.debug('notifyUser called', {
     userId,
     notificationId: notification?.id,
     hasConnections: !!userConnections,
@@ -536,7 +536,7 @@ export function notifyUser(userId: string, notification: any) {
   });
   
   if (!userConnections) {
-    console.log('[WebSocket] No connections found for user:', userId);
+    logger.debug('No connections found for user', { userId });
     return;
   }
   
@@ -555,7 +555,7 @@ export function notifyUser(userId: string, notification: any) {
     }
   });
   
-  console.log('[WebSocket] Sent new_notification to', sentCount, 'connections');
+  logger.debug('Sent new_notification to connections', { sentCount });
 }
 
 /**
@@ -565,7 +565,7 @@ export function notifyUser(userId: string, notification: any) {
 export function sendToUser(userId: string, message: any) {
   const userConnections = clients.get(userId);
   
-  console.log('[WebSocket] sendToUser called:', {
+  logger.debug('sendToUser called', {
     userId,
     messageType: message.type,
     hasConnections: !!userConnections,
@@ -573,7 +573,7 @@ export function sendToUser(userId: string, message: any) {
   });
   
   if (!userConnections) {
-    console.log('[WebSocket] No connections found for user:', userId);
+    logger.debug('No connections found for user', { userId });
     return;
   }
   
@@ -592,7 +592,7 @@ export function sendToUser(userId: string, message: any) {
     }
   });
   
-  console.log('[WebSocket] Sent message to', sentCount, 'connections');
+  logger.debug('Sent message to connections', { sentCount, messageType: message.type });
 }
 
 /**

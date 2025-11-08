@@ -5,6 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { notifyUser } from "../../../../shared/lib/notification-websocket.ts";
 import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
@@ -14,6 +15,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('CreateNotificationAPI');
 
 const CreateNotificationSchema = z.object({
   userId: z.string().min(1),
@@ -52,7 +55,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.name === "ZodError") {
         return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
       }
-      console.error("Create notification error:", error);
+      logger.error("Create notification error", { error });
       return errorResponse(
         "SERVER_ERROR",
         "Failed to create notification",

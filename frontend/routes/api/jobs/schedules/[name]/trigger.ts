@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../../../shared/lib/logger.ts';
 import { scheduler } from "../../../../../../shared/lib/scheduler.ts";
 import {
     errorResponse,
@@ -11,6 +12,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('TriggerScheduleAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
@@ -27,7 +30,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
-      console.error("Trigger schedule error:", error);
+      logger.error("Trigger schedule error", { error });
       return errorResponse(
         "TRIGGER_FAILED",
         error instanceof Error ? error.message : "Failed to trigger schedule",

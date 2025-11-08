@@ -10,6 +10,9 @@
  */
 
 import { MiddlewareHandlerContext } from '$fresh/server.ts';
+import { createLogger } from '../../../shared/lib/logger.ts';
+
+const logger = createLogger('AdminMiddleware');
 
 interface User {
   id: string;
@@ -21,7 +24,7 @@ interface User {
 
 export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
   const url = new URL(req.url);
-  console.log("🔶 [Admin Middleware] CALLED for:", url.pathname);
+  logger.debug('Admin route access', { pathname: url.pathname });
   
   // Extract token from cookies
   const cookieHeader = req.headers.get('cookie');
@@ -32,31 +35,31 @@ export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
   if (!token) {
     // Not logged in - redirect to login with return URL
     const url = new URL(req.url);
-    console.log("🚫 [Admin Middleware] No token found, redirecting to login");
+    logger.debug('No token found, redirecting to login', { pathname: url.pathname });
     return new Response(null, {
       status: 302,
       headers: { location: `/login?redirect=${url.pathname}` },
     });
   }
 
-  console.log("🔐 [Admin Middleware] Token found, verifying...");
+  logger.debug('Token found, verifying');
 
   try {
     // Verify token and get user data (using internal Fresh API route)
     const apiUrl = new URL('/api/auth/me', req.url).href;
-    console.log("📞 [Admin Middleware] Calling:", apiUrl);
+    logger.debug('Calling auth verification', { apiUrl });
     const userResponse = await fetch(apiUrl, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
 
-    console.log("📥 [Admin Middleware] API response:", userResponse.status, userResponse.statusText);
+    logger.debug('Auth response received', { status: userResponse.status });
 
     if (!userResponse.ok) {
       // Invalid or expired token - redirect to login with reason
       // This will trigger the login page to show an appropriate error message
-      console.log("❌ [Admin Middleware] Token verification failed, redirecting to login");
+      logger.debug('Token verification failed, redirecting to login');
       return new Response(null, {
         status: 302,
         headers: { location: '/login?reason=invalid_session' },
@@ -66,12 +69,12 @@ export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
     const userData = await userResponse.json();
     const user: User = userData.data;
 
-    console.log("👤 [Admin Middleware] User verified:", user.email, "Role:", user.role);
+    logger.debug('User verified', { email: user.email, role: user.role });
 
     // Check if user has admin role
     if (user.role !== 'admin') {
       // Not an admin - redirect to home with error message
-      console.log("🚫 [Admin Middleware] User is not admin, redirecting");
+      logger.debug('User is not admin, redirecting', { email: user.email });
       return new Response(null, {
         status: 302,
         headers: { location: '/?error=unauthorized' },
@@ -83,7 +86,7 @@ export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
     ctx.state.user = user;
     ctx.state.token = token;
 
-    console.log("✅ [Admin Middleware] Admin verified, proceeding to page");
+    logger.debug('Admin verified, proceeding', { email: user.email });
 
     // Continue to the requested page
     return await ctx.next();

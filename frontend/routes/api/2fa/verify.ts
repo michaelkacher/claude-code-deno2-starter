@@ -7,6 +7,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from "../../../../shared/lib/logger.ts";
 import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -15,6 +16,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('Verify2FAAPI');
 
 const Verify2FASchema = z.object({
   code: z.string().min(6).max(8),
@@ -53,7 +56,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error instanceof z.ZodError) {
         return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
       }
-      console.error("2FA verify error:", error);
+      logger.error("2FA verify error", { error });
       return errorResponse("SERVER_ERROR", "Failed to verify 2FA", 500);
     }
   },

@@ -5,13 +5,16 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-    errorResponse,
-    parseJsonBody,
-    successResponse,
-    type AppState,
+  errorResponse,
+  parseJsonBody,
+  successResponse,
+  type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('ForgotPasswordAPI');
 
 const ForgotPasswordSchema = z.object({
   email: z.string().email(),
@@ -35,7 +38,7 @@ export const handler: Handlers<unknown, AppState> = {
       // }
 
       if (resetToken) {
-        console.log(`Password reset token for ${email}: ${resetToken}`);
+        logger.info('Password reset requested', { email });
       }
 
       // Always return success (don't reveal if email exists)
@@ -50,7 +53,7 @@ export const handler: Handlers<unknown, AppState> = {
           400
         );
       }
-      console.error("Forgot password error:", error);
+      logger.error("Forgot password error", { error });
       return errorResponse("SERVER_ERROR", "Failed to process request", 500);
     }
   },

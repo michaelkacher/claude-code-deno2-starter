@@ -5,13 +5,16 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-    errorResponse,
-    parseJsonBody,
-    successResponse,
-    type AppState,
+  errorResponse,
+  parseJsonBody,
+  successResponse,
+  type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('ResendVerificationAPI');
 
 const ResendVerificationSchema = z.object({
   email: z.string().email(),
@@ -52,7 +55,7 @@ export const handler: Handlers<unknown, AppState> = {
       // TODO: Send verification email
       // await sendVerificationEmail(email, verificationToken);
 
-      console.log(`Verification token for ${email}: ${verificationToken}`);
+      logger.info('Verification email resent', { email });
 
       return successResponse({
         message: "If an account exists with this email, a verification link will be sent.",
@@ -65,7 +68,7 @@ export const handler: Handlers<unknown, AppState> = {
           400
         );
       }
-      console.error("Resend verification error:", error);
+      logger.error("Resend verification error", { error });
       return errorResponse("SERVER_ERROR", "Failed to resend verification", 500);
     }
   },

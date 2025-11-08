@@ -5,6 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { JobRepository } from "../../../../shared/repositories/index.ts";
 import {
   errorResponse,
@@ -13,6 +14,8 @@ import {
   successResponse,
   type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('JobsAPI');
 
 const CreateJobSchema = z.object({
   name: z.string().min(1).max(100),
@@ -54,7 +57,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error instanceof Error && error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
-      console.error("List jobs error:", error);
+      logger.error("List jobs error", { error });
       return errorResponse("SERVER_ERROR", "Failed to list jobs", 500);
     }
   },
@@ -85,7 +88,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error instanceof Error && error.name === "ZodError") {
         return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
       }
-      console.error("Create job error:", error);
+      logger.error("Create job error", { error });
       return errorResponse("SERVER_ERROR", "Failed to create job", 500);
     }
   },

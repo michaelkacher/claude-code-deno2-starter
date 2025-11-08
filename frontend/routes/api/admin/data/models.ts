@@ -5,12 +5,15 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { getKv } from "../../../../../shared/lib/kv.ts";
+import { createLogger } from "../../../../../shared/lib/logger.ts";
 import {
     errorResponse,
     requireAdmin,
     successResponse,
     type AppState,
 } from "../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('AdminDataModelsAPI');
 
 // Known model prefixes in the database
 const MODEL_PREFIXES = [
@@ -57,7 +60,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
-      console.error("Error fetching models:", error);
+      logger.error("Error fetching models", { error });
       return errorResponse("SERVER_ERROR", "Failed to fetch models", 500);
     }
   },

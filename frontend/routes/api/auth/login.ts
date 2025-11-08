@@ -5,6 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
   errorResponse,
@@ -12,6 +13,8 @@ import {
   setCookie,
   type AppState
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('LoginAPI');
 
 const LoginSchema = z.object({
   email: z.string().email(),
@@ -81,7 +84,7 @@ export const handler: Handlers<unknown, AppState> = {
           400
         );
       }
-      console.error("Login error:", error);
+      logger.error("Login error", { error });
       return errorResponse("SERVER_ERROR", "Failed to log in", 500);
     }
   },

@@ -5,7 +5,10 @@
  */
 
 import { MiddlewareHandler } from '$fresh/server.ts';
+import { createLogger } from '../../shared/lib/logger.ts';
 import { decodeJwt, isTokenExpired, isValidJwtStructure } from '../lib/jwt.ts';
+
+const logger = createLogger('PageMiddleware');
 
 // Routes that don't require authentication
 const publicRoutes = [
@@ -117,11 +120,11 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
       return await ctx.next();
     }
 
-    console.log(`🛡️ [Page Middleware] Protected route: ${pathname}, token: ${authToken ? "present" : "missing"}`);
+    logger.debug('Protected route access', { pathname, hasToken: !!authToken });
 
     // If no token, redirect to login
     if (!authToken) {
-      console.log(`🔒 [Page Middleware] No token, redirecting to login`);
+      logger.debug('No token, redirecting to login', { pathname });
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
@@ -140,7 +143,7 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
 
     // Verify JWT signature server-side by calling Fresh API
     try {
-      console.log(`🔍 [Page Middleware] Verifying token with /api/auth/verify`);
+      logger.debug('Verifying token', { pathname });
       const verifyUrl = new URL('/api/auth/verify', url.origin).href;
       const verifyResponse = await fetch(verifyUrl, {
         method: 'GET',
@@ -149,11 +152,11 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
         },
       });
 
-      console.log(`📥 [Page Middleware] Verify response:`, verifyResponse.status, verifyResponse.statusText);
+      logger.debug('Token verification response', { status: verifyResponse.status });
 
       if (!verifyResponse.ok) {
         // Token verification failed (invalid signature, blacklisted, or other error)
-        console.log(`❌ [Page Middleware] Token verification failed, redirecting to login`);
+        logger.debug('Token verification failed, redirecting', { pathname });
         const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=invalid`;
         return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
       }

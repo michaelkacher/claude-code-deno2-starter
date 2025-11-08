@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../../../shared/lib/logger.ts';
 import { scheduler } from "../../../../../../shared/lib/scheduler.ts";
 import {
     errorResponse,
@@ -11,6 +12,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('DisableScheduleAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
@@ -27,7 +30,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
-      console.error("Disable schedule error:", error);
+      logger.error("Disable schedule error", { error });
       return errorResponse("SERVER_ERROR", "Failed to disable schedule", 500);
     }
   },

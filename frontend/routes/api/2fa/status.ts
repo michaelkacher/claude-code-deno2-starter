@@ -6,6 +6,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from "../../../../shared/lib/logger.ts";
 import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -13,6 +14,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('Status2FAAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async GET(_req, ctx) {
@@ -32,7 +35,7 @@ export const handler: Handlers<unknown, AppState> = {
           return errorResponse("NOT_FOUND", error.message, 404);
         }
       }
-      console.error("2FA status error:", error);
+      logger.error("2FA status error", { error });
       return errorResponse("SERVER_ERROR", "Failed to get 2FA status", 500);
     }
   },

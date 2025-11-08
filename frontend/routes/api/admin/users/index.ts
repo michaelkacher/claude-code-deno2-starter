@@ -6,6 +6,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from "../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -13,6 +14,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('AdminListUsersAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async GET(req, ctx) {
@@ -26,14 +29,14 @@ export const handler: Handlers<unknown, AppState> = {
       const userMgmt = new UserManagementService();
       const result = await userMgmt.listUsers({ limit, role });
 
-      console.log('[Admin Users API] Returning users:', result.users.length);
+      logger.debug('Listed users', { count: result.users.length });
 
       return successResponse(result);
     } catch (error) {
       if (error instanceof Error && error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
-      console.error("List users error:", error);
+      logger.error("List users error", { error });
       return errorResponse("SERVER_ERROR", "Failed to list users", 500);
     }
   },

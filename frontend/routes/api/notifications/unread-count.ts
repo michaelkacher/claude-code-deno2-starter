@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
@@ -11,6 +12,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('UnreadCountAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async GET(req, ctx) {
@@ -26,7 +29,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Authentication required") {
         return errorResponse("UNAUTHORIZED", "Authentication required", 401);
       }
-      console.error("Get unread count error:", error);
+      logger.error("Get unread count error", { error });
       return errorResponse(
         "SERVER_ERROR",
         "Failed to get unread count",

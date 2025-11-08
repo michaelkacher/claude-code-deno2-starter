@@ -18,7 +18,7 @@ const logger = createLogger('Startup');
  * Call this once when the server starts
  */
 export async function initializeBackgroundServices() {
-  console.log('🚀 [Startup] initializeBackgroundServices() CALLED');
+  logger.info('initializeBackgroundServices() CALLED');
   try {
     // Setup initial admin if specified (only runs if DISABLE_AUTH=false)
     logger.info('Setting up initial admin user...');

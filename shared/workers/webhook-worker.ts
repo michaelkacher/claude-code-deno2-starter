@@ -5,7 +5,10 @@
  * This demonstrates handling external API calls with retry logic.
  */
 
+import { createLogger } from '../lib/logger.ts';
 import { queue } from '../lib/queue.ts';
+
+const logger = createLogger('WebhookWorker');
 
 // ============================================================================
 // Types
@@ -28,10 +31,11 @@ export interface WebhookJobData {
  * Process a webhook by sending HTTP request to the target URL
  */
 async function processWebhook(data: WebhookJobData): Promise<void> {
-  console.log('🪝 Processing webhook:');
-  console.log(`  URL: ${data.url}`);
-  console.log(`  Event: ${data.event}`);
-  console.log(`  Method: ${data.method}`);
+  logger.info('Processing webhook', {
+    url: data.url,
+    event: data.event,
+    method: data.method,
+  });
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -59,9 +63,9 @@ async function processWebhook(data: WebhookJobData): Promise<void> {
       );
     }
 
-    console.log(`✅ Webhook delivered successfully (status: ${response.status})`);
+    logger.info('Webhook delivered successfully', { status: response.status, url: data.url });
   } catch (error) {
-    console.error('❌ Webhook delivery failed:', error);
+    logger.error('Webhook delivery failed', { error, url: data.url });
     throw error;
   }
 }
@@ -79,7 +83,7 @@ export function registerWebhookWorker(): void {
     await processWebhook(job.data);
   });
 
-  console.log('🪝 Webhook worker registered');
+  logger.info('Webhook worker registered');
 }
 
 // ============================================================================

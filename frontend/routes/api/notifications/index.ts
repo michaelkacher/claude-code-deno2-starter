@@ -4,6 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { createLogger } from '../../../../shared/lib/logger.ts';
 import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
     errorResponse,
@@ -11,6 +12,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('NotificationsAPI');
 
 export const handler: Handlers<unknown, AppState> = {
   async GET(req, ctx) {
@@ -27,7 +30,11 @@ export const handler: Handlers<unknown, AppState> = {
       const result = await notificationRepo.listUserNotifications(user.sub, { limit, cursor });
       const unreadCount = await notificationRepo.getUnreadCount(user.sub);
 
-      console.log('[Notifications API] User:', user.sub, 'Found notifications:', result.items?.length || 0, 'Unread:', unreadCount);
+      logger.debug('Listed user notifications', { 
+        userId: user.sub, 
+        count: result.items?.length || 0, 
+        unreadCount 
+      });
 
       return successResponse({
         notifications: result.items,
@@ -39,7 +46,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error.message === "Authentication required") {
         return errorResponse("UNAUTHORIZED", "Authentication required", 401);
       }
-      console.error("List notifications error:", error);
+      logger.error("List notifications error", { error });
       return errorResponse(
         "SERVER_ERROR",
         "Failed to list notifications",

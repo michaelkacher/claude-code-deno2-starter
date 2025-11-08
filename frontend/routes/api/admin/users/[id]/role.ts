@@ -7,6 +7,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
+import { createLogger } from "../../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../../shared/services/index.ts";
 import {
     errorResponse,
@@ -15,6 +16,8 @@ import {
     successResponse,
     type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
+
+const logger = createLogger('AdminUpdateRoleAPI');
 
 const UpdateRoleSchema = z.object({
   role: z.enum(["user", "admin"]),
@@ -50,7 +53,7 @@ export const handler: Handlers<unknown, AppState> = {
       if (error instanceof z.ZodError) {
         return errorResponse("VALIDATION_ERROR", error.errors[0].message, 400);
       }
-      console.error("Update role error:", error);
+      logger.error("Update role error", { error });
       return errorResponse("SERVER_ERROR", "Failed to update role", 500);
     }
   },
