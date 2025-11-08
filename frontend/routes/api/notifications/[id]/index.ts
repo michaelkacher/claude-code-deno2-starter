@@ -24,7 +24,7 @@ export const handler: Handlers<unknown, AppState> = {
       const notificationRepo = new NotificationRepository();
 
       // Get notification to verify ownership
-      const notification = await notificationRepo.getById(notificationId);
+      const notification = await notificationRepo.findById(user.sub, notificationId);
       if (!notification) {
         return errorResponse("NOT_FOUND", "Notification not found", 404);
       }
@@ -38,7 +38,7 @@ export const handler: Handlers<unknown, AppState> = {
       }
 
       // Delete notification
-      await notificationRepo.delete(notificationId);
+      await notificationRepo.deleteNotification(user.sub, notificationId);
 
       return successResponse({ message: "Notification deleted" });
     } catch (error) {

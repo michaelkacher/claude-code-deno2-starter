@@ -25,7 +25,8 @@
     "kill-ports": "deno run --allow-run scripts/kill-ports.ts",
     "reset-rate-limits": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/reset-rate-limits.ts",
     "users:list": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/list-users.ts",
-    "users:make-admin": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/make-admin.ts"
+    "users:make-admin": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/make-admin.ts",
+    "test-notifications": "deno run --unstable-kv --allow-read --allow-write --allow-env scripts/quick-test-notifications.ts"
   },
   "deploy": {
     "project": "your-project-name",

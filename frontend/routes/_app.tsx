@@ -1,3 +1,4 @@
+import { Partial } from "$fresh/runtime.ts";
 import { type PageProps } from "$fresh/server.ts";
 import ErrorBoundary from "../components/ErrorBoundary.tsx";
 import ThemeProvider from "../components/ThemeProvider.tsx";
@@ -51,13 +52,17 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
           `
         }} />
       </head>
-      <body style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
-        {/* Use key="nav" to persist the same Navigation island instance across navigations */}
+      <body f-client-nav style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
+        {/* Navigation and banner are outside partials - they persist across navigations */}
         <Navigation key="nav" userEmail={userEmail} userRole={userRole} initialTheme={initialTheme} />
         {showEmailBanner && <EmailVerificationBanner />}
-        <ErrorBoundary>
-          <Component />
-        </ErrorBoundary>
+        
+        {/* Only the main content area is wrapped in a Partial - this is what gets updated on navigation */}
+        <Partial name="main-content">
+          <ErrorBoundary>
+            <Component />
+          </ErrorBoundary>
+        </Partial>
       </body>
     </html>
   );
