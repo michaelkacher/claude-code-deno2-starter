@@ -30,16 +30,17 @@ export const handler: Handlers<unknown, AppState> = {
       }
 
       // Only allow deletion of completed or failed jobs
-      if (job.status === "pending" || job.status === "processing") {
+      if (job.status === "pending" || job.status === "running") {
         return errorResponse(
           "BAD_REQUEST",
-          "Cannot delete pending or processing jobs",
+          "Cannot delete pending or running jobs",
           400,
         );
       }
 
-      // Delete job
-      await jobRepo.delete(jobId);
+      // Delete job using the queue system
+      const queue = await import("../../../../../shared/lib/queue.ts");
+      await queue.queue.delete(jobId);
 
       return successResponse({ message: "Job deleted" });
     } catch (error) {

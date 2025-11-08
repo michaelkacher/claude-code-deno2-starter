@@ -18,10 +18,10 @@ export const handler: Handlers = {
     const { socket, response } = Deno.upgradeWebSocket(req);
     
     // Attach the handlers from setupWebSocketConnection
-    socket.onopen = (evt) => wsHandlers.onOpen?.(evt, socket as any);
-    socket.onmessage = (evt) => wsHandlers.onMessage?.(evt, socket as any);
-    socket.onclose = (evt) => wsHandlers.onClose?.(evt, socket as any);
-    socket.onerror = (evt) => wsHandlers.onError?.(evt, socket as any);
+    socket.onopen = (evt) => wsHandlers.onOpen?.(evt, socket);
+    socket.onmessage = (evt) => wsHandlers.onMessage?.(evt, socket);
+    socket.onclose = () => wsHandlers.onClose?.();
+    socket.onerror = (evt) => wsHandlers.onError?.(evt);
     
     return response;
   },

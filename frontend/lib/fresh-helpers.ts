@@ -84,12 +84,22 @@ export function errorResponse(
 }
 
 /**
- * Parse JSON body with error handling
+ * Parse JSON body with error handling and optional Zod validation
  */
-export async function parseJsonBody<T>(req: Request): Promise<T> {
+export async function parseJsonBody<T>(
+  req: Request,
+  schema?: { parse: (data: unknown) => T }
+): Promise<T> {
   try {
-    return await req.json();
-  } catch {
+    const data = await req.json();
+    if (schema) {
+      return schema.parse(data);
+    }
+    return data as T;
+  } catch (error) {
+    if (error instanceof Error && error.name === "ZodError") {
+      throw error;
+    }
     throw new Error("Invalid JSON body");
   }
 }

@@ -5,11 +5,12 @@
 
 import { Head } from '$fresh/runtime.ts';
 import { PageProps } from '$fresh/server.ts';
+import { JSX } from 'preact';
 import { ContentContainer, FeatureCard } from '../components/common/index.ts';
 
 const isDevelopment = Deno.env.get("DENO_ENV") !== "production";
 
-export default function Home(props: PageProps) {
+export default function Home(props: PageProps): JSX.Element {
   return (
     <>
       <Head>
@@ -17,8 +18,9 @@ export default function Home(props: PageProps) {
       </Head>
       <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <ContentContainer>
-          {/* Hero Section */}
-          <div class="text-center mb-16">
+          <div>
+            {/* Hero Section */}
+            <div class="text-center mb-16">
             <h1 class="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Deno 2 + Claude Code Starter
             </h1>
@@ -40,7 +42,7 @@ export default function Home(props: PageProps) {
           </div>
 
           {/* Quick Actions - Development Only */}
-          {isDevelopment && (
+          {isDevelopment ? (
             <div class="grid md:grid-cols-2 gap-6 mb-16">
               <FeatureCard
                 href="/design-system"
@@ -62,7 +64,7 @@ export default function Home(props: PageProps) {
                 hoverBorderColor="hover:border-purple-300 dark:hover:border-purple-600"
               />
             </div>
-          )}
+          ) : null}
 
           {/* Getting Started */}
           <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
@@ -162,6 +164,7 @@ export default function Home(props: PageProps) {
                 GitHub Repository
               </a>
             </div>
+          </div>
           </div>
         </ContentContainer>
       </div>

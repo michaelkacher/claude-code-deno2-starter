@@ -37,8 +37,9 @@ export const handler: Handlers<unknown, AppState> = {
         );
       }
 
-      // Retry job (resets to pending with incremented attempts)
-      await jobRepo.retry(jobId);
+      // Retry job using the queue system
+      const queue = await import("../../../../../shared/lib/queue.ts");
+      await queue.queue.retry(jobId);
 
       return successResponse({ message: "Job queued for retry" });
     } catch (error) {
