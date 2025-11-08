@@ -14,7 +14,7 @@
 ## Developer Workflows
 - **Dev Server**: `deno task dev` (runs at http://localhost:3000)
 - **Tests**:
-  - Unit: `deno test`
+  - Unit: `deno task test`
   - E2E: `npx playwright test` (see `playwright.config.ts`)
 - **Feature Development**:
   - Start new feature: `/new-feature "feature-name"` (auto-creates docs/templates in `features/proposed/`)

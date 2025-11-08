@@ -440,7 +440,7 @@ test.describe('User Authentication Flow', () => {
 npx playwright install
 
 # Run E2E tests
-deno test --allow-all tests/e2e/
+deno task test --allow-all tests/e2e/
 
 # Run with Playwright UI (interactive mode)
 npx playwright test --ui

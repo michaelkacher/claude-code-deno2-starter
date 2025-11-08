@@ -213,7 +213,7 @@ cp tests/templates/[template-name].ts tests/[location]/[your-test].ts
 
 ### Step 4: Run Tests
 ```bash
-deno test tests/[your-test].ts --allow-all
+deno task test tests/[your-test].ts --allow-all
 ```
 
 ## Best Practices
@@ -376,16 +376,16 @@ Update this README with the new helper!
 
 ```bash
 # All tests
-deno test --allow-all
+deno task test --allow-all
 
 # Specific test
-deno test tests/unit/my-feature.test.ts --allow-all
+deno task test tests/unit/my-feature.test.ts --allow-all
 
 # Watch mode
-deno test --allow-all --watch
+deno task test --allow-all --watch
 
 # Coverage
-deno test --allow-all --coverage=coverage
+deno task test --allow-all --coverage=coverage
 deno coverage coverage --lcov --output=coverage.lcov
 ```
 

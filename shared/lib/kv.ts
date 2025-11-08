@@ -48,8 +48,18 @@ class KvConnectionManager {
    * Create a new KV connection
    */
   private async connect(): Promise<Deno.Kv> {
-    const kvPath = Deno.env.get('DENO_KV_PATH');
-    const denoEnv = Deno.env.get('DENO_ENV');
+    let kvPath: string | undefined;
+    let denoEnv: string | undefined;
+    
+    // Safely access environment variables
+    try {
+      kvPath = Deno.env.get('DENO_KV_PATH');
+      denoEnv = Deno.env.get('DENO_ENV');
+    } catch {
+      // If we can't access env (e.g., in tests without --allow-env), use defaults
+      kvPath = undefined;
+      denoEnv = undefined;
+    }
     
     let path = kvPath
       ? kvPath

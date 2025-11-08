@@ -444,7 +444,7 @@ Deno.test('UserService - creates user', async () => {
 
 ### 1. Start with failing test
 ```bash
-deno test tests/[test-file]_test.ts
+deno task test tests/[test-file]_test.ts
 ```
 Confirm test fails (Red phase).
 
@@ -656,7 +656,7 @@ export class UserRepository extends BaseRepository<User> {
 ### 3. Run tests to confirm they pass (Green phase)
 ### 3. Run tests to confirm they pass (Green phase)
 ```bash
-deno test
+deno task test
 ```
 
 ### 4. Refactor if needed
@@ -1309,10 +1309,10 @@ import { UserSchema, CreateUserSchema } from '../types/user.ts';
 
 ```bash
 # Run all tests
-deno test
+deno task test
 
 # Run specific test file
-deno test tests/users_test.ts
+deno task test tests/users_test.ts
 
 # Run with coverage
 deno task test:coverage
@@ -1324,7 +1324,7 @@ deno task test:watch
 ## Next Steps
 
 After implementation:
-- Ensure all tests pass: `deno test`
+- Ensure all tests pass: `deno task test`
 - Check formatting: `deno fmt`
 - Run linter: `deno lint`
 - Type check: `deno task type-check`

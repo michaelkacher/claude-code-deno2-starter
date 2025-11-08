@@ -49,7 +49,12 @@ class LoggerImpl implements Logger {
 
   constructor(context: string) {
     this.context = context;
-    this.isDevelopment = Deno.env.get('DENO_ENV') === 'development';
+    // Safely check environment - default to production if we can't access env
+    try {
+      this.isDevelopment = Deno.env.get('DENO_ENV') === 'development';
+    } catch {
+      this.isDevelopment = false;
+    }
     this.minLevel = this.isDevelopment ? 'debug' : 'info';
   }
 
@@ -177,6 +182,14 @@ export function createLogger(context: string): Logger {
 }
 
 /**
- * Default logger for general use
+ * Default logger for general use (lazy-initialized to avoid permission errors)
  */
-export const logger = createLogger('App');
+let _defaultLogger: Logger | null = null;
+export const logger: Logger = new Proxy({} as Logger, {
+  get(_target, prop) {
+    if (!_defaultLogger) {
+      _defaultLogger = createLogger('App');
+    }
+    return (_defaultLogger as any)[prop];
+  }
+});

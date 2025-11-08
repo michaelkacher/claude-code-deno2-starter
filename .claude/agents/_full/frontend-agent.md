@@ -702,7 +702,7 @@ Deno.test("WorkoutCard renders workout name", () => {
 deno task dev
 
 # Run tests
-deno test --allow-all
+deno task test --allow-all
 
 # Format code
 deno fmt
@@ -825,7 +825,7 @@ import { Button, Card, Input, Modal } from "@/components/design-system/...";
 ## Next Steps
 
 After implementation:
-- Verify all tests pass: `deno test --allow-all`
+- Verify all tests pass: `deno task test --allow-all`
 - Check accessibility with axe DevTools
 - Test responsive design on different screen sizes
 - Run Lighthouse audit for performance

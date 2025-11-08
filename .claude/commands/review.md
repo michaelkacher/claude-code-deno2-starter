@@ -12,7 +12,7 @@ Perform a comprehensive code review focusing on:
 - [ ] Appropriate comments for complex logic
 
 ## Testing
-- [ ] Run all tests: `deno test --allow-all`
+- [ ] Run all tests: `deno task test --allow-all`
 - [ ] Check test coverage: `deno task test:coverage && deno task coverage`
 - [ ] All tests passing
 - [ ] Coverage meets targets (80%+ for unit tests)

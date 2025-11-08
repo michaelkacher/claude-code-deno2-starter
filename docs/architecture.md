@@ -399,7 +399,7 @@ Deno.test('validateEmail - rejects invalid format', () => {
 
 - **Runtime:** Deno's built-in test runner
 - **Database:** `:memory:` Deno KV (fast, isolated)
-- **Coverage:** `deno test --coverage`
+- **Coverage:** `deno task test --coverage`
 - **CI:** GitHub Actions
 
 ---
@@ -452,7 +452,7 @@ deno task dev
 # Frontend: http://localhost:3000
 
 # Run tests
-deno test --allow-all
+deno task test --allow-all
 
 # Type checking
 deno task type-check

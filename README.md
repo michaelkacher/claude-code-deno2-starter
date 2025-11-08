@@ -1,5 +1,7 @@
 # Web Project Starter with Claude Code + Deno 2
 
+Go from idea, to mockups, to features that are fully tested--fast! Having AI build yor tests help prevent backward compatibility issues and prevents the AI from drifting from the intent of other features.
+
 **This is an opinionated starter template** with a pre-selected tech stack so you can focus on building features, not debating technology choices.
 
 ## The Stack
@@ -69,18 +71,18 @@ deno task dev
 # API: http://localhost:3000/api/*
 ```
 
-3. Requirements (Not required but helps scope project)
-
-3. Customize your template (Recommended)
+3. Requirements (Not required, but recommended for larger projects)
+```bash
+# Gathers information on the scope of the project, personas, goals,
+# Non-functional requirements, and more
+/requirements
+```
+4. Customize your template (Not required, but recommended for real projects)
 
 ```bash
 # Guided customization workflow to brand your application
 # Works with Claude Code or GitHub Copilot
 /customize
-
-# Or alternatively:
-@workspace customize starter
-@workspace I want to customize this template
 
 # The command walks you through:
 # - Naming your application
@@ -96,9 +98,6 @@ deno task dev
 - Navigation menu items (primary, mobile, footer)
 - Feature flags (notifications, 2FA, file uploads, admin panel, dark mode)
 - API configuration
-- Social media links
-
-See `.claude/commands/customize.md` or `.github/copilot-workflows.md` for details.
 
 4. Create a mockup
 
@@ -244,7 +243,7 @@ This template enforces TDD workflow:
 
 ```bash
 # Run all tests
-deno test
+deno task test
 
 # Run with coverage
 deno task test:coverage
@@ -254,7 +253,7 @@ deno task coverage
 deno task test:watch
 
 # Specific file
-deno test tests/users_test.ts
+deno task test tests/users_test.ts
 ```
 
 ## Project Structure
@@ -667,7 +666,7 @@ See [docs/RATE_LIMITING.md](docs/RATE_LIMITING.md) for detailed information abou
 
 1. Check that you're in the Green phase (tests should be written first)
 2. Review test expectations vs. implementation
-3. Run specific test: `deno test <file-name>`
+3. Run specific test: `deno task test <file-name>`
 
 ### Agent Not Following Architecture
 
@@ -787,7 +786,7 @@ deno task kv:inspect   # View stored data
 ```bash
 # Development
 deno task dev              # Start dev server (both backend + frontend)
-deno test                  # Run tests
+deno task test                  # Run tests
 deno task test:coverage    # Test coverage
 deno lint                  # Lint code
 deno fmt                   # Format code

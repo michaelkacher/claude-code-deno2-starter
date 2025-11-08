@@ -34,7 +34,7 @@ Check that `features/proposed/{feature-name}/` exists:
 
 Run tests to ensure the feature is working:
 ```bash
-deno test
+deno task test
 ```
 
 If tests fail:

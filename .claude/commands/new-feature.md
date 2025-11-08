@@ -347,7 +347,7 @@ Say:
 
 Run tests:
 ```bash
-deno test
+deno task test
 ```
 
 **If this feature was converted from a mockup:**
