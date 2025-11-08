@@ -72,16 +72,16 @@ export default function ForgotPasswordForm() {
   };
 
   return (
-    <div class="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-      <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+      <div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
         <div class="text-center mb-8">
-          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-purple-100 mb-4">
-            <svg class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-purple-100 dark:bg-purple-900 mb-4">
+            <svg class="h-8 w-8 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
             </svg>
           </div>
-          <h1 class="text-2xl font-bold text-gray-900 mb-2">Forgot Password?</h1>
-          <p class="text-gray-600">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Forgot Password?</h1>
+          <p class="text-gray-600 dark:text-gray-400">
             Enter your email address and we'll send you a link to reset your password.
           </p>
         </div>
@@ -89,8 +89,8 @@ export default function ForgotPasswordForm() {
         {state.message && (
           <div class={`mb-4 p-3 rounded-md ${
             state.message.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
+              ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+              : 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
           }`}>
             {state.message.type === 'success' ? (
               <>
@@ -108,7 +108,7 @@ export default function ForgotPasswordForm() {
 
         <form onSubmit={handleSubmit} class="space-y-4">
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email Address
             </label>
             <input
@@ -117,7 +117,7 @@ export default function ForgotPasswordForm() {
               name="email"
               ref={emailRef}
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
               placeholder="you@example.com"
             />
           </div>
@@ -134,13 +134,13 @@ export default function ForgotPasswordForm() {
         <div class="mt-6 text-center space-y-2">
           <a
             href="/login"
-            class="text-sm text-purple-600 hover:text-purple-700 font-medium block"
+            class="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium block"
           >
             ← Back to Login
           </a>
           <a
             href="/signup"
-            class="text-sm text-gray-600 hover:text-gray-700 block"
+            class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 block"
           >
             Don't have an account? Sign up
           </a>

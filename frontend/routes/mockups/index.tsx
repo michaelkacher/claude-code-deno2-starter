@@ -69,32 +69,32 @@ export default function MockupsIndex({ data }: PageProps<{ mockups: Mockup[] }>)
   const { mockups } = data;
 
   return (
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
-      <div class="bg-white border-b border-gray-200">
+      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-6 py-4">
-          <h1 class="text-3xl font-bold text-gray-900">UI Mockups</h1>
-          <p class="text-gray-600 mt-1">
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">UI Mockups</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">
             Visual prototypes for design review and iteration
           </p>
         </div>
       </div>
 
       {/* Info Banner */}
-      <div class="bg-blue-50 border-b border-blue-200 px-6 py-4">
+      <div class="bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800 px-6 py-4">
         <div class="max-w-7xl mx-auto">
-          <h2 class="text-blue-900 font-semibold mb-2">
+          <h2 class="text-blue-900 dark:text-blue-200 font-semibold mb-2">
             ℹ️ About Mockups
           </h2>
-          <p class="text-blue-800 text-sm">
+          <p class="text-blue-800 dark:text-blue-300 text-sm">
             Mockups are non-functional UI prototypes for design exploration.
             They use mock data and buttons don't perform real actions.
             Use{' '}
-            <code class="bg-blue-100 px-2 py-1 rounded">
+            <code class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">
               /mockup
             </code>{' '}
             to create new mockups or{' '}
-            <code class="bg-blue-100 px-2 py-1 rounded">
+            <code class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">
               /new-feature
             </code>{' '}
             to convert approved mockups to full features.
@@ -106,46 +106,46 @@ export default function MockupsIndex({ data }: PageProps<{ mockups: Mockup[] }>)
       <div class="max-w-7xl mx-auto px-6 py-8">
         {mockups.length === 0 ? (
           /* No mockups yet */
-          <div class="bg-white rounded-lg shadow p-12 text-center">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
             <div class="text-6xl mb-4">🎨</div>
-            <h2 class="text-2xl font-semibold text-gray-900 mb-2">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               No Mockups Yet
             </h2>
-            <p class="text-gray-600 mb-6">
+            <p class="text-gray-600 dark:text-gray-400 mb-6">
               Create your first UI mockup to start visualizing your ideas
             </p>
 
-            <div class="bg-gray-50 rounded-lg p-6 max-w-md mx-auto text-left">
-              <h3 class="font-semibold text-gray-900 mb-3">
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 max-w-md mx-auto text-left">
+              <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">
                 Quick Start:
               </h3>
-              <ol class="space-y-2 text-sm text-gray-700">
+              <ol class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                 <li class="flex items-start">
-                  <span class="font-mono bg-gray-200 px-2 py-0.5 rounded mr-2 text-xs">
+                  <span class="font-mono bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded mr-2 text-xs">
                     1
                   </span>
                   <span>
-                    Run <code class="bg-gray-200 px-2 py-0.5 rounded">/mockup</code> in Claude Code
+                    Run <code class="bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded">/mockup</code> in Claude Code
                   </span>
                 </li>
                 <li class="flex items-start">
-                  <span class="font-mono bg-gray-200 px-2 py-0.5 rounded mr-2 text-xs">
+                  <span class="font-mono bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded mr-2 text-xs">
                     2
                   </span>
                   <span>Describe the screen you want to mockup</span>
                 </li>
                 <li class="flex items-start">
-                  <span class="font-mono bg-gray-200 px-2 py-0.5 rounded mr-2 text-xs">
+                  <span class="font-mono bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded mr-2 text-xs">
                     3
                   </span>
                   <span>Review the mockup at /mockups/[name]</span>
                 </li>
                 <li class="flex items-start">
-                  <span class="font-mono bg-gray-200 px-2 py-0.5 rounded mr-2 text-xs">
+                  <span class="font-mono bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded mr-2 text-xs">
                     4
                   </span>
                   <span>
-                    Convert to feature with <code class="bg-gray-200 px-2 py-0.5 rounded">/new-feature</code>
+                    Convert to feature with <code class="bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded">/new-feature</code>
                   </span>
                 </li>
               </ol>
@@ -155,7 +155,7 @@ export default function MockupsIndex({ data }: PageProps<{ mockups: Mockup[] }>)
           /* Display mockups */
           <>
             <div class="mb-6">
-              <p class="text-gray-600">
+              <p class="text-gray-600 dark:text-gray-400">
                 Found {mockups.length} mockup{mockups.length !== 1 ? 's' : ''}
               </p>
             </div>
@@ -164,27 +164,27 @@ export default function MockupsIndex({ data }: PageProps<{ mockups: Mockup[] }>)
                 <a
                   key={mockup.name}
                   href={mockup.url}
-                  class="block bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6"
+                  class="block bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow p-6"
                 >
                   <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-lg font-semibold text-gray-900">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {mockup.displayName}
                     </h3>
-                    <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
+                    <span class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-xs px-2 py-1 rounded">
                       Mockup
                     </span>
                   </div>
                   {mockup.purpose && (
-                    <p class="text-gray-600 text-sm mb-3">
+                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">
                       {mockup.purpose}
                     </p>
                   )}
                   {mockup.created && (
-                    <p class="text-gray-500 text-xs mb-3">
+                    <p class="text-gray-500 dark:text-gray-500 text-xs mb-3">
                       Created: {mockup.created}
                     </p>
                   )}
-                  <p class="text-blue-500 text-sm mt-4 hover:underline">
+                  <p class="text-blue-500 dark:text-blue-400 text-sm mt-4 hover:underline">
                     View mockup →
                   </p>
                 </a>
@@ -195,8 +195,8 @@ export default function MockupsIndex({ data }: PageProps<{ mockups: Mockup[] }>)
       </div>
 
       {/* Footer */}
-      <div class="max-w-7xl mx-auto px-6 py-8 border-t border-gray-200 mt-12">
-        <div class="text-center text-sm text-gray-600">
+      <div class="max-w-7xl mx-auto px-6 py-8 border-t border-gray-200 dark:border-gray-700 mt-12">
+        <div class="text-center text-sm text-gray-600 dark:text-gray-400">
           <p>
             💡 <strong>Tip:</strong> Mockups are temporary. Delete them after
             converting to full features with /new-feature.
@@ -205,7 +205,7 @@ export default function MockupsIndex({ data }: PageProps<{ mockups: Mockup[] }>)
             See{' '}
             <a
               href="https://github.com"
-              class="text-blue-500 hover:underline"
+              class="text-blue-500 dark:text-blue-400 hover:underline"
             >
               features/mockups/README.md
             </a>{' '}
