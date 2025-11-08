@@ -36,7 +36,7 @@ open http://localhost:3000
 # Password: password123
 
 # 4. Check WebSocket connection in Network tab
-# Should see: ws://localhost:8000/api/notifications/ws?token=...
+# Should see: ws://localhost:3000/api/notifications/ws?token=...
 
 # 5. Logout
 # Click profile dropdown > Logout

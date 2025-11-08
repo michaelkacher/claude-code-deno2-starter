@@ -85,7 +85,7 @@ All endpoints use these standard error formats. **Reference by pattern name** in
 
 ### Pattern: `CREATE_RESOURCE`
 
-**Endpoint**: `POST /api/v1/{resources}`
+**Endpoint**: `POST /api/{resources}`
 **Auth**: Required
 **Request**: JSON body with resource fields (omit id, timestamps)
 **Success**: 201 with `SINGLE_RESOURCE` response
@@ -93,7 +93,7 @@ All endpoints use these standard error formats. **Reference by pattern name** in
 
 ### Pattern: `LIST_RESOURCES`
 
-**Endpoint**: `GET /api/v1/{resources}?limit=10&cursor=abc`
+**Endpoint**: `GET /api/{resources}?limit=10&cursor=abc`
 **Auth**: Required/Optional
 **Query Params**: `limit` (number, 1-100), `cursor` (string, optional)
 **Success**: 200 with `RESOURCE_LIST` response
@@ -101,14 +101,14 @@ All endpoints use these standard error formats. **Reference by pattern name** in
 
 ### Pattern: `GET_RESOURCE`
 
-**Endpoint**: `GET /api/v1/{resources}/:id`
+**Endpoint**: `GET /api/{resources}/:id`
 **Auth**: Required
 **Success**: 200 with `SINGLE_RESOURCE` response
 **Errors**: `STANDARD_ERRORS` (401, 404, 500)
 
 ### Pattern: `UPDATE_RESOURCE`
 
-**Endpoint**: `PUT /api/v1/{resources}/:id`
+**Endpoint**: `PUT /api/{resources}/:id`
 **Auth**: Required
 **Request**: JSON body with partial resource fields
 **Success**: 200 with `SINGLE_RESOURCE` response
@@ -116,7 +116,7 @@ All endpoints use these standard error formats. **Reference by pattern name** in
 
 ### Pattern: `DELETE_RESOURCE`
 
-**Endpoint**: `DELETE /api/v1/{resources}/:id`
+**Endpoint**: `DELETE /api/{resources}/:id`
 **Auth**: Required
 **Success**: `NO_CONTENT` (204)
 **Errors**: `STANDARD_ERRORS` (401, 404, 500)

@@ -3,7 +3,7 @@
  * Promote a user to admin role by email
  */
 
-import { getKv } from '../backend/lib/kv.ts';
+import { getKv } from '../shared/lib/kv.ts';
 
 const kv = await getKv();
 

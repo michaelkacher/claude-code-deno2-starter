@@ -42,8 +42,6 @@ your-project/
 │   └── {hash}.sqlite      # SQLite database file
 ├── data/                  # Custom location (if using Deno.openKv('./data/local.db'))
 │   └── local.db           # Your KV data
-└── backend/
-    └── main.ts
 ```
 
 ## Best Practices for Local Development
@@ -52,7 +50,7 @@ your-project/
 
 **DO THIS** ✅:
 ```typescript
-// backend/lib/kv.ts
+// shared/lib/kv.ts
 let kvInstance: Deno.Kv | null = null;
 
 export async function getKv(): Promise<Deno.Kv> {
@@ -69,7 +67,7 @@ export async function getKv(): Promise<Deno.Kv> {
 ```
 
 ```typescript
-// backend/services/users.ts
+// shared/services/users.ts
 import { getKv } from '../lib/kv.ts';
 
 export class UserService {
@@ -99,7 +97,6 @@ export async function handler(req: Request) {
 Use environment variables to control database location:
 
 ```typescript
-// backend/config/kv.ts
 const DENO_ENV = Deno.env.get('DENO_ENV') || 'development';
 
 export function getKvPath(): string | undefined {
@@ -136,7 +133,7 @@ Always use `:memory:` for tests to ensure isolation:
 ```typescript
 // tests/integration/users.test.ts
 import { assertEquals } from '@std/assert';
-import { UserService } from '../../backend/services/users.ts';
+import { UserService } from '../../shared/services/users.ts';
 
 Deno.test('UserService - create user', async () => {
   // Create isolated in-memory database for this test
@@ -185,7 +182,7 @@ Deno.test('UserService - another test', async () => {
 Pass KV instance to services instead of importing globally:
 
 ```typescript
-// backend/services/users.ts
+// shared/services/users.ts
 export class UserService {
   constructor(private kv: Deno.Kv) {}
 
@@ -198,7 +195,6 @@ export class UserService {
 ```
 
 ```typescript
-// backend/main.ts
 import { getKv } from './lib/kv.ts';
 import { UserService } from './services/users.ts';
 
@@ -218,22 +214,22 @@ const userService = new UserService(kv);
 Close KV connection on app shutdown:
 
 ```typescript
-// backend/main.ts
-import { Hono } from 'hono';
-import { getKv } from './lib/kv.ts';
+// frontend/main.ts (Fresh application)
+import { start } from "$fresh/server.ts";
+import manifest from "./fresh.gen.ts";
+import config from "./fresh.config.ts";
+import { getKv, closeKv } from "../shared/lib/kv.ts";
 
-const app = new Hono();
-const kv = await getKv();
-
-// ... set up routes
+// Initialize KV once at startup
+await getKv();
 
 // Handle shutdown gracefully
 globalThis.addEventListener('unload', async () => {
   console.log('Closing KV connection...');
-  await kv.close();
+  await closeKv();
 });
 
-Deno.serve(app.fetch);
+await start(manifest, config);
 ```
 
 ### 6. Development vs Production Differences
@@ -279,15 +275,23 @@ sqlite> .quit
 #### Option 2: Create Admin Endpoints (Development Only)
 
 ```typescript
-// backend/routes/admin.ts (dev only!)
-import { Hono } from 'hono';
-import { getKv } from '../lib/kv.ts';
+// frontend/routes/api/admin/kv/all.ts (dev only!)
+import { Handlers } from "$fresh/server.ts";
+import { getKv } from "../../../../../shared/lib/kv.ts";
+import { successResponse, requireAuth, requireRole, type AppState } from "../../../../lib/fresh-helpers.ts";
 
-const admin = new Hono();
-
-// ⚠️ Only enable in development!
-if (Deno.env.get('DENO_ENV') === 'development') {
-  admin.get('/kv/all', async (c) => {
+export const handler: Handlers<unknown, AppState> = {
+  // ⚠️ Only enable in development!
+  async GET(req, ctx) {
+    // Require admin role
+    const user = requireAuth(ctx);
+    requireRole(user, ['admin']);
+    
+    // Only in development
+    if (Deno.env.get('DENO_ENV') !== 'development') {
+      return new Response('Not available in production', { status: 403 });
+    }
+    
     const kv = await getKv();
     const entries = [];
 
@@ -299,11 +303,9 @@ if (Deno.env.get('DENO_ENV') === 'development') {
       });
     }
 
-    return c.json({ entries });
-  });
-}
-
-export default admin;
+    return successResponse({ entries });
+  }
+};
 ```
 
 #### Option 3: Use Deno Deploy Dashboard (Production)
@@ -320,7 +322,7 @@ Create seed scripts for local development:
 
 ```typescript
 // scripts/seed-local-kv.ts
-import { getKv } from '../backend/lib/kv.ts';
+import { getKv } from '../shared/lib/kv.ts';
 
 async function seedDatabase() {
   const kv = await getKv();
@@ -410,15 +412,18 @@ Here's a complete example with all best practices:
 
 ### Project Structure
 ```
-backend/
-├── config/
-│   └── kv.ts           # KV configuration
+shared/
 ├── lib/
 │   └── kv.ts           # KV singleton
-├── services/
-│   └── users.ts        # Business logic
+└── repositories/
+    └── user-repository.ts  # Data access layer
+
+frontend/
 ├── routes/
-│   └── users.ts        # API routes
+│   └── api/
+│       └── users/
+│           ├── index.ts    # GET/POST /api/users
+│           └── [id].ts     # GET/PATCH/DELETE /api/users/:id
 └── main.ts             # Entry point
 
 scripts/
@@ -435,7 +440,7 @@ data/
 
 ### Implementation
 
-**backend/lib/kv.ts**:
+**shared/lib/kv.ts**:
 ```typescript
 let kvInstance: Deno.Kv | null = null;
 
@@ -464,56 +469,57 @@ export async function closeKv() {
 }
 ```
 
-**backend/main.ts**:
+**frontend/main.ts**:
 ```typescript
-import { Hono } from 'hono';
-import { getKv, closeKv } from './lib/kv.ts';
-import usersRoutes from './routes/users.ts';
-
-const app = new Hono();
+import { start } from "$fresh/server.ts";
+import manifest from "./fresh.gen.ts";
+import config from "./fresh.config.ts";
+import { getKv, closeKv } from "../shared/lib/kv.ts";
 
 // Initialize KV once at startup
 await getKv();
-
-app.route('/api/v1/users', usersRoutes);
 
 // Graceful shutdown
 globalThis.addEventListener('unload', async () => {
   await closeKv();
 });
 
-Deno.serve(app.fetch);
+await start(manifest, config);
 ```
 
 **tests/integration/users.test.ts**:
 ```typescript
 import { assertEquals } from '@std/assert';
-import { UserService } from '../../backend/services/users.ts';
+import { UserRepository } from '../../shared/repositories/user-repository.ts';
 
-Deno.test('UserService CRUD operations', async () => {
+Deno.test('UserRepository CRUD operations', async () => {
   // Isolated test database
   const kv = await Deno.openKv(':memory:');
 
   try {
-    const service = new UserService(kv);
+    // Inject test KV instance into repository
+    const repo = new UserRepository();
+    // @ts-ignore: Accessing private property for testing
+    repo.kv = kv;
 
     // Create
-    const user = await service.create({
+    const user = await repo.create({
       email: 'test@example.com',
       name: 'Test User',
+      password: 'hashedpassword',
     });
     assertEquals(user.email, 'test@example.com');
 
     // Read
-    const found = await service.findById(user.id);
+    const found = await repo.findById(user.id);
     assertEquals(found?.id, user.id);
 
     // Update
-    const updated = await service.update(user.id, { name: 'Updated Name' });
+    const updated = await repo.update(user.id, { name: 'Updated Name' });
     assertEquals(updated?.name, 'Updated Name');
 
     // Delete
-    const deleted = await service.delete(user.id);
+    const deleted = await repo.delete(user.id);
     assertEquals(deleted, true);
   } finally {
     await kv.close();

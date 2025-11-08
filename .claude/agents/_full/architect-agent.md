@@ -17,10 +17,16 @@ You are a software architect specializing in web applications. Your role is to *
 **IMPORTANT**: This template ships with a comprehensive, production-ready architecture:
 
 - **Runtime:** Deno 2 (TypeScript-native, secure, edge-ready)
-- **Backend:** Hono (ultra-fast, edge-optimized, <12KB)
-- **Frontend:** Fresh + Preact (SSR, islands architecture, optional)
+- **Framework:** Fresh 1.7.3 (Pure SSR - single server architecture)
+  - SSR pages in `frontend/routes/`
+  - API endpoints in `frontend/routes/api/`
+  - Islands in `frontend/islands/`
+  - Shared code in `shared/`
+- **Frontend:** Fresh + Preact (SSR, islands architecture)
 - **Database:** Deno KV (built-in, zero-config, edge-distributed)
 - **Deployment:** Deno Deploy (serverless, global edge, auto-scaling)
+
+**Single Server at Port 3000** - No separate backend server!
 
 **This stack is opinionated by design** for:
 - Fast development
@@ -28,6 +34,7 @@ You are a software architect specializing in web applications. Your role is to *
 - Production readiness
 - Edge deployment
 - Zero configuration
+- Simplified architecture
 
 ## When to Update Architecture
 
@@ -156,11 +163,12 @@ Format: `docs/adr/001-[decision-name].md`
 - **Styling**: Tailwind CSS (recommended) or [CSS Modules/CSS-in-JS]
 - **Build Tool**: None needed for Fresh (runs directly with Deno)
 
-### Backend
+### Server & API
+- **Framework**: Fresh 1.7.3 (handles both frontend SSR and API routes)
 - **Runtime**: Deno 2 (default for this template)
-- **Framework**: [Hono/Fresh/Oak/etc.] - [Why chosen]
 - **Language**: TypeScript (built-in with Deno)
-- **API Style**: [REST/GraphQL/tRPC]
+- **API Style**: REST (via Fresh file-based API routes in `frontend/routes/api/`)
+- **Architecture**: Single-server (no separate backend)
 
 ### Database
 - **Type**: [Deno KV (recommended) / PostgreSQL / SQLite / etc.]
@@ -239,14 +247,16 @@ Date: [YYYY-MM-DD]
 ## Common ADR Topics
 
 1. Runtime choice (Deno 2 - already selected for this template)
-2. Backend framework (Hono, Oak - recommended: Hono for edge compatibility)
-3. Frontend framework (Fresh with Preact - recommended for Deno, or React/Vue if needed)
+2. API architecture (Fresh file-based API routes - default for this template)
+3. Frontend framework (Fresh with Preact - integrated single-server architecture)
 4. Database selection (**Deno KV recommended**, PostgreSQL for complex queries, SQLite for local-first)
 5. Authentication strategy (JWT, OAuth, session-based with Deno KV sessions)
-6. API design (REST vs GraphQL vs tRPC)
-7. State management (Preact Signals for Fresh, Zustand for React)
-8. Testing strategy (Deno test runner with in-memory KV, integration tests)
+6. API design patterns (REST endpoints, GraphQL integration, tRPC support)
+7. State management (Preact Signals for Fresh, Zustand for React if migrating)
+8. Testing strategy (Deno test runner with in-memory KV, direct handler tests)
 9. Deployment platform (**Deno Deploy recommended** - zero-config, edge network, built-in KV)
+
+**Note**: This template uses Pure Fresh (single-server) architecture. There is no separate backend framework - Fresh handles both SSR pages and API routes.
 
 ## Anti-Patterns to Avoid
 
@@ -262,7 +272,7 @@ Date: [YYYY-MM-DD]
 
 **Recommended Tech Stack for This Template:**
 - **Runtime**: Deno 2 (secure, TypeScript-first, modern)
-- **Backend Framework**: Hono (fast, lightweight, edge-ready, works on Deno Deploy)
+- **Backend Framework**: Fresh 1.7.3 API routes (file-based, SSR-native, edge-ready, works on Deno Deploy)
 - **Frontend Framework**: Fresh with Preact (Deno-native, SSR, islands architecture)
 - **Database**: **Deno KV (recommended)** - built-in, serverless, edge-ready; PostgreSQL for complex queries
 - **Testing**: Deno's built-in test runner with in-memory KV (`:memory:`)
@@ -285,7 +295,7 @@ Date: [YYYY-MM-DD]
 - Auto-scaling and serverless
 - GitHub integration for CI/CD
 - Free tier available
-- Supports Hono and Fresh out of the box
+- Supports Fresh out of the box
 
 **Why Fresh for Frontend:**
 - Native Deno support (no build step required)

@@ -38,14 +38,10 @@ export default function NotificationBell() {
     }
     
     try {
-      const apiUrl = IS_BROWSER
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
-      
       const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
       if (!token) return;
 
-      const response = await fetch(`${apiUrl}/api/notifications?limit=10`, {
+      const response = await fetch(`/api/notifications?limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -67,15 +63,11 @@ export default function NotificationBell() {
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
     try {
-      const apiUrl = IS_BROWSER
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
-      
       const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
       if (!token) return;
 
       const response = await fetch(
-        `${apiUrl}/api/notifications/${notificationId}/read`,
+        `/api/notifications/${notificationId}/read`,
         {
           method: 'PATCH',
           headers: {
@@ -103,14 +95,10 @@ export default function NotificationBell() {
   const markAllAsRead = async () => {
     setIsLoading(true);
     try {
-      const apiUrl = IS_BROWSER
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
-      
       const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
       if (!token) return;
 
-      const response = await fetch(`${apiUrl}/api/notifications/read-all`, {
+      const response = await fetch(`/api/notifications/read-all`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -135,15 +123,11 @@ export default function NotificationBell() {
   // Delete notification
   const deleteNotification = async (notificationId: string) => {
     try {
-      const apiUrl = IS_BROWSER
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
-      
       const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
       if (!token) return;
 
       const response = await fetch(
-        `${apiUrl}/api/notifications/${notificationId}`,
+        `/api/notifications/${notificationId}`,
         {
           method: 'DELETE',
           headers: {
@@ -187,13 +171,12 @@ export default function NotificationBell() {
       wsRef.current = null;
     }
 
-    // Create WebSocket connection with proper URL
+    // Create WebSocket connection with proper URL (same origin)
     const wsUrl = window.location.origin
       .replace('http://', 'ws://')
-      .replace('https://', 'wss://')
-      .replace(':3000', ':8000');
+      .replace('https://', 'wss://');
     
-    const ws = new WebSocket(`${wsUrl}/api/notifications/ws`);
+    const ws = new WebSocket(`${wsUrl}/api/notifications/ws?token=${encodeURIComponent(token)}`);
     let authSent = false;
 
     ws.onopen = () => {

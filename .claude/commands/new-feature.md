@@ -71,7 +71,7 @@ Before starting, detect if this is the user's first feature by checking for exis
 
    **Key goal:** {answer c}
 
-   **Tech stack:** Hono (backend), Fresh + Preact (frontend), Deno KV (database)
+   **Tech stack:** Fresh 1.7.3 (API routes + SSR + Islands), Deno KV (database)
 
    ---
 
@@ -94,8 +94,8 @@ Before starting, detect if this is the user's first feature by checking for exis
    **It should exist** (this template ships with a pre-defined architecture).
 
    If it exists, read it briefly to understand the tech stack:
-   - Backend: Hono
-   - Frontend: Fresh + Preact (optional)
+   - Backend: Fresh 1.7.3 API routes
+   - Frontend: Fresh + Preact Islands
    - Database: Deno KV
    - Deployment: Deno Deploy
 
@@ -104,8 +104,8 @@ Before starting, detect if this is the user's first feature by checking for exis
    Note: This template includes a pre-defined architecture in docs/architecture.md.
 
    I'll proceed with the default stack:
-   - Backend: Hono
-   - Frontend: Fresh + Preact
+   - Backend: Fresh 1.7.3 API routes
+   - Frontend: Fresh + Preact Islands
    - Database: Deno KV
 
    If you need a different stack, this template may not be suitable.
@@ -276,7 +276,7 @@ After backend implementation, check if the feature added new Deno KV data models
 
    Read the Data Browser configuration:
    ```
-   Read backend/routes/data-browser.ts
+   Read frontend/routes/api/admin/data/models.ts
    ```
 
    Find the `MODEL_PREFIXES` array and add the new model prefix(es):

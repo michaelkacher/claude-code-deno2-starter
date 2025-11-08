@@ -1,8 +1,26 @@
 #!/usr/bin/env -S deno run -A --watch=static/,routes/
 
+import { load } from "$std/dotenv/mod.ts";
+
+// Load .env FIRST - before any other imports that might read env vars
+await load({ envPath: "../.env", export: true });
+
 import dev from "$fresh/dev.ts";
 import config from "./fresh.config.ts";
 
-import "$std/dotenv/load.ts";
+// Verify critical env vars are loaded
+console.log("🔧 [Startup] JWT_SECRET loaded:", Deno.env.get("JWT_SECRET") ? "✅ Yes" : "❌ No");
+console.log("🔧 [Startup] DENO_ENV:", Deno.env.get("DENO_ENV"));
+
+// Initialize background services (job queue, scheduler, workers)
+import { initializeBackgroundServices } from "../shared/startup.ts";
+console.log('🔵 [dev.ts] About to call initializeBackgroundServices()...');
+try {
+  await initializeBackgroundServices();
+  console.log('✅ [dev.ts] initializeBackgroundServices() completed successfully');
+} catch (error) {
+  console.error('❌ [dev.ts] initializeBackgroundServices() failed:', error);
+  throw error; // Re-throw to prevent server from starting with broken services
+}
 
 await dev(import.meta.url, "./main.ts", config);

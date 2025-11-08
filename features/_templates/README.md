@@ -72,11 +72,11 @@ The agent will:
 
 | Endpoint | Pattern | Auth | Notes |
 |----------|---------|------|-------|
-| POST /api/v1/tasks | CREATE_RESOURCE | Yes | - |
-| GET /api/v1/tasks | LIST_RESOURCES | Yes | Filter by status |
-| GET /api/v1/tasks/:id | GET_RESOURCE | Yes | - |
-| PUT /api/v1/tasks/:id | UPDATE_RESOURCE | Yes | - |
-| DELETE /api/v1/tasks/:id | DELETE_RESOURCE | Yes | Soft delete |
+| POST /api/tasks | CREATE_RESOURCE | Yes | - |
+| GET /api/tasks | LIST_RESOURCES | Yes | Filter by status |
+| GET /api/tasks/:id | GET_RESOURCE | Yes | - |
+| PUT /api/tasks/:id | UPDATE_RESOURCE | Yes | - |
+| DELETE /api/tasks/:id | DELETE_RESOURCE | Yes | Soft delete |
 
 All endpoints use `STANDARD_ERRORS` (see API_PATTERNS.md).
 ```

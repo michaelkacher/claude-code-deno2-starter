@@ -171,7 +171,7 @@ Reusable API client with auth headers.
 
 ```typescript
 // frontend/lib/api.ts
-const API_BASE = "http://localhost:8000/api/v1";
+const API_BASE = "http://localhost:3000/api";
 
 function getHeaders() {
   const token = localStorage.getItem("token");

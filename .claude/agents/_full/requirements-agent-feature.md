@@ -125,7 +125,7 @@ interface Resource {
 - **Analyze impact**: Document which features would be affected by data model changes
 
 ### List Concrete Endpoints
-- Use actual endpoint paths (e.g., `/api/v1/workouts`)
+- Use actual endpoint paths (e.g., `/api/workouts`)
 - Specify HTTP methods
 - Indicate authentication requirements
 
@@ -174,7 +174,7 @@ interface Resource {
 ## Context You Can Assume
 
 The project already has:
-- ✅ Architecture defined (Deno 2, Hono backend, Fresh frontend)
+- ✅ Architecture defined (Deno 2, Fresh 1.7.3 with API routes + Islands)
 - ✅ Tech stack chosen (Deno KV or PostgreSQL, Preact, Tailwind)
 - ✅ Authentication pattern (if implemented)
 - ✅ Error handling patterns

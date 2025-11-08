@@ -14,13 +14,13 @@ This guide helps you write tests **3-5x faster** using templates and helpers.
 - **Edge cases**: Boundary values, empty data, special domain states
 
 ### ❌ DON'T Test:
-- HTTP status codes (Hono's responsibility)
+- HTTP status codes (Fresh framework's responsibility)
 - Authentication middleware (framework feature)
 - JSON serialization (framework feature)
 - Routing logic (framework feature)
 - CORS, headers, etc. (framework features)
 
-**Rule**: If you didn't write the code, don't test it. Trust Hono/Fresh/Deno to work correctly.
+**Rule**: If you didn't write the code, don't test it. Trust Fresh/Deno to work correctly.
 
 ---
 
@@ -53,11 +53,19 @@ cp tests/templates/unit.test.template.ts tests/unit/my-utility.test.ts
 
 ### For API Integration Tests (USE SPARINGLY)
 
+**Note:** With Pure Fresh architecture, integration tests work differently:
+- **Unit tests**: Test repositories and business logic (no HTTP, use in-memory KV)
+- **Integration tests**: Test Fresh Handlers directly (invoke handler functions with mock Request)
+- **E2E tests**: Use Playwright to test full user flows with running server
+
 ```bash
-# Only use this if you need to test data persistence integration
-# DO NOT use this to test HTTP status codes or routing
+# Only use integration tests to test Fresh Handler + Repository integration
+# DO NOT test HTTP status codes, routing, or authentication middleware
+# Test business logic through handler invocation, not HTTP requests
 cp tests/templates/integration-api.test.template.ts tests/integration/api/my-endpoint.test.ts
 ```
+
+**Better approach for most cases:** Test repositories in unit tests, handlers in E2E tests.
 
 ## Available Helpers
 
@@ -221,7 +229,7 @@ deno test tests/[your-test].ts --allow-all
 
 ### ❌ DON'T:
 - Test framework logic (HTTP codes, routing, auth middleware)
-- Test third-party libraries (trust Hono/Fresh/Deno)
+- Test third-party libraries (trust Fresh/Deno)
 - Write integration tests for everything
 - Test JSON serialization (framework handles this)
 - Test authentication middleware (unless custom logic)
@@ -233,7 +241,7 @@ deno test tests/[your-test].ts --allow-all
 
 ```typescript
 import { assertEquals } from 'jsr:@std/assert';
-import { validateEmail } from '../../backend/lib/validation.ts';
+import { validateEmail } from '../../shared/lib/validation.ts';
 
 Deno.test('validateEmail - accepts valid email', () => {
   assertEquals(validateEmail('test@example.com'), true);
@@ -272,7 +280,7 @@ Deno.test('POST /api/tasks - creates task', async () => {
 ```typescript
 import { assertEquals } from 'jsr:@std/assert';
 import { setupTestKv, seedKv } from '../helpers/kv-test.ts';
-import { TaskService } from '../../backend/services/tasks.ts';
+import { TaskService } from '../../shared/services/tasks.ts';
 
 Deno.test('TaskService - lists all tasks', async () => {
   const { kv, cleanup } = await setupTestKv();
@@ -293,6 +301,54 @@ Deno.test('TaskService - lists all tasks', async () => {
 ```
 
 **Time:** ~2 minutes to write
+
+## Testing Fresh Handlers (Integration Tests)
+
+With Pure Fresh architecture, you can test handlers directly without a running server:
+
+```typescript
+import { assertEquals } from 'jsr:@std/assert';
+import { handler } from '../../frontend/routes/api/users/index.ts';
+import { setupTestKv } from '../helpers/kv-test.ts';
+import type { FreshContext } from "$fresh/server.ts";
+
+Deno.test('GET /api/users - returns user list', async () => {
+  const { kv, cleanup } = await setupTestKv();
+  try {
+    // Create mock Request
+    const request = new Request('http://localhost:3000/api/users');
+    
+    // Create mock FreshContext
+    const ctx: FreshContext = {
+      params: {},
+      state: { user: { sub: 'test-user-id', role: 'admin' } },
+      render: (data) => new Response(JSON.stringify(data)),
+    } as any;
+    
+    // Call handler directly
+    const response = await handler.GET!(request, ctx);
+    
+    // Assert response
+    assertEquals(response.status, 200);
+    const data = await response.json();
+    assertEquals(Array.isArray(data.data.users), true);
+  } finally {
+    await cleanup();
+  }
+});
+```
+
+**When to use:**
+- Testing handler + repository integration
+- Testing business logic in handlers
+- Testing auth checks and permissions
+
+**When NOT to use:**
+- Simple CRUD operations (test repositories instead)
+- Testing routing (Fresh handles this)
+- Testing framework features (trust Fresh)
+
+**Better for most cases:** Test repositories in unit tests, full flows in E2E tests.
 
 ## Speed Comparison
 

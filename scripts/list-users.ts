@@ -5,7 +5,7 @@
  * Usage: deno run --allow-env --allow-read scripts/list-users.ts
  */
 
-import { getKv } from '../backend/lib/kv.ts';
+import { getKv } from '../shared/lib/kv.ts';
 
 const kv = await getKv();
 

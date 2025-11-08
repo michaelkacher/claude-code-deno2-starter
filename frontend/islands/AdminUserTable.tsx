@@ -55,7 +55,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
     error.value = '';
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       
       const params = new URLSearchParams({
         page: page.toString(),
@@ -102,7 +102,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
     success.value = '';
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       const token = getToken();
       const response = await fetch(`${apiUrl}/api/admin/users/${userId}/role`, {
         method: 'PATCH',
@@ -137,7 +137,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
     success.value = '';
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       const token = getToken();
       const response = await fetch(`${apiUrl}/api/admin/users/${userId}/verify-email`, {
         method: 'PATCH',
@@ -171,7 +171,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
     success.value = '';
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       const token = getToken();
       const response = await fetch(`${apiUrl}/api/admin/users/${userId}/revoke-sessions`, {
         method: 'POST',
@@ -194,7 +194,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
 
   // Delete user
   const deleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to DELETE user "${userName}"? This cannot be undone!`)) {
+    if (!confirm(`Are you sure you want to delete this user? This action cannot be undone.`)) {
       return;
     }
 
@@ -203,7 +203,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
     success.value = '';
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       const token = getToken();
       const response = await fetch(`${apiUrl}/api/admin/users/${userId}`, {
         method: 'DELETE',

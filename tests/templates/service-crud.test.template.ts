@@ -21,7 +21,7 @@ import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { setupTestKv, seedKv } from '../helpers/kv-test.ts';
 
 // TODO: Import your service
-// import { [ServiceName] } from '../../backend/services/[service].ts';
+// import { [ServiceName] } from '../../shared/services/[service].ts';
 
 // TODO: Define test data
 const validData = {

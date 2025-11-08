@@ -7,7 +7,7 @@ Launch the architect-agent to **update** the system architecture and document ke
 ## When to Use This Command
 
 **This template ships with a pre-defined architecture** (`docs/architecture.md`):
-- Deno 2 + Hono + Fresh + Deno KV + Deno Deploy
+- Deno 2 + Fresh 1.7.3 (API routes + Islands) + Deno KV + Deno Deploy
 - Opinionated by design for fast development
 
 **Most users should NOT run this command** - the default architecture is production-ready.

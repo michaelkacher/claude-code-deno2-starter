@@ -101,9 +101,10 @@ frontend/
 └── static/                    # Static assets
     └── styles.css            # Global styles
 
-backend/
-├── main.ts                    # Hono API server
-└── routes/                    # Backend API routes
+shared/                        # Shared server-side code
+├── lib/                       # Utilities (JWT, KV, queue, etc.)
+├── repositories/              # Data access layer
+└── workers/                   # Background job workers
 ```
 
 ## Fresh Concepts
@@ -131,7 +132,7 @@ interface Data {
 export const handler: Handlers<Data> = {
   async GET(req, ctx) {
     // Fetch data on the server
-    const res = await fetch("http://localhost:8000/api/v1/workouts");
+    const res = await fetch("http://localhost:3000/api/workouts");
     const data = await res.json();
 
     return ctx.render({ workouts: data.data });
@@ -177,7 +178,7 @@ export default function WorkoutForm({ onSuccess }: WorkoutFormProps) {
     error.value = "";
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/workouts", {
+      const res = await fetch("http://localhost:3000/api/workouts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -285,9 +286,9 @@ export function WorkoutCard({ workout }: WorkoutCardProps) {
 }
 ```
 
-### 4. API Routes (Backend in Frontend)
+### 4. API Routes (Server-Side Endpoints)
 
-You can add API routes in `frontend/routes/api/` if needed (though typically use the Hono backend).
+**Pure Fresh Architecture**: API routes in `frontend/routes/api/` are server-side Fresh Handlers. There's no separate backend - Fresh handles both SSR pages and API endpoints on a single server.
 
 **Example: API Route (`frontend/routes/api/health.ts`)**
 ```typescript
@@ -301,6 +302,8 @@ export const handler: Handlers = {
   },
 };
 ```
+
+**Server-side logic** (repositories, utilities, workers) lives in `shared/` and is imported by API routes.
 
 ## State Management with Signals
 
@@ -318,7 +321,7 @@ export const isAuthenticated = computed(() => user.value !== null);
 
 // Login function
 export async function login(email: string, password: string) {
-  const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+  const res = await fetch("http://localhost:3000/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -391,11 +394,13 @@ export default function HomePage() {
 }
 ```
 
-## Connecting to Backend API
+## Connecting to API Routes
+
+**Pure Fresh Architecture**: API routes run on the same server as pages (port 3000). Islands use fetch to call API routes.
 
 **API Client Utility (`frontend/lib/api.ts`)**
 ```typescript
-const API_BASE = "http://localhost:8000/api/v1";
+const API_BASE = "http://localhost:3000/api";
 
 function getAuthHeaders() {
   const token = typeof localStorage !== "undefined"
@@ -514,11 +519,8 @@ Deno.test("WorkoutCard renders workout name", () => {
 ## Development Commands
 
 ```bash
-# Start Fresh frontend (from frontend/ directory)
-cd frontend
-deno task start
-
-# Or start both backend + frontend (from root)
+# Start Fresh server (SSR pages + API routes + background services)
+# Single server at port 3000
 deno task dev
 
 # Run tests
@@ -530,6 +532,11 @@ deno fmt
 # Lint
 deno lint
 ```
+
+**Note**: There's no separate backend server. `deno task dev` starts a single Fresh server that handles:
+- SSR pages (`frontend/routes/*.tsx`)
+- API endpoints (`frontend/routes/api/*.ts`)
+- Background services (queue, scheduler)
 
 ## File Structure Best Practices
 

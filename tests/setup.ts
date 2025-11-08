@@ -1,11 +1,10 @@
 // Deno test setup
 // This file runs before all tests
 
-import { assertEquals } from 'jsr:@std/assert';
 
 // Mock environment variables for testing
 Deno.env.set('DENO_ENV', 'test');
-Deno.env.set('API_URL', 'http://localhost:8000/api');
+Deno.env.set('API_URL', 'http://localhost:3000/api');
 
 // Global test utilities
 export { assertEquals, assertExists, assertThrows } from 'jsr:@std/assert';

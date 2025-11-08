@@ -8,7 +8,7 @@
  */
 
 import 'jsr:@std/dotenv/load';
-import { NotificationService } from '../backend/services/notifications.ts';
+import { NotificationService } from '../shared/services/notifications.ts';
 
 // Use a test user ID (replace with real user ID if you have one)
 const TEST_USER_ID = 'test-user-123';

@@ -72,7 +72,7 @@ jobs:
         uses: denoland/deployctl@v1
         with:
           project: your-project-name
-          entrypoint: backend/main.ts
+          entrypoint: frontend/main.ts
           root: .
         env:
           DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}

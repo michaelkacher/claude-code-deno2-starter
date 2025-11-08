@@ -5,7 +5,7 @@ Quick reference for using Deno KV in this project. See `DENO_KV_GUIDE.md` for co
 ## TL;DR
 
 ```typescript
-// backend/lib/kv.ts - Use this pattern!
+// shared/lib/kv.ts - Use this pattern!
 let kvInstance: Deno.Kv | null = null;
 
 export async function getKv(): Promise<Deno.Kv> {

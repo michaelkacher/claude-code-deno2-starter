@@ -5,11 +5,22 @@
 ## The Stack
 
 - **Runtime:** Deno 2
-- **Backend:** Hono (REST API)
-- **Frontend:** Fresh + Preact (optional, can be removed)
+- **Framework:** Fresh 1.7.3 (Pure SSR - single server)
 - **Database:** Deno KV
+- **Background Jobs:** Queue + Scheduler system
 - **Deployment:** [Deno Deploy](https://deno.com/deploy)
 - **Testing:** Deno's built-in test runner for unit tests and playwright for e2e tests
+
+## Architecture
+
+**Pure Fresh** - No separate backend server! Everything runs on a single Fresh server:
+- **Server-side routes** (`frontend/routes/**/*.tsx`) - Pages rendered on the server
+- **API endpoints** (`frontend/routes/api/**/*.ts`) - REST API handlers
+- **Islands** (`frontend/islands/**/*.tsx`) - Client-side interactive components
+- **Background services** - Queue, scheduler, and workers for async tasks
+- **Shared code** (`shared/`) - Repositories, utilities, workers used by all of the above
+
+Single server at `http://localhost:3000`
 
 ## Prerequisites
 
@@ -30,7 +41,6 @@ irm https://deno.land/install.ps1 | iex
 
 2. **AI Assistant**:
    - **Claude Code**: Install with `npm install -g @anthropic-ai/claude-code` ([pricing](https://www.claude.com/pricing))
-   - There is experimental support for **GitHub Copilot**: Use with VS Code extension ([get started](https://github.com/features/copilot)). Read about [using GitHub Copilot](docs/USING_WITH_COPILOT.md) with this project.
 
 ## Quick Start
 
@@ -53,10 +63,10 @@ Edit `.env` with your configuration.
 2. Run the project
 
 ```bash
-# Start the minimal server to see it running
+# Start the Fresh server with background services
 deno task dev
-# Backend: http://localhost:8000
-# Frontend: http://localhost:3000
+# Server: http://localhost:3000
+# API: http://localhost:3000/api/*
 ```
 
 3. Customize your template (Recommended)
@@ -288,15 +298,17 @@ deno test tests/users_test.ts
 │   ├── data-models.md      # Shared data models (optional)
 │   ├── adr/                # Architecture Decision Records
 │   └── guides/                 # Detailed guides (see docs/QUICK_REFERENCE.md)
-├── backend/                 # Backend source code
-│   ├── main.ts             # Backend entry point (Hono server)
-│   ├── routes/             # API routes
-│   ├── lib/                # Utilities and API client
+├── shared/                  # Shared server-side code
+│   ├── lib/                # Utilities (JWT, KV, queue, scheduler, etc.)
+│   ├── repositories/       # Data access layer
+│   ├── workers/            # Background job workers
+│   ├── config/             # Environment configuration
 │   └── types/              # TypeScript types
-├── frontend/                # Frontend Fresh 2 application
-│   ├── routes/             # Fresh file-based routes
+├── frontend/                # Fresh application
+│   ├── routes/             # Fresh file-based routes (pages + API endpoints)
 │   ├── islands/            # Interactive client components
 │   ├── components/         # Shared UI components
+│   ├── lib/                # Frontend utilities
 │   └── static/             # Static assets
 └── tests/                   # Test files
     ├── unit/               # Unit tests
@@ -308,21 +320,16 @@ deno test tests/users_test.ts
 
 ### Development
 ```bash
-deno task dev              # Start both backend + frontend
-deno task dev:backend      # Backend only (port 8000)
-deno task dev:frontend     # Frontend only (port 3000)
+deno task dev              # Start Fresh server with background services
 ```
 
 ### Production & Deployment
 ```bash
-deno task build            # Build both backend + frontend (for Docker/VPS)
-deno task build:backend    # Compile backend to executable
-deno task build:frontend   # Build frontend for production
-deno task preview          # Preview production backend build
+deno task build            # Build for production
+deno task preview          # Preview production build
 
 # Deno Deploy (Recommended)
 deno task deploy           # Deploy to Deno Deploy (production)
-deno task deploy:preview   # Deploy preview environment
 ```
 
 **Note:** Development-only routes (`/design-system`, `/mockups`) are automatically excluded from production builds. See [Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md) for details.
@@ -348,7 +355,7 @@ deno task type-check       # Type check all TypeScript files
 ### Utilities
 ```bash
 deno task clean            # Remove build artifacts and cache
-deno task kill-ports       # Kill processes on ports 3000 and 8000
+deno task kill-ports       # Kill processes on ports 3000
 ```
 
 **Note:** Use `kill-ports` if you get "port already in use" errors from hidden instances of the app.
@@ -464,7 +471,7 @@ This template is built on **Deno 2** with modern, production-ready tools optimiz
 
 ### Backend (Deno 2)
 - **Runtime**: Deno 2.0+ (secure, TypeScript-first)
-- **Framework**: Hono (ultra-fast, edge-ready, works on Deno Deploy)
+- **Framework**: Fresh 1.7.3 API routes (file-based routing, SSR-friendly)
 - **Language**: TypeScript (built-in, no build step)
 - **Database**: **Deno KV** - zero-config, distributed, edge-ready, built-in
 - **Testing**: Deno's built-in test runner with in-memory KV
@@ -591,9 +598,9 @@ Starting from a fresh template:
 # Step 2: Design architecture
 /architect
 # Agent evaluates requirements and recommends:
-# - Hono for REST API
+# - Fresh API routes for REST API
 # - Deno KV for data storage (tasks + projects)
-# - Fresh for the UI
+# - Fresh Islands for interactive UI
 # - Creates docs/architecture.md and ADRs
 
 # Step 3: Build first feature
@@ -622,7 +629,7 @@ Skip requirements/architecture and jump right in:
 
 Would you like to:
 a) Run /requirements + /architect first (recommended)
-b) Continue with default architecture (Hono + Fresh + Deno KV)
+b) Continue with default architecture (Fresh + Deno KV)
 c) Skip architecture setup
 
 # Choose (b) for quick start with sensible defaults
@@ -754,20 +761,6 @@ On Deno Deploy, Deno KV is:
 
 Deno KV uses SQLite locally and FoundationDB in production. See `docs/guides/DENO_KV_GUIDE.md` for comprehensive best practices.
 
-**Quick Setup**:
-```typescript
-// backend/lib/kv.ts - Single instance pattern
-let kvInstance: Deno.Kv | null = null;
-
-export async function getKv(): Promise<Deno.Kv> {
-  if (!kvInstance) {
-    const env = Deno.env.get('DENO_ENV') || 'development';
-    const path = env === 'production' ? undefined : './data/local.db';
-    kvInstance = await Deno.openKv(path);
-  }
-  return kvInstance;
-}
-```
 
 **Storage Locations**:
 - **Local**: `./data/local.db` (SQLite file)
@@ -816,7 +809,7 @@ For issues or questions:
 - Use `/review` to validate your implementation
 - Consult the agent definitions in `.claude/agents/`
 - [Deno Documentation](https://deno.land/manual)
-- [Hono Documentation](https://hono.dev/)
+- [Fresh Documentation](https://fresh.deno.dev)
 
 ---
 
@@ -829,9 +822,6 @@ For issues or questions:
 See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns.
 
 # Backlog
-* Create account did an alert popup, change to UI
-* ensure the admin screen should only appear if auth enabled
-* Can the admin screen show all models?
 * the docs will load a lot of the guides for claude code, does the claudeignore need to be updated or these docs moved?
 
 * Does the /design command also impact layout? If not, should there be a layout? Maybe add some common layouts?
@@ -846,12 +836,6 @@ See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns.
 * update home screen with:
 *  all commands and up to date info. 
 * How to set up auth
-* Add open api link to home page info
-  - Swagger UI: http://localhost:8000/api/docs (interactive testing)
-  - ReDoc: http://localhost:8000/api/redoc (clean reading experience)
-  - OpenAPI JSON: http://localhost:8000/api/openapi.json (raw spec)
-  - API Info: http://localhost:8000/ (lists all endpoints)
-
 * Evaluate Open API implementation, is Redoc the right choice?
 * Error monitoring: Optional setting to integrate with something like Datadog?
 

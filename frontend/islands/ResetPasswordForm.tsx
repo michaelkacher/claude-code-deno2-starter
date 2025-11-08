@@ -24,7 +24,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   // Check if token is valid and if 2FA is required
   useEffect(() => {
     if (IS_BROWSER) {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       fetch(`${apiUrl}/api/auth/validate-reset-token?token=${token}`)
         .then(res => res.json())
         .then(data => {
@@ -57,7 +57,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     try {
       if (!IS_BROWSER) return;
 
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       
       const response = await fetch(`${apiUrl}/api/auth/reset-password`, {
         method: 'POST',
@@ -200,3 +200,4 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     </form>
   );
 }
+

@@ -145,15 +145,12 @@ A: Start with [QUEUE_OPTIMIZATIONS_SUMMARY.md](QUEUE_OPTIMIZATIONS_SUMMARY.md), 
 **Q: How do I deploy to production?**  
 A: See [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md)
 
-**Q: Where are the API docs?**  
-A: See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) or visit `/api/docs` when running the app
 
 ### Support
 
 - Check existing documentation first
 - Look at code examples in `/features` directory
 - Review test files in `/tests` directory
-- See `/backend/openapi.json` for complete API specification
 
 ---
 

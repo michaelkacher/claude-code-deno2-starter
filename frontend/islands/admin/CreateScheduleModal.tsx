@@ -127,8 +127,8 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
 
   // Get API URL
   const getApiUrl = () => {
-    if (!IS_BROWSER) return 'http://localhost:8000';
-    return window.location.origin.replace(':3000', ':8000');
+    if (!IS_BROWSER) return 'http://localhost:3000';
+    return window.location.origin;
   };
 
   // Handle pattern change
@@ -412,3 +412,4 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
     </div>
   );
 }
+

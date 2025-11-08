@@ -53,8 +53,8 @@ export function isTokenExpired(token: string): boolean {
 export async function verifyTokenWithBackend(token: string): Promise<boolean> {
   try {
     const apiUrl = typeof window !== 'undefined'
-      ? window.location.origin.replace(':3000', ':8000')
-      : 'http://localhost:8000';
+      ? window.location.origin
+      : 'http://localhost:3000';
     
     const response = await fetch(`${apiUrl}/api/auth/verify`, {
       method: 'GET',

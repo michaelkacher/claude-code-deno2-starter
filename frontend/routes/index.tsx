@@ -30,9 +30,6 @@ export default function Home(props: PageProps) {
               <span class="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-sm font-medium">
                 Deno 2
               </span>
-              <span class="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full text-sm font-medium">
-                Hono
-              </span>
               <span class="px-3 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full text-sm font-medium">
                 Fresh + Preact
               </span>
@@ -99,8 +96,7 @@ export default function Home(props: PageProps) {
                   </code>
                 </div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm">
-                  Start both backend (port 8000) and frontend (port 3000)
-                  servers in watch mode for hot reloading.
+                  Start the Fresh server (port 3000) in watch mode for hot reloading.
                 </p>
               </div>
 

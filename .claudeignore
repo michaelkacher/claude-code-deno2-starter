@@ -20,7 +20,7 @@ docs/dev-notes/
 # ==============================================================================
 # TEMPLATE PATTERNS (loaded by specific agents only when needed)
 # ==============================================================================
-backend/templates/
+shared/templates/
 frontend/templates/
 tests/templates/
 
@@ -90,3 +90,4 @@ Thumbs.db
 # GitHub
 # ==============================================================================
 .github/copilot-instructions.md
+.github/copilot-workflows.md

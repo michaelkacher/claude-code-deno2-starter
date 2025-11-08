@@ -6,8 +6,8 @@
 
 ## Base URL
 ```
-Development: http://localhost:8000/api/v1
-Production: https://api.example.com/api/v1
+Development: http://localhost:3000/api
+Production: https://api.example.com/api
 ```
 
 ## Authentication
@@ -17,7 +17,7 @@ Production: https://api.example.com/api/v1
 
 ### 1. {Endpoint Name}
 
-**Endpoint**: `{METHOD} /api/v1/resource`
+**Endpoint**: `{METHOD} /api/resource`
 
 **Description**: {What this endpoint does}
 

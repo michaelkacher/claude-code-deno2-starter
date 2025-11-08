@@ -11,7 +11,7 @@ import { expect, test } from '@playwright/test';
 
 // Configuration
 const BASE_URL = 'http://localhost:3000';
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://localhost:3000';
 
 // Test data
 const testUser = {

@@ -8,7 +8,7 @@ import { assertEquals } from 'jsr:@std/assert';
 import { createTestClient } from '../helpers/test-client.ts';
 
 // TODO: Import types
-// import type { Feature } from '../../backend/types/index.ts';
+// import type { Feature } from '../../shared/types/index.ts';
 
 const client = createTestClient();
 

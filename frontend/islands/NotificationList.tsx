@@ -27,8 +27,8 @@ export default function NotificationList() {
     try {
       setIsLoading(true);
       const apiUrl = IS_BROWSER
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
+        ? window.location.origin
+        : 'http://localhost:3000';
       
       const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
       if (!token) {
@@ -45,8 +45,9 @@ export default function NotificationList() {
 
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
+        console.log('[NotificationList] API response:', data);
+        setNotifications(data.data?.notifications || []);
+        setUnreadCount(data.data?.unreadCount || 0);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -59,8 +60,8 @@ export default function NotificationList() {
   const markAsRead = async (notificationId: string) => {
     try {
       const apiUrl = IS_BROWSER
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
+        ? window.location.origin
+        : 'http://localhost:3000';
       
       const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
       if (!token) return;
@@ -93,8 +94,8 @@ export default function NotificationList() {
   const markAllAsRead = async () => {
     try {
       const apiUrl = IS_BROWSER
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
+        ? window.location.origin
+        : 'http://localhost:3000';
       
       const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
       if (!token) return;
@@ -120,8 +121,8 @@ export default function NotificationList() {
   const deleteNotification = async (notificationId: string) => {
     try {
       const apiUrl = IS_BROWSER
-        ? window.location.origin.replace(':3000', ':8000')
-        : 'http://localhost:8000';
+        ? window.location.origin
+        : 'http://localhost:3000';
       
       const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
       if (!token) return;
@@ -164,8 +165,7 @@ export default function NotificationList() {
     // Create WebSocket connection
     const wsUrl = window.location.origin
       .replace('http://', 'ws://')
-      .replace('https://', 'wss://')
-      .replace(':3000', ':8000');
+      .replace('https://', 'wss://');
     
     const ws = new WebSocket(`${wsUrl}/api/notifications/ws`);
 

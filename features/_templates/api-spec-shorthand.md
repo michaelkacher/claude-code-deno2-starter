@@ -10,11 +10,11 @@ This feature implements standard CRUD for `{ResourceName}`:
 
 | Endpoint | Pattern | Auth | Notes |
 |----------|---------|------|-------|
-| `POST /api/v1/{resources}` | `CREATE_RESOURCE` | Yes | {any unique validation} |
-| `GET /api/v1/{resources}` | `LIST_RESOURCES` | Yes | {any filters/sorting} |
-| `GET /api/v1/{resources}/:id` | `GET_RESOURCE` | Yes | {any special behavior} |
-| `PUT /api/v1/{resources}/:id` | `UPDATE_RESOURCE` | Yes | {any special rules} |
-| `DELETE /api/v1/{resources}/:id` | `DELETE_RESOURCE` | Yes | {soft/hard delete?} |
+| `POST /api/{resources}` | `CREATE_RESOURCE` | Yes | {any unique validation} |
+| `GET /api/{resources}` | `LIST_RESOURCES` | Yes | {any filters/sorting} |
+| `GET /api/{resources}/:id` | `GET_RESOURCE` | Yes | {any special behavior} |
+| `PUT /api/{resources}/:id` | `UPDATE_RESOURCE` | Yes | {any special rules} |
+| `DELETE /api/{resources}/:id` | `DELETE_RESOURCE` | Yes | {soft/hard delete?} |
 
 **Pattern Reference**: See `features/_templates/API_PATTERNS.md` for full pattern definitions.
 
@@ -60,7 +60,7 @@ This feature implements standard CRUD for `{ResourceName}`:
 
 ### {Custom Endpoint Name}
 
-**Endpoint**: `{METHOD} /api/v1/{custom-path}`
+**Endpoint**: `{METHOD} /api/{custom-path}`
 
 **Description**: {What makes this endpoint special/different}
 

@@ -77,7 +77,7 @@ export default function ForgotPasswordPage(props: PageProps) {
           messageDiv.classList.add('hidden');
 
           try {
-            const apiUrl = window.location.origin.replace(':3000', ':8000');
+            const apiUrl = window.location.origin;
             const response = await fetch(\`\${apiUrl}/api/auth/forgot-password\`, {
               method: 'POST',
               headers: {
@@ -121,3 +121,4 @@ export default function ForgotPasswordPage(props: PageProps) {
     </div>
   );
 }
+
