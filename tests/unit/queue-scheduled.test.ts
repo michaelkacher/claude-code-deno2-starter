@@ -5,7 +5,7 @@
  */
 
 import { assertEquals } from 'jsr:@std/assert';
-import { JobQueue } from '../../backend/lib/queue.ts';
+import { JobQueue } from '../../shared/lib/queue.ts';
 
 Deno.test({
   name: 'Queue - Scheduled job promotion',

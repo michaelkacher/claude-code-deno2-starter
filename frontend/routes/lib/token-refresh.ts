@@ -14,7 +14,7 @@ export const handler: Handlers = {
  */
 export async function refreshAccessToken() {
   try {
-    const response = await fetch('http://localhost:8000/api/auth/refresh', {
+    const response = await fetch('/api/auth/refresh', {
       method: 'POST',
       credentials: 'include', // Include httpOnly refresh token cookie
     });

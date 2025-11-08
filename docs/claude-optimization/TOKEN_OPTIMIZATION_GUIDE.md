@@ -88,11 +88,11 @@ The API designer agent now:
 
 | Endpoint | Pattern | Auth | Notes |
 |----------|---------|------|-------|
-| POST /api/v1/profiles | CREATE_RESOURCE | Yes | - |
-| GET /api/v1/profiles | LIST_RESOURCES | Yes | Filter by status |
-| GET /api/v1/profiles/:id | GET_RESOURCE | Yes | - |
-| PUT /api/v1/profiles/:id | UPDATE_RESOURCE | Yes | - |
-| DELETE /api/v1/profiles/:id | DELETE_RESOURCE | Yes | Soft delete |
+| POST /api/profiles | CREATE_RESOURCE | Yes | - |
+| GET /api/profiles | LIST_RESOURCES | Yes | Filter by status |
+| GET /api/profiles/:id | GET_RESOURCE | Yes | - |
+| PUT /api/profiles/:id | UPDATE_RESOURCE | Yes | - |
+| DELETE /api/profiles/:id | DELETE_RESOURCE | Yes | Soft delete |
 
 See `API_PATTERNS.md` for pattern definitions.
 All endpoints use `STANDARD_ERRORS`.

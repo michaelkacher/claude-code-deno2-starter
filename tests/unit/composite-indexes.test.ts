@@ -14,7 +14,7 @@ import {
     type Job,
     type Notification,
     type User,
-} from '../../backend/lib/composite-indexes.ts';
+} from '../../shared/lib/composite-indexes.ts';
 
 describe('CompositeIndexManager', () => {
   let kv: Deno.Kv;

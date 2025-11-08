@@ -107,7 +107,7 @@ Your role focuses on step 1 (Red) - writing the tests first.
 - **Business validations**: Duplicate prevention, required fields
 
 ### ❌ DON'T Test (Framework Logic):
-- HTTP status codes (Hono handles this)
+- HTTP status codes (Fresh framework handles this)
 - Authentication middleware (framework feature)
 - JSON serialization (framework feature)
 - Routing (framework feature)
@@ -144,15 +144,15 @@ Your role focuses on step 1 (Red) - writing the tests first.
 
 ## Output Structure
 
-### Backend Tests
+### Server-Side Tests
 
-Create test files following this structure:
+Create test files following this structure. Server-side code lives in `shared/` (repositories, services, utilities, workers).
 
 **`tests/unit/[feature].test.ts`**
 ```typescript
 import { assertEquals, assertThrows } from "@std/assert";
 import { describe, it, beforeEach } from "@std/testing/bdd";
-import { functionToTest } from "../backend/lib/[feature].ts";
+import { functionToTest } from "../../shared/lib/[feature].ts";
 
 describe('[Feature Name]', () => {
   describe('functionToTest', () => {
@@ -186,20 +186,20 @@ describe('[Feature Name]', () => {
 });
 ```
 
-**`tests/unit/services/users.test.ts`** (RECOMMENDED - Business Logic)
+**`tests/unit/repositories/users.test.ts`** (RECOMMENDED - Business Logic)
 ```typescript
 import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { setupTestKv } from '../../helpers/kv-test.ts';
-import { UserService } from '../../../backend/services/users.ts';
+import { UserRepository } from '../../../shared/repositories/user-repository.ts';
 
-Deno.test('UserService - business rule: valid email required', async () => {
+Deno.test('UserRepository - business rule: valid email required', async () => {
   const { kv, cleanup } = await setupTestKv();
   try {
-    const service = new UserService(kv);
+    const repo = new UserRepository(kv);
 
     // Test YOUR business rule, not HTTP status codes
     await assertRejects(
-      () => service.create({ email: 'invalid', name: 'Test' }),
+      () => repo.create({ email: 'invalid', name: 'Test' }),
       Error,
       'Invalid email format',
     );
@@ -208,17 +208,17 @@ Deno.test('UserService - business rule: valid email required', async () => {
   }
 });
 
-Deno.test('UserService - business rule: prevents duplicate emails', async () => {
+Deno.test('UserRepository - business rule: prevents duplicate emails', async () => {
   const { kv, cleanup } = await setupTestKv();
   try {
-    const service = new UserService(kv);
+    const repo = new UserRepository(kv);
 
     // First user
-    await service.create({ email: 'test@example.com', name: 'User 1' });
+    await repo.create({ email: 'test@example.com', name: 'User 1' });
 
     // Test duplicate prevention (business rule)
     await assertRejects(
-      () => service.create({ email: 'test@example.com', name: 'User 2' }),
+      () => repo.create({ email: 'test@example.com', name: 'User 2' }),
       Error,
       'Email already exists',
     );
@@ -227,13 +227,13 @@ Deno.test('UserService - business rule: prevents duplicate emails', async () => 
   }
 });
 
-Deno.test('UserService - business logic: assigns default role', async () => {
+Deno.test('UserRepository - business logic: assigns default role', async () => {
   const { kv, cleanup } = await setupTestKv();
   try {
-    const service = new UserService(kv);
+    const repo = new UserRepository(kv);
 
     // Test business logic: default role assignment
-    const user = await service.create({ email: 'test@example.com', name: 'Test' });
+    const user = await repo.create({ email: 'test@example.com', name: 'Test' });
 
     assertEquals(user.role, 'user'); // Business logic, not HTTP
   } finally {
@@ -252,16 +252,16 @@ Deno.test('UserService - business logic: assigns default role', async () => {
 ```typescript
 import { assertEquals } from 'jsr:@std/assert';
 import { setupTestKv, seedKv } from '../../helpers/kv-test.ts';
-import { UserService } from '../../../backend/services/users.ts';
+import { UserRepository } from '../../../shared/repositories/user-repository.ts';
 
-Deno.test('UserService - creates user in KV', async () => {
+Deno.test('UserRepository - creates user in KV', async () => {
   // Setup - automatic cleanup with try/finally
   const { kv, cleanup } = await setupTestKv();
   try {
-    const service = new UserService(kv);
+    const repo = new UserRepository(kv);
 
     // Act
-    const user = await service.create({
+    const user = await repo.create({
       email: 'test@example.com',
       name: 'Test User',
     });
@@ -277,7 +277,7 @@ Deno.test('UserService - creates user in KV', async () => {
   }
 });
 
-Deno.test('UserService - finds user by email index', async () => {
+Deno.test('UserRepository - finds user by email index', async () => {
   const { kv, cleanup } = await setupTestKv();
   try {
     // Seed test data quickly
@@ -286,10 +286,10 @@ Deno.test('UserService - finds user by email index', async () => {
       { key: ['users_by_email', 'test@example.com'], value: 'user-1' },
     ]);
 
-    const service = new UserService(kv);
+    const repo = new UserRepository(kv);
 
     // Act
-    const user = await service.findByEmail('test@example.com');
+    const user = await repo.findByEmail('test@example.com');
 
     // Assert
     assertEquals(user?.id, 'user-1');
@@ -548,7 +548,7 @@ import { validUserData, invalidUserData, buildUser } from '../helpers/test-data-
 ```typescript
 // Manually write test for string length validation
 Deno.test('name too long', async () => {
-  await assertRejects(() => service.create({ name: 'x'.repeat(101) }));
+  await assertRejects(() => repo.create({ name: 'x'.repeat(101) }));
 });
 ```
 

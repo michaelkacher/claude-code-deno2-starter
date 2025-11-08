@@ -40,18 +40,10 @@ export default defineConfig({
         use: { browserName: 'iPhone 12' },
    },
  ],
- webServer: [ 
-    {
-    command: 'deno task dev:backend',
-    url: 'http://localhost:8000/api/health',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000, // 2 minutes
-    },
-    {
-    command: 'cd frontend && deno task start',
+ webServer: {
+    command: 'deno task dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000, // 2 minutes
-    },
- ],
+ },
 });

@@ -1,6 +1,6 @@
 # System Architecture
 
-**Last Updated:** 2025-01-27
+**Last Updated:** 2025-11-07
 
 ## Overview
 
@@ -12,42 +12,57 @@ This is an **opinionated starter template** designed for building modern web app
 
 ## Architecture Pattern
 
-**Monolithic with clear separation of concerns**
+**Pure Fresh - Single Server Architecture**
 
 ```
-┌─────────────────────────────────────────┐
-│         Frontend (Fresh + Preact)       │
-│              Port 3000                  │
-│  - SSR pages (routes/)                  │
-│  - Interactive islands (islands/)       │
-│  - Preact Signals for state             │
-└─────────────────┬───────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│         Fresh Server (localhost:3000)                    │
+├─────────────────────────────────────────────────────────┤
+│  Frontend (Pages & Islands)                             │
+│  - SSR pages (routes/*.tsx)                             │
+│  - Interactive islands (islands/*.tsx)                  │
+│  - Preact for UI components                             │
+├─────────────────────────────────────────────────────────┤
+│  API Endpoints (routes/api/**)                          │
+│  - REST API handlers (routes/api/**/*.ts)               │
+│  - Fresh Handlers with typed context                    │
+│  - Middleware for auth, validation, CORS                │
+├─────────────────────────────────────────────────────────┤
+│  Background Services                                     │
+│  - Job queue processor                                  │
+│  - Job scheduler (cron-like)                            │
+│  - Background workers (email, cleanup, etc.)            │
+└─────────────────┬───────────────────────────────────────┘
                   │
-                  │ HTTP/Fetch
+                  │ Uses shared code
                   ↓
-┌─────────────────────────────────────────┐
-│          Backend (Hono)                 │
-│              Port 8000                  │
-│  - REST API endpoints                   │
-│  - Business logic in services/          │
-│  - Validation middleware                │
-└─────────────────┬───────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│          Shared Code (shared/)                          │
+│  - Repositories (data access layer)                     │
+│  - Workers (background job handlers)                    │
+│  - Lib (utilities: JWT, KV, queue, scheduler)           │
+│  - Config (environment validation)                      │
+│  - Types (TypeScript definitions)                       │
+└─────────────────┬───────────────────────────────────────┘
                   │
                   │ Deno KV API
                   ↓
-┌─────────────────────────────────────────┐
-│          Database (Deno KV)             │
-│  - Key-value store                      │
-│  - ACID transactions                    │
-│  - Secondary indexes                    │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│          Database (Deno KV)                             │
+│  - Key-value store                                      │
+│  - ACID transactions                                    │
+│  - Secondary indexes                                    │
+│  - Background job queue storage                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-**Why monolithic?**
-- ✅ Simple deployment (single artifact)
-- ✅ Easier development (no distributed complexity)
+**Why Pure Fresh (Single Server)?**
+- ✅ Simpler deployment (one server, one port)
+- ✅ No CORS complexity (same origin)
+- ✅ Faster development (no context switching)
 - ✅ Perfect for Deno Deploy edge deployment
-- ✅ Can split later if needed (YAGNI principle)
+- ✅ Fresh handles both pages AND APIs natively
+- ✅ Reduced operational complexity
 
 ---
 
@@ -63,32 +78,7 @@ This is an **opinionated starter template** designed for building modern web app
 - ✅ Fast module resolution
 - ✅ Built-in Deno KV database
 
-### Backend: Hono
-
-**Framework:** [Hono](https://hono.dev/) v4+
-
-**Why Hono?**
-- ✅ Ultra-fast (built for edge)
-- ✅ Small bundle size (~12KB)
-- ✅ Works on Deno Deploy natively
-- ✅ Express-like API (familiar)
-- ✅ TypeScript-first
-- ✅ Middleware ecosystem
-
-**Structure:**
-```
-backend/
-├── main.ts              # Server entry point
-├── routes/              # Route handlers
-│   └── [resource].ts    # REST endpoints
-├── services/            # Business logic
-│   └── [resource].ts    # Domain operations
-├── middleware/          # Custom middleware
-├── lib/                 # Utilities
-└── types/               # TypeScript types
-```
-
-### Frontend: Fresh + Preact
+### Framework: Fresh 1.7.3
 
 **Framework:** [Fresh](https://fresh.deno.dev/) 1.7+
 **UI Library:** [Preact](https://preactjs.com/) 10+
@@ -98,6 +88,9 @@ backend/
 - ✅ Deno-native (no Node.js needed)
 - ✅ Islands architecture (minimal JS)
 - ✅ Server-side rendering (SSR)
+- ✅ Handles both pages AND API endpoints
+- ✅ File-based routing
+- ✅ Zero config required
 - ✅ Zero-config (no webpack)
 - ✅ File-based routing
 - ✅ Edge-ready
@@ -111,19 +104,50 @@ backend/
 **Structure:**
 ```
 frontend/
-├── routes/              # File-based routes (SSR)
-│   ├── index.tsx        # Homepage
-│   └── _app.tsx         # Root layout
+├── routes/              # File-based routes
+│   ├── index.tsx        # Homepage (SSR page)
+│   ├── _app.tsx         # Root layout
+│   ├── _middleware.ts   # Page auth middleware
+│   └── api/             # API endpoints
+│       ├── auth/        # Auth endpoints
+│       ├── admin/       # Admin endpoints
+│       ├── jobs/        # Job management
+│       └── _middleware.ts  # API middleware
 ├── islands/             # Interactive components
-│   └── Counter.tsx      # Client-side islands
+│   ├── LoginForm.tsx    # Client-side islands
+│   └── Navigation.tsx   # Persistent navigation
 ├── components/          # Shared components (SSR)
+│   └── common/          # Reusable UI components
+├── lib/                 # Frontend utilities
+│   ├── api-client.ts    # Type-safe API client
+│   ├── storage.ts       # Storage abstraction
+│   └── fresh-helpers.ts # Fresh utilities
 └── static/              # Static assets
-```
 
-**Note:** Frontend is **optional**. You can:
-- Remove it entirely for API-only projects
-- Replace with any SPA framework
-- Use a separate frontend repo
+shared/
+├── lib/                 # Server-side utilities
+│   ├── jwt.ts          # JWT handling
+│   ├── kv.ts           # Deno KV wrapper
+│   ├── queue.ts        # Background job queue
+│   ├── scheduler.ts    # Job scheduler
+│   ├── logger.ts       # Structured logging
+│   └── totp.ts         # 2FA TOTP
+├── repositories/        # Data access layer
+│   ├── user-repository.ts
+│   ├── job-repository.ts
+│   └── notification-repository.ts
+├── workers/             # Background job workers
+│   ├── email-worker.ts
+│   ├── cleanup-worker.ts
+│   └── index.ts
+├── config/              # Configuration
+│   └── env.ts          # Environment validation
+├── middleware/          # Shared middleware
+│   ├── auth.ts         # JWT verification
+│   └── validate.ts     # Zod validation
+└── types/               # TypeScript types
+    └── index.ts
+```
 
 ### Database: Deno KV
 
@@ -233,19 +257,19 @@ Request → Route → Service → Database
          Auth       Logic    Persistence
 ```
 
-**Routes (`backend/routes/`):**
+**Routes (`frontend/routes/`):**
 - Handle HTTP request/response
 - Parse input
 - Call services
 - Return JSON
 
-**Services (`backend/services/`):**
+**Services (`shared/services/`):**
 - **Business logic lives here**
 - Domain operations
 - Data validation
 - Business rules
 
-**Models/Types (`backend/types/`):**
+**Models/Types (`shared/types/`):**
 - TypeScript interfaces
 - Data shapes
 - Validation schemas (Zod)
@@ -315,7 +339,7 @@ function requireAdmin(c, next) {
 - ✅ Domain-specific validation
 
 **What we DON'T test:**
-- ❌ Framework code (Hono/Fresh/Deno)
+- ❌ Framework code (Fresh/Deno runtime)
 - ❌ HTTP routing
 - ❌ Authentication middleware
 - ❌ JSON serialization
@@ -410,7 +434,6 @@ Deno.test('validateEmail - rejects invalid format', () => {
 ```bash
 # Start dev servers
 deno task dev
-# Backend: http://localhost:8000
 # Frontend: http://localhost:3000
 
 # Run tests
@@ -490,8 +513,7 @@ Major architectural decisions are documented in `docs/adr/`.
 
 ✅ **Use this template if you want:**
 - Deno 2 runtime
-- Hono backend
-- Fresh frontend (optional)
+- Fresh 1.7.3 (API routes + SSR)
 - Deno KV database
 - Deno Deploy deployment
 - Fast development

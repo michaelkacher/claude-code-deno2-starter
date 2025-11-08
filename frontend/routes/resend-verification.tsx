@@ -71,7 +71,7 @@ export default function ResendVerificationPage(props: PageProps) {
           messageDiv.classList.add('hidden');
 
           try {
-            const apiUrl = window.location.origin.replace(':3000', ':8000');
+            const apiUrl = window.location.origin;
             const response = await fetch(\`\${apiUrl}/api/auth/resend-verification\`, {
               method: 'POST',
               headers: {
@@ -105,3 +105,4 @@ export default function ResendVerificationPage(props: PageProps) {
     </div>
   );
 }
+

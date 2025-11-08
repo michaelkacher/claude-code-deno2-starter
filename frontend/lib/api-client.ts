@@ -8,13 +8,13 @@
  * - Standardized error responses
  * - Type-safe requests and responses
  * - Credential handling
- * - Port translation (3000 → 8000)
+ * - Same-origin API calls (no CORS)
  * 
  * @example
  * ```typescript
  * import { api } from '../lib/api-client.ts';
  * 
- * const result = await api.get<User>('/users/me');
+ * const result = await api.get<User>('/auth/me');
  * if (result.error) {
  *   console.error(result.error.message);
  * } else {
@@ -58,10 +58,8 @@ export class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    // Translate port 3000 to 8000 for API calls
-    this.baseUrl = typeof window !== 'undefined'
-      ? window.location.origin.replace(':3000', ':8000')
-      : 'http://localhost:8000';
+    // Use relative /api prefix for same-origin Fresh API routes
+    this.baseUrl = '/api';
   }
 
   /**

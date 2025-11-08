@@ -89,7 +89,7 @@ The test-writer agent now:
 import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { setupTestKv } from '../helpers/kv-test.ts';
 import { validUserData, invalidUserData, buildUser } from '../helpers/test-data-patterns.ts';
-import { UserService } from '../../backend/services/users.ts';
+import { UserService } from '../../shared/services/users.ts';
 
 // ============================================================================
 // CREATE Tests (5 tests - all from template)
@@ -169,7 +169,7 @@ Deno.test('UserService - business rule: assigns default role', async () => {
 import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { setupTestKv } from '../helpers/kv-test.ts';
 import { buildWorkout, validWorkoutData } from '../helpers/test-data-patterns.ts';
-import { WorkoutService } from '../../backend/services/workouts.ts';
+import { WorkoutService } from '../../shared/services/workouts.ts';
 
 Deno.test('WorkoutService - business rule: calculates total duration', async () => {
   const { kv, cleanup } = await setupTestKv();

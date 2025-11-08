@@ -9,8 +9,8 @@ This is a condensed reference for common patterns and workflows. For detailed gu
 ## Stack Overview
 
 - **Runtime:** Deno 2 (TypeScript-native, secure, edge-ready)
-- **Backend:** Hono (ultra-fast, <12KB, edge-optimized)
-- **Frontend:** Fresh + Preact (SSR, islands, optional)
+- **Backend:** Fresh 1.7.3 API routes (file-based, SSR-native, edge-optimized)
+- **Frontend:** Fresh + Preact (SSR, islands architecture)
 - **Database:** Deno KV (built-in, zero-config, globally distributed)
 - **Deployment:** Deno Deploy (serverless edge, auto-scaling)
 
@@ -20,7 +20,7 @@ This is a condensed reference for common patterns and workflows. For detailed gu
 
 ```bash
 # Start development
-deno task dev                    # Backend (8000) + Frontend (3000)
+deno task dev                    
 
 # Build feature (recommended)
 /new-feature                     # Handles everything: requirements → tests → implementation
@@ -129,7 +129,7 @@ const unread = await CompositeIndexManager.queryNotifications({
 ### Pattern References
 
 Agents automatically use templates from:
-- `backend/templates/` - Service & route patterns
+- `shared/templates/` - Service & route patterns
 - `frontend/templates/` - Component & page patterns
 - `tests/templates/` - Test patterns
 
@@ -150,9 +150,8 @@ Agents automatically use templates from:
 ## File Structure
 
 ```
-backend/
-├── main.ts              # Server entry
-├── routes/              # API routes (HTTP handlers)
+shared/
+├── repositories/              # Data access
 ├── services/            # Business logic
 └── types/               # TypeScript types
 
@@ -250,16 +249,9 @@ When you have:
 
 ### "Port already in use"
 ```bash
-# Kill processes on ports 3000 and 8000
+# Kill processes on ports 3000
 deno task kill-ports
 # Then restart: deno task dev
-```
-
-### "Permission Denied"
-```bash
-# Deno requires explicit permissions
-deno run --allow-net --allow-read --allow-env backend/main.ts
-# Or use deno task dev (permissions in deno.json)
 ```
 
 ### "Module not found"
@@ -281,10 +273,10 @@ const kv = await Deno.openKv(':memory:');
 
 - **Architecture:** `docs/architecture.md` (ESSENTIAL - read this!)
 - **Detailed Guides:** `docs/guides/` (reference when needed)
-- **Templates:** `backend/templates/`, `frontend/templates/`, `tests/templates/`
+- **Templates:** `shared/templates/`, `frontend/templates/`, `tests/templates/`
 - **Deno Docs:** https://deno.com/manual
 - **Fresh Docs:** https://fresh.deno.dev/docs
-- **Hono Docs:** https://hono.dev/
+- **Deno KV Docs:** https://deno.com/kv
 
 ---
 

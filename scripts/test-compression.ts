@@ -10,9 +10,7 @@
  * - Testing different content types
  */
 
-import { env } from '../backend/config/env.ts';
-
-const API_URL = env.API_URL || 'http://localhost:8000/api';
+const API_URL = Deno.env.get('API_URL') || 'http://localhost:3000/api';
 
 interface TestResult {
   test: string;

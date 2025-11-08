@@ -11,9 +11,8 @@
 ## Files Created/Modified
 
 ### Backend
-- `backend/routes/{resource}.ts` - API endpoints for {feature}
-- `backend/services/{resource}.ts` - Business logic
-- `backend/types/index.ts` - Type definitions
+- `shared/services/{resource}.ts` - Business logic
+- `shared/types/index.ts` - Type definitions
 - `tests/integration/api/{resource}.test.ts` - API tests
 
 ### Frontend
@@ -28,11 +27,11 @@
 
 ## API Endpoints Implemented
 
-- ✅ `POST /api/v1/resources` - Create resource
-- ✅ `GET /api/v1/resources` - List resources (with pagination)
-- ✅ `GET /api/v1/resources/:id` - Get single resource
-- ✅ `PUT /api/v1/resources/:id` - Update resource
-- ✅ `DELETE /api/v1/resources/:id` - Delete resource
+- ✅ `POST /api/resources` - Create resource
+- ✅ `GET /api/resources` - List resources (with pagination)
+- ✅ `GET /api/resources/:id` - Get single resource
+- ✅ `PUT /api/resources/:id` - Update resource
+- ✅ `DELETE /api/resources/:id` - Delete resource
 
 ## Test Coverage
 
@@ -83,7 +82,6 @@
 
 {How to roll back this feature if needed}
 
-1. Remove routes from `backend/routes/index.ts`
 2. Delete feature files listed above
 3. Remove Deno KV keys or run SQL migration to drop tables
 

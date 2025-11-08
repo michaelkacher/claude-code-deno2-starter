@@ -81,7 +81,7 @@ Valid scenarios:
 - Splitting monolith into microservices (scaling)
 - Adding major infrastructure (Redis, message queues, CDN)
 
-**Note:** This template ships with production-ready architecture (Deno 2 + Hono + Fresh + Deno KV). Most projects won't need architectural changes.
+**Note:** This template ships with production-ready architecture (Deno 2 + Fresh + Deno KV). Most projects won't need architectural changes.
 
 ## Code Style
 
@@ -211,7 +211,7 @@ deno task type-check
 ### Port Already in Use
 If you get "port already in use" errors:
 ```bash
-deno task kill-ports  # Kills processes on ports 3000 and 8000
+deno task kill-ports  # Kills processes on ports 3000
 deno task dev         # Then restart
 ```
 
@@ -224,7 +224,7 @@ This is useful when hidden instances of the app are blocking the ports.
 
 ### Type Errors
 1. Run `deno task type-check` to see all errors
-2. Update types in `backend/types/`
+2. Update types in `shared/types/`
 3. Ensure API spec matches implementation
 
 ### Linting Errors

@@ -229,7 +229,7 @@ export const defaultConfig: SiteConfig = {
   },
 
   api: {
-    baseUrl: "http://localhost:8000/api",
+    baseUrl: "http://localhost:3000/api",
     timeout: 10000,
     retries: 3,
   },

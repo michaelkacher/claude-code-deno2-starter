@@ -3,14 +3,14 @@
 /**
  * Kill Ports Script
  *
- * Kills processes running on the application ports (3000 and 8000).
+ * Kills processes running on the application ports (3000).
  * Useful when ports are blocked by hidden instances of the app.
  *
  * Usage:
  *   deno task kill-ports
  */
 
-const PORTS = [3000, 8000]; // Frontend and Backend ports
+const PORTS = [3000]; // Fresh port
 const isWindows = Deno.build.os === "windows";
 
 async function findProcessOnPort(port: number): Promise<string | null> {

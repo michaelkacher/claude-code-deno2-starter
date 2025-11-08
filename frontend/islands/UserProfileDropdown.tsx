@@ -168,8 +168,11 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
       // State is already initialized from sessionStorage in useState
       // Just fetch fresh data in background to ensure accuracy
       const token = TokenStorage.getAccessToken();
-      if (token && userEmail) {
+      if (token && userEmail && !isTokenExpired(token)) {
         fetchNotifications();
+      } else if (token && isTokenExpired(token)) {
+        console.log('🔒 [Auth] Token expired on re-initialization, cleaning up');
+        handleTokenExpiry();
       }
       return;
     }
@@ -275,11 +278,11 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
     }
 
     try {
+      const token = localStorage.getItem('access_token');
       const wsUrl = window.location.origin
         .replace('http://', 'ws://')
-        .replace('https://', 'wss://')
-        .replace(':3000', ':8000');
-      wsRef.current = new WebSocket(`${wsUrl}/api/notifications/ws`);
+        .replace('https://', 'wss://');
+      wsRef.current = new WebSocket(`${wsUrl}/api/notifications/ws?token=${encodeURIComponent(token || '')}`);
 
       wsRef.current.onopen = () => {
         // Connection opened, wait for auth_required message
@@ -413,15 +416,20 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
       return;
     }
     
+    // Check if token is expired before making request
+    if (isTokenExpired(token)) {
+      console.log('🔒 [Auth] Token expired, skipping notification fetch');
+      handleTokenExpiry();
+      return;
+    }
+    
     // Don't show loading state if we already have notifications (prevents flicker on re-fetch)
     const shouldShowLoading = notifications.length === 0;
     if (shouldShowLoading) {
       setIsNotificationsLoading(true);
     }
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
-
-      const response = await fetch(`${apiUrl}/api/notifications?limit=5`, {
+      const response = await fetch(`/api/notifications?limit=5`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -430,11 +438,14 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
 
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data.notifications || []);
-        updateUnreadCount(data.unreadCount || 0);
+        setNotifications(data.data?.notifications || []);
+        updateUnreadCount(data.data?.unreadCount || 0);
       } else if (response.status === 401) {
-        // Token is invalid, clean up auth state
+        // Token is invalid, clean up auth state (don't log error - expected)
+        console.log('🔒 [Auth] 401 response from notifications API, token invalid');
         handleLogout();
+      } else {
+        console.error('Error fetching notifications:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -456,9 +467,7 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
     }
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
-
-      const response = await fetch(`${apiUrl}/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -489,9 +498,7 @@ function UserProfileDropdown({ initialEmail, initialRole }: UserProfileDropdownP
     cleanupWebSocket();
     
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
-      
-      await fetch(`${apiUrl}/api/auth/logout`, {
+      await fetch(`/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });

@@ -10,11 +10,9 @@
  * - Activity tracking
  */
 
-import { env } from '../backend/config/env.ts';
-
-// API_URL includes /api already (e.g., http://localhost:8000/api)
-const API_URL = env.API_URL.replace('/api', '') || 'http://localhost:8000';
-const WS_URL = API_URL.replace('http', 'ws');
+// API_URL includes /api already (e.g., http://localhost:3000/api)
+const API_URL = Deno.env.get('API_URL') || 'http://localhost:3000/api';
+const WS_URL = API_URL.replace('/api', '').replace('http', 'ws');
 
 interface TestResult {
   test: string;

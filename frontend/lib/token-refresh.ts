@@ -12,8 +12,8 @@
 export async function refreshAccessToken(): Promise<string | null> {
   try {
     const apiUrl = typeof window !== 'undefined'
-      ? window.location.origin.replace(':3000', ':8000')
-      : 'http://localhost:8000';
+      ? window.location.origin
+      : 'http://localhost:3000';
     
     const response = await fetch(`${apiUrl}/api/auth/refresh`, {
       method: 'POST',

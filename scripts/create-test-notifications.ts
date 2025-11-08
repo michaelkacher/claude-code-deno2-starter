@@ -11,7 +11,7 @@
 
 import 'jsr:@std/dotenv/load';
 
-const API_URL = Deno.env.get('API_URL') || 'http://localhost:8000/api';
+const API_URL = Deno.env.get('API_URL') || 'http://localhost:3000/api';
 const TEST_EMAIL = 'test@example.com';
 const TEST_PASSWORD = 'Test123!@#';
 

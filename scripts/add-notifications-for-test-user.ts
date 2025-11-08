@@ -1,7 +1,7 @@
 /**
  * Create notifications for test@example.com user
  */
-import { NotificationService } from '../backend/services/notifications.ts';
+import { NotificationService } from '../shared/services/notifications.ts';
 
 const userId = 'adb04da8-e1f5-482f-a118-e216e056b133';
 

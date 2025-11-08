@@ -7,7 +7,7 @@
 
 import 'jsr:@std/dotenv/load';
 
-const API_URL = Deno.env.get('API_URL') || 'http://localhost:8000/api';
+const API_URL = Deno.env.get('API_URL') || 'http://localhost:3000/api';
 
 // Sample user ID (replace with an actual user ID from your system)
 const TEST_USER_ID = 'test-user-id';

@@ -13,21 +13,14 @@ Token efficiency optimizations for backend service and route implementation.
 
 Pre-built service with all CRUD operations, Deno KV integration, and secondary indexes.
 
-**File**: `backend/templates/service-crud.template.ts`
+**File**: `shared/templates/service-crud.template.ts`
 
-### Layer 2: CRUD Routes Template
-**Token Savings**: ~400-600 tokens per service
-
-Pre-built REST endpoints with error handling and authentication hooks.
-
-**File**: `backend/templates/routes-crud.template.ts`
-
-### Layer 3: Pattern Reference
+## Layer 3: Pattern Reference
 **Token Savings**: ~200-400 tokens per service
 
 Common patterns for validation, pagination, error handling, Deno KV operations.
 
-**File**: `backend/templates/BACKEND_PATTERNS.md`
+**File**: `shared/templates/BACKEND_PATTERNS.md`
 
 ## Token Savings Breakdown
 
@@ -53,15 +46,12 @@ Common patterns for validation, pagination, error handling, Deno KV operations.
 **New approach** (~1000 tokens):
 ```typescript
 // 1. Copy service template (50 tokens)
-// cp backend/templates/service-crud.template.ts backend/services/users.ts
+// cp shared/templates/service-crud.template.ts shared/services/users.ts
 
 // 2. Replace placeholders (50 tokens)
 // [Resource] → User
 // [resource] → user
 // [resources] → users
-
-// 3. Copy routes template (50 tokens)
-// cp backend/templates/routes-crud.template.ts backend/routes/users.ts
 
 // 4. Replace placeholders (50 tokens)
 
@@ -102,10 +92,9 @@ Common patterns for validation, pagination, error handling, Deno KV operations.
 
 | File | Purpose |
 |------|---------|
-| `backend/templates/service-crud.template.ts` | CRUD service template |
-| `backend/templates/routes-crud.template.ts` | REST routes template |
-| `backend/templates/BACKEND_PATTERNS.md` | Pattern reference |
-| `backend/templates/README.md` | Quick start guide |
+| `shared/templates/service-crud.template.ts` | CRUD service template |
+| `shared/templates/BACKEND_PATTERNS.md` | Pattern reference |
+| `shared/templates/README.md` | Quick start guide |
 
 See also:
 - [Token Optimization Guide](TOKEN_OPTIMIZATION_GUIDE.md) - API design optimizations

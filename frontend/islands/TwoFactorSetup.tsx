@@ -28,7 +28,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
     try {
       if (!IS_BROWSER) return;
 
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       const accessToken = localStorage.getItem('access_token');
       
       const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
@@ -73,7 +73,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
     try {
       if (!IS_BROWSER) return;
 
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       const accessToken = localStorage.getItem('access_token');
       
       const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
@@ -293,3 +293,4 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
     </div>
   );
 }
+

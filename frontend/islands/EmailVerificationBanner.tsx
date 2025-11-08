@@ -30,7 +30,7 @@ export default function EmailVerificationBanner() {
     setMessage('');
 
     try {
-      const apiUrl = window.location.origin.replace(':3000', ':8000');
+      const apiUrl = window.location.origin;
       
       const response = await fetch(`${apiUrl}/api/auth/resend-verification`, {
         method: 'POST',
@@ -111,3 +111,4 @@ export default function EmailVerificationBanner() {
     </div>
   );
 }
+

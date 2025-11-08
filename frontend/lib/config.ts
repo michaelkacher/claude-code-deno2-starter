@@ -68,7 +68,7 @@ export interface SiteConfig {
 export const defaultConfig: SiteConfig = {
   site: {
     name: "Deno 2 Starter",
-    description: "A modern full-stack application starter with Deno 2, Fresh, and Hono",
+    description: "A modern full-stack application starter with Deno 2 and Fresh",
     url: "http://localhost:3000",
   },
 
@@ -140,7 +140,7 @@ export const defaultConfig: SiteConfig = {
   },
 
   api: {
-    baseUrl: "http://localhost:8000/api",
+    baseUrl: "/api",
     timeout: 10000,
     retries: 3,
   },

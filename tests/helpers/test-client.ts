@@ -22,7 +22,7 @@ export interface TestResponse<T = unknown> {
  * Create a test client for making API requests
  * Handles authentication, JSON serialization, and response parsing
  */
-export function createTestClient(baseUrl = 'http://localhost:8000') {
+export function createTestClient(baseUrl = 'http://localhost:3000') {
   const defaultHeaders = {
     'Content-Type': 'application/json',
   };

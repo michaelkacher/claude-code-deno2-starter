@@ -98,8 +98,8 @@ function Navigation(props: NavigationProps) {
 // Memoize Navigation to prevent re-renders when props haven't changed
 // This is critical for preventing child islands from re-rendering on page navigation
 export default memo(Navigation, (prevProps, nextProps) => {
-  // Return true to SKIP re-render (props are equal)
-  return prevProps.userEmail === nextProps.userEmail && 
-         prevProps.userRole === nextProps.userRole &&
-         prevProps.initialTheme === nextProps.initialTheme;
+  // ALWAYS return true to skip re-render on page navigation
+  // Islands should maintain their own state independently of props
+  // Props are only used for initial hydration
+  return true;
 });

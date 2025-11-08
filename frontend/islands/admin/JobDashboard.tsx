@@ -52,10 +52,10 @@ export default function JobDashboard() {
   const showCreateModal = useSignal(false);
   const showCreateScheduleModal = useSignal(false);
 
-  // Get API URL
+  // Get API URL (now using same-origin Fresh API)
   const getApiUrl = () => {
-    if (!IS_BROWSER) return 'http://localhost:8000';
-    return window.location.origin.replace(':3000', ':8000');
+    if (!IS_BROWSER) return '';
+    return '';
   };
 
   // Refresh access token
@@ -112,7 +112,7 @@ export default function JobDashboard() {
       const apiUrl = getApiUrl();
       const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
       const statusParam = statusFilter.value !== 'all' ? `?status=${statusFilter.value}` : '';
-      const response = await fetch(`${apiUrl}/api/jobs/jobs${statusParam}`, {
+      const response = await fetch(`${apiUrl}/api/jobs${statusParam}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -127,7 +127,8 @@ export default function JobDashboard() {
       if (!response.ok) throw new Error('Failed to fetch jobs');
 
       const data = await response.json();
-      jobs.value = data.data;
+      console.log('[JobDashboard] Fetched jobs response:', data);
+      jobs.value = data.data?.jobs || [];
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch jobs';
       console.error('Failed to fetch jobs:', err);
@@ -141,7 +142,7 @@ export default function JobDashboard() {
     try {
       const apiUrl = getApiUrl();
       const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      const response = await fetch(`${apiUrl}/api/jobs/jobs/stats`, {
+      const response = await fetch(`${apiUrl}/api/jobs/stats`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -180,7 +181,8 @@ export default function JobDashboard() {
       if (!response.ok) throw new Error('Failed to fetch schedules');
 
       const data = await response.json();
-      schedules.value = data.data;
+      console.log('[JobDashboard] Fetched schedules response:', data);
+      schedules.value = data.data?.schedules || [];
     } catch (err) {
       console.error('Failed to fetch schedules:', err);
     }
@@ -191,7 +193,7 @@ export default function JobDashboard() {
     try {
       const apiUrl = getApiUrl();
       const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      const response = await fetch(`${apiUrl}/api/jobs/jobs/${jobId}/retry`, {
+      const response = await fetch(`${apiUrl}/api/jobs/${jobId}/retry`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -214,7 +216,7 @@ export default function JobDashboard() {
     try {
       const apiUrl = getApiUrl();
       const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      const response = await fetch(`${apiUrl}/api/jobs/jobs/${jobId}`, {
+      const response = await fetch(`${apiUrl}/api/jobs/${jobId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -279,7 +281,7 @@ export default function JobDashboard() {
     try {
       const apiUrl = getApiUrl();
       const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      const response = await fetch(`${apiUrl}/api/jobs/jobs/cleanup`, {
+      const response = await fetch(`${apiUrl}/api/jobs/cleanup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -330,7 +332,7 @@ export default function JobDashboard() {
       
     // Set up WebSocket connection
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host.replace(':3000', ':8000')}/api/notifications/ws`;
+    const wsUrl = `${wsProtocol}//${window.location.host}/api/notifications/ws`;
     
     console.log('[JobDashboard] Connecting to WebSocket:', wsUrl);
     ws = new WebSocket(wsUrl);

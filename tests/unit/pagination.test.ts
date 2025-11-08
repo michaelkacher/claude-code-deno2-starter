@@ -11,91 +11,92 @@ import {
     getPaginationParams,
     PAGINATION_CONFIG,
     parseCursor,
-} from '../../backend/lib/pagination.ts';
+} from '../../shared/lib/pagination.ts';
 
-// Mock Hono context
-function createMockContext(query: Record<string, string> = {}) {
-  return {
-    req: {
-      query: (key: string) => query[key] || null,
-    },
-  } as any;
+// Mock Fresh request with query params
+function createMockRequest(query: Record<string, string> = {}) {
+  const url = new URL('http://localhost/test');
+  Object.entries(query).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+  
+  return new Request(url.toString());
 }
 
 Deno.test('getPaginationParams - uses default limit when not specified', () => {
-  const c = createMockContext({});
-  const params = getPaginationParams(c);
+  const req = createMockRequest({});
+  const params = getPaginationParams(req);
   
   assertEquals(params.limit, PAGINATION_CONFIG.DEFAULT_LIMIT);
   assertEquals(params.cursor, undefined);
 });
 
 Deno.test('getPaginationParams - parses valid limit', () => {
-  const c = createMockContext({ limit: '25' });
-  const params = getPaginationParams(c);
+  const req = createMockRequest({ limit: '25' });
+  const params = getPaginationParams(req);
   
   assertEquals(params.limit, 25);
 });
 
 Deno.test('getPaginationParams - enforces maximum limit', () => {
-  const c = createMockContext({ limit: '500' });
-  const params = getPaginationParams(c);
+  const req = createMockRequest({ limit: '500' });
+  const params = getPaginationParams(req);
   
   assertEquals(params.limit, PAGINATION_CONFIG.MAX_LIMIT);
 });
 
 Deno.test('getPaginationParams - enforces minimum limit', () => {
-  const c = createMockContext({ limit: '0' });
-  const params = getPaginationParams(c);
+  const req = createMockRequest({ limit: '0' });
+  const params = getPaginationParams(req);
   
   assertEquals(params.limit, PAGINATION_CONFIG.MIN_LIMIT);
 });
 
 Deno.test('getPaginationParams - handles negative limit', () => {
-  const c = createMockContext({ limit: '-10' });
-  const params = getPaginationParams(c);
+  const req = createMockRequest({ limit: '-10' });
+  const params = getPaginationParams(req);
   
   assertEquals(params.limit, PAGINATION_CONFIG.MIN_LIMIT);
 });
 
 Deno.test('getPaginationParams - handles invalid limit string', () => {
-  const c = createMockContext({ limit: 'abc' });
-  const params = getPaginationParams(c);
+  const req = createMockRequest({ limit: 'abc' });
+  const params = getPaginationParams(req);
   
   assertEquals(params.limit, PAGINATION_CONFIG.DEFAULT_LIMIT);
 });
 
 Deno.test('getPaginationParams - parses cursor', () => {
-  const c = createMockContext({ cursor: 'abc123' });
-  const params = getPaginationParams(c);
+  const req = createMockRequest({ cursor: 'abc123' });
+  const params = getPaginationParams(req);
   
   assertEquals(params.cursor, 'abc123');
 });
 
 Deno.test('getPaginationParams - parses offset', () => {
-  const c = createMockContext({ offset: '20' });
-  const params = getPaginationParams(c);
+  const req = createMockRequest({ offset: '20' });
+  const params = getPaginationParams(req);
   
   assertEquals(params.offset, 20);
 });
 
 Deno.test('getPaginationParams - handles invalid offset', () => {
-  const c = createMockContext({ offset: 'invalid' });
-  const params = getPaginationParams(c);
+  const req = createMockRequest({ offset: 'invalid' });
+  const params = getPaginationParams(req);
   
   assertEquals(params.offset, undefined);
 });
 
 Deno.test('getPaginationParams - respects custom maxLimit', () => {
-  const c = createMockContext({ limit: '75' });
-  const params = getPaginationParams(c, { maxLimit: 50 });
+  const req = createMockRequest({ limit: '75' });
+  const params = getPaginationParams(req, { maxLimit: 50 });
   
   assertEquals(params.limit, 50);
 });
 
 Deno.test('getPaginationParams - respects custom defaultLimit', () => {
-  const c = createMockContext({});
-  const params = getPaginationParams(c, { defaultLimit: 25 });
+  const req = createMockRequest({});
+  const params = getPaginationParams(req, { defaultLimit: 25 });
   
   assertEquals(params.limit, 25);
 });

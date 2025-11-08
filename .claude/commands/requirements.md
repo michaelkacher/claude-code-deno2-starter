@@ -36,4 +36,4 @@ Consider running:
 - `/architect` - Design or adjust system architecture
 - `/new-feature` - Build your first feature
 
-**Note:** This is optional. The template ships with a pre-defined architecture (Hono + Fresh + Deno KV). You can start building features immediately with `/new-feature`.
+**Note:** This is optional. The template ships with a pre-defined architecture (Fresh 1.7.3 + Deno KV). You can start building features immediately with `/new-feature`.

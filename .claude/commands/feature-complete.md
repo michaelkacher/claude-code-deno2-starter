@@ -68,9 +68,9 @@ Use this template:
 
 ## Files Created/Modified
 
-### Backend
-- `backend/routes/{resource}.ts` - API endpoints
-- `backend/services/{resource}.ts` - Business logic
+### Server-Side (Shared)
+- `shared/routes/{resource}.ts` - API endpoints
+- `shared/repositories/{resource}-repository.ts` - Business logic
 - `tests/integration/api/{resource}.test.ts` - API tests
 
 ### Frontend
@@ -83,8 +83,8 @@ Use this template:
 
 ## API Endpoints Implemented
 
-- ✅ `{METHOD} /api/v1/{path}` - {Description}
-- ✅ `{METHOD} /api/v1/{path}` - {Description}
+- ✅ `{METHOD} /api/{path}` - {Description}
+- ✅ `{METHOD} /api/{path}` - {Description}
 
 ## Test Coverage
 
@@ -165,7 +165,7 @@ Would you like me to create a git commit for this feature? (yes/no)
 If yes:
 ```bash
 git add features/implemented/{feature-name}
-git add {list of backend/frontend files}
+git add {list of shared/frontend files}
 git commit -m "feat: implement {feature-name}
 
 - {Key change 1}

@@ -55,12 +55,23 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
     ctx.state.userEmail = null;
     ctx.state.userRole = null;
     ctx.state.initialTheme = themeCookie === 'dark' || themeCookie === 'light' ? themeCookie : null;
+    ctx.state.token = null;
+    ctx.state.user = null;
     
     if (authToken) {
       try {
         const payload = decodeJwt(authToken);
         ctx.state.userEmail = payload.email || null;
         ctx.state.userRole = payload.role || null;
+        ctx.state.token = authToken;
+        ctx.state.user = {
+          sub: payload.sub,
+          email: payload.email,
+          role: payload.role,
+          emailVerified: payload.emailVerified,
+          iat: payload.iat,
+          exp: payload.exp,
+        };
       } catch (_e) {
         // Invalid token
       }
@@ -105,8 +116,11 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
       return await ctx.next();
     }
 
+    console.log(`🛡️ [Page Middleware] Protected route: ${pathname}, token: ${authToken ? "present" : "missing"}`);
+
     // If no token, redirect to login
     if (!authToken) {
+      console.log(`🔒 [Page Middleware] No token, redirecting to login`);
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
@@ -123,18 +137,22 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
 
-    // Verify JWT signature server-side by calling backend API
+    // Verify JWT signature server-side by calling Fresh API
     try {
-      const backendUrl = Deno.env.get('API_URL') || 'http://localhost:8000/api';
-      const verifyResponse = await fetch(`${backendUrl}/auth/verify`, {
+      console.log(`🔍 [Page Middleware] Verifying token with /api/auth/verify`);
+      const verifyUrl = new URL('/api/auth/verify', url.origin).href;
+      const verifyResponse = await fetch(verifyUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
       });
 
+      console.log(`📥 [Page Middleware] Verify response:`, verifyResponse.status, verifyResponse.statusText);
+
       if (!verifyResponse.ok) {
         // Token verification failed (invalid signature, blacklisted, or other error)
+        console.log(`❌ [Page Middleware] Token verification failed, redirecting to login`);
         const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=invalid`;
         return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
       }
@@ -143,6 +161,8 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
       const verifiedData = await verifyResponse.json();
       ctx.state.userEmail = verifiedData.data?.user?.email || null;
       ctx.state.userRole = verifiedData.data?.user?.role || null;
+      ctx.state.token = authToken;
+      ctx.state.user = verifiedData.data?.user || null;
     } catch (_error) {
       // Network error or backend unavailable - redirect to login
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=error`;
