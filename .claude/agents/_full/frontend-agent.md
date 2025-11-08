@@ -75,6 +75,9 @@ This template uses **Fresh 1.7+**, Deno's full-stack web framework:
 ## Implementation Principles
 
 - **Islands Architecture**: Server render by default, add interactivity only where needed
+- **Centralized API Client**: Use `apiClient` from `frontend/lib/api-client.ts` (never manual fetch)
+- **Storage Abstraction**: Use `TokenStorage` from `frontend/lib/storage.ts` (never direct localStorage)
+- **Centralized Validation**: Use utilities from `frontend/lib/validation.ts`
 - **Accessibility First**: WCAG 2.1 AA compliance minimum
 - **Progressive Enhancement**: Work without JavaScript when possible
 - **Performance**: Minimal JavaScript shipped to client
@@ -161,6 +164,7 @@ Islands are interactive components that hydrate on the client. Put them in `fron
 ```typescript
 import { useSignal } from "@preact/signals";
 import { JSX } from "preact";
+import { apiClient } from "../lib/api-client.ts";
 
 interface WorkoutFormProps {
   onSuccess?: () => void;
@@ -178,28 +182,18 @@ export default function WorkoutForm({ onSuccess }: WorkoutFormProps) {
     error.value = "";
 
     try {
-      const res = await fetch("http://localhost:3000/api/workouts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          name: name.value,
-          duration: duration.value,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to create workout");
-      }
+      // Use centralized API client (automatic auth, CSRF, error handling)
+      await apiClient.post("/api/workouts", {
+        name: name.value,
+        duration: duration.value,
+      }, true);
 
       // Reset form
       name.value = "";
       duration.value = 30;
       onSuccess?.();
     } catch (err) {
-      error.value = err.message;
+      error.value = err instanceof Error ? err.message : "Failed to create workout";
     } finally {
       isSubmitting.value = false;
     }
@@ -305,6 +299,181 @@ export const handler: Handlers = {
 
 **Server-side logic** (repositories, utilities, workers) lives in `shared/` and is imported by API routes.
 
+## Centralized API Client
+
+**IMPORTANT**: Always use the centralized API client - never manual fetch!
+
+The project has a sophisticated API client in `frontend/lib/api-client.ts` that provides:
+- ✅ Automatic authentication headers
+- ✅ CSRF token handling (cached, auto-refresh)
+- ✅ Consistent error handling
+- ✅ Rate limit detection
+- ✅ Type-safe API methods
+- ✅ Response data extraction
+
+**Example: Using API Client in Islands**
+```typescript
+import { authApi, apiClient } from "../lib/api-client.ts";
+
+export default function LoginForm() {
+  const handleLogin = async () => {
+    try {
+      // Use type-safe auth API
+      const data = await authApi.login(email.value, password.value);
+      
+      // Access token automatically handled
+      console.log("Logged in:", data.user);
+    } catch (error) {
+      // Errors are automatically parsed and thrown
+      console.error(error.message);
+    }
+  };
+}
+```
+
+**Available API Helpers:**
+```typescript
+// Authentication
+import { authApi } from "../lib/api-client.ts";
+authApi.login(email, password)
+authApi.signup(email, password, name)
+authApi.logout()
+authApi.forgotPassword(email)
+authApi.resetPassword(token, password)
+authApi.verifyEmail(token)
+
+// Two-Factor Authentication
+import { twoFactorApi } from "../lib/api-client.ts";
+twoFactorApi.setup(password)
+twoFactorApi.enable(code)
+twoFactorApi.disable(password)
+
+// User Profile
+import { userApi } from "../lib/api-client.ts";
+userApi.getProfile()
+userApi.updateProfile(data)
+
+// Notifications
+import { notificationApi } from "../lib/api-client.ts";
+notificationApi.getNotifications()
+notificationApi.markAsRead(id)
+notificationApi.markAllAsRead()
+
+// Admin
+import { adminApi } from "../lib/api-client.ts";
+adminApi.getUsers()
+adminApi.updateUser(userId, data)
+adminApi.deleteUser(userId)
+
+// Generic requests (for custom endpoints)
+import { apiClient } from "../lib/api-client.ts";
+apiClient.get<T>("/api/endpoint", requireAuth)
+apiClient.post<T>("/api/endpoint", body, requireAuth)
+apiClient.put<T>("/api/endpoint", body, requireAuth)
+apiClient.delete<T>("/api/endpoint", requireAuth)
+```
+
+**API Response Format:**
+```typescript
+// All API responses follow this structure
+interface ApiResponse<T> {
+  data?: T;
+  error?: {
+    message: string;
+    code?: string;
+    details?: unknown;
+  };
+  success: boolean;
+}
+
+// API client automatically extracts data and throws on error
+const user = await userApi.getProfile(); // Returns UserProfile directly
+```
+
+## Token Storage Abstraction
+
+**IMPORTANT**: Use `TokenStorage` - never direct localStorage!
+
+The project has a storage abstraction in `frontend/lib/storage.ts`:
+
+```typescript
+import { TokenStorage } from "../lib/storage.ts";
+
+// ✅ CORRECT - Use storage abstraction
+TokenStorage.getAccessToken()
+TokenStorage.setAccessToken(token)
+TokenStorage.getRefreshToken()
+TokenStorage.setRefreshToken(token)
+TokenStorage.getUserEmail()
+TokenStorage.getUserRole()
+TokenStorage.setUserSession({ accessToken, email, role, emailVerified })
+TokenStorage.clearAuth()
+
+// ❌ WRONG - Never use localStorage directly
+localStorage.getItem("token")
+localStorage.setItem("token", value)
+```
+
+**Benefits:**
+- SSR-safe (checks for browser environment)
+- Consistent error handling
+- Easy to mock in tests
+- Single source of truth for storage keys
+- Easy to migrate to different storage (cookies, IndexedDB)
+
+## Centralized Validation
+
+**IMPORTANT**: Use validation utilities - don't duplicate validation logic!
+
+The project has validation utilities in `frontend/lib/validation.ts`:
+
+```typescript
+import { validateEmail, validatePassword, validatePasswordMatch } from "../lib/validation.ts";
+
+export default function SignupForm() {
+  const handleSubmit = async () => {
+    // ✅ CORRECT - Use centralized validation
+    const emailValidation = validateEmail(email.value);
+    if (!emailValidation.isValid) {
+      error.value = emailValidation.error;
+      return;
+    }
+
+    const passwordValidation = validatePassword(password.value);
+    if (!passwordValidation.isValid) {
+      error.value = passwordValidation.error;
+      return;
+    }
+
+    const matchValidation = validatePasswordMatch(password.value, confirmPassword.value);
+    if (!matchValidation.isValid) {
+      error.value = matchValidation.error;
+      return;
+    }
+
+    // Proceed with signup...
+  };
+}
+```
+
+**Available Validators:**
+```typescript
+validateEmail(email: string): ValidationResult
+validatePassword(password: string): ValidationResult
+validatePasswordMatch(password: string, confirmPassword: string): ValidationResult
+validateName(name: string): ValidationResult
+validateLoginForm({ email, password }): ValidationResult
+validateSignupForm({ email, password, confirmPassword, name }): ValidationResult
+```
+
+**ValidationResult Type:**
+```typescript
+interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+}
+```
+
 ## State Management with Signals
 
 Fresh uses **Preact Signals** for reactive state (not useState/Redux).
@@ -314,53 +483,55 @@ Fresh uses **Preact Signals** for reactive state (not useState/Redux).
 import { signal, computed } from "@preact/signals";
 
 // User authentication state
-export const user = signal<{ id: string; email: string } | null>(null);
-export const token = signal<string | null>(null);
+export const user = signal<{ email: string; role: string } | null>(null);
+export const accessToken = signal<string | null>(null);
 
 export const isAuthenticated = computed(() => user.value !== null);
 
-// Login function
-export async function login(email: string, password: string) {
-  const res = await fetch("http://localhost:3000/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!res.ok) throw new Error("Login failed");
-
-  const data = await res.json();
-  user.value = data.user;
-  token.value = data.token;
-
-  // Persist to localStorage
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem("token", data.token);
-  }
+// State update functions
+export function setUser(userData: { email: string; role: string }) {
+  user.value = userData;
 }
 
-export function logout() {
+export function setAccessToken(token: string) {
+  accessToken.value = token;
+}
+
+export function clearAuth() {
   user.value = null;
-  token.value = null;
-  if (typeof localStorage !== "undefined") {
-    localStorage.removeItem("token");
-  }
+  accessToken.value = null;
 }
 ```
 
 **Using in Islands:**
 ```typescript
-import { user, isAuthenticated, login } from "@/lib/store.ts";
+import { user, isAuthenticated } from "../lib/store.ts";
+import { authApi } from "../lib/api-client.ts";
+import { TokenStorage } from "../lib/storage.ts";
 
 export default function LoginButton() {
+  const handleLogin = async () => {
+    const data = await authApi.login(email, password);
+    
+    // Update global state
+    setUser(data.user);
+    setAccessToken(data.accessToken);
+    
+    // Persist to storage
+    TokenStorage.setUserSession({
+      accessToken: data.accessToken,
+      email: data.user.email,
+      role: data.user.role,
+      emailVerified: data.user.emailVerified,
+    });
+  };
+
   return (
     <div>
       {isAuthenticated.value ? (
         <p>Welcome, {user.value?.email}</p>
       ) : (
-        <button onClick={() => login("test@example.com", "password")}>
-          Login
-        </button>
+        <button onClick={handleLogin}>Login</button>
       )}
     </div>
   );
@@ -396,43 +567,46 @@ export default function HomePage() {
 
 ## Connecting to API Routes
 
-**Pure Fresh Architecture**: API routes run on the same server as pages (port 3000). Islands use fetch to call API routes.
+**Pure Fresh Architecture**: API routes run on the same server as pages (port 3000). Islands use the centralized API client to call API routes.
 
-**API Client Utility (`frontend/lib/api.ts`)**
+**DO NOT create custom API client functions** - use the provided helpers:
+
 ```typescript
-const API_BASE = "http://localhost:3000/api";
+// ✅ CORRECT - Use provided API helpers
+import { authApi, userApi, notificationApi } from "../lib/api-client.ts";
 
-function getAuthHeaders() {
-  const token = typeof localStorage !== "undefined"
-    ? localStorage.getItem("token")
-    : null;
+const user = await userApi.getProfile();
+const notifications = await notificationApi.getNotifications();
+await authApi.login(email, password);
 
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-  };
+// ✅ CORRECT - Use apiClient for custom endpoints
+import { apiClient } from "../lib/api-client.ts";
+
+interface Workout {
+  id: string;
+  name: string;
+  duration: number;
 }
 
-export async function fetchWorkouts() {
+const workouts = await apiClient.get<Workout[]>("/api/workouts", true);
+await apiClient.post("/api/workouts", { name: "Jump Training", duration: 30 }, true);
+
+// ❌ WRONG - Don't create manual fetch functions
+async function fetchWorkouts() {
   const res = await fetch(`${API_BASE}/workouts`, {
     headers: getAuthHeaders(),
   });
-
-  if (!res.ok) throw new Error("Failed to fetch workouts");
-  return res.json();
-}
-
-export async function createWorkout(data: { name: string; duration: number }) {
-  const res = await fetch(`${API_BASE}/workouts`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) throw new Error("Failed to create workout");
+  if (!res.ok) throw new Error("Failed to fetch");
   return res.json();
 }
 ```
+
+**API Client Features:**
+- Automatic auth headers from `TokenStorage`
+- CSRF token handling (fetched and cached)
+- Consistent error handling
+- Rate limit detection
+- Type-safe responses
 
 ## Accessibility Best Practices
 
@@ -515,6 +689,10 @@ Deno.test("WorkoutCard renders workout name", () => {
 - ❌ Using React Router (Fresh has file-based routing)
 - ❌ npm packages (use JSR or Deno-compatible packages)
 - ❌ Build steps (Fresh runs directly with Deno)
+- ❌ Manual `fetch` calls (use `apiClient` or API helpers)
+- ❌ Direct `localStorage` access (use `TokenStorage`)
+- ❌ Duplicate validation logic (use validation utilities)
+- ❌ Custom API client functions (use provided helpers)
 
 ## Development Commands
 
@@ -568,7 +746,43 @@ frontend/
 
 ## Token Efficiency Best Practices
 
-### 1. Use Templates for Standard UIs
+### 1. Use Centralized Utilities (CRITICAL)
+**BAD** (wastes ~600-800 tokens):
+```typescript
+// Manual fetch in every island
+const res = await fetch("http://localhost:3000/api/workouts", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+  },
+  body: JSON.stringify(data),
+});
+if (!res.ok) throw new Error("Failed");
+const result = await res.json();
+
+// Manual validation in every form
+if (!email || !email.includes("@")) {
+  error.value = "Invalid email";
+}
+if (!password || password.length < 8) {
+  error.value = "Password too short";
+}
+```
+
+**GOOD** (saves ~600-800 tokens):
+```typescript
+// Use centralized API client
+import { apiClient } from "../lib/api-client.ts";
+await apiClient.post("/api/workouts", data, true);
+
+// Use centralized validation
+import { validateEmail, validatePassword } from "../lib/validation.ts";
+const emailValidation = validateEmail(email.value);
+const passwordValidation = validatePassword(password.value);
+```
+
+### 2. Use Templates for Standard UIs
 **BAD** (wastes ~1800 tokens):
 ```typescript
 // Writing list page, form island, detail page from scratch
@@ -582,7 +796,7 @@ frontend/
 // Reference FRONTEND_PATTERNS.md for detail page
 ```
 
-### 2. Use Design System Components
+### 3. Use Design System Components
 **BAD** (wastes ~400 tokens):
 ```typescript
 // Create custom Button, Card, Input, Modal...
@@ -595,31 +809,18 @@ import { Button, Card, Input, Modal } from "@/components/design-system/...";
 // Pre-built, styled, accessible components
 ```
 
-### 3. Reference Frontend Patterns
-**BAD** (wastes ~500 tokens):
-```typescript
-// Manually implement API client
-// Manually implement form validation
-// Manually implement pagination
-```
-
-**GOOD** (saves ~500 tokens):
-```typescript
-// Reference FRONTEND_PATTERNS.md:
-// - API_CLIENT pattern
-// - CRUD_FORM_ISLAND pattern
-// - PAGINATION pattern
-```
-
 ### Summary of Token Savings
 
 | Optimization | Tokens Saved | When to Use |
 |--------------|--------------|-------------|
+| API client usage | ~200-300/island | All API calls |
+| Storage abstraction | ~50-100/island | All auth/storage |
+| Validation utilities | ~100-150/form | All forms |
 | List route template | ~500-700/page | Resource listing |
 | Form island patterns | ~600-800/form | Create/edit forms |
 | Design system usage | ~100/component | All UI components |
 | Pattern references | ~400-600/feature | All features |
-| **Total potential** | **~1600-2200/feature** | **Always apply** |
+| **Total potential** | **~2000-3000/feature** | **Always apply** |
 
 ## Next Steps
 

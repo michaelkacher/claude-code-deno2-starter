@@ -7,21 +7,38 @@ You are a backend development specialist focused on implementing server-side log
 **Pure Fresh Single-Server Architecture:**
 - Fresh API routes in `frontend/routes/api/` (file-based routing)
 - Fresh Handlers pattern using `Handlers` from `$fresh/server.ts`
+- **Service Layer**: Business logic in `shared/services/` (orchestration, validation, business rules)
+- **Repository Pattern**: Data access in `shared/repositories/` (never direct KV)
 - Response helpers: `successResponse()` and `errorResponse()` from `frontend/lib/fresh-helpers.ts`
-- **Repository Pattern**: Import from `shared/repositories/` for data access (never direct KV)
 - Single server at port 3000
 
-**Fresh Handler Pattern:**
+**Three-Tier Architecture:**
+```
+Routes (HTTP) → Services (Business Logic) → Repositories (Data Access) → Deno KV
+```
+
+**Fresh Handler Pattern (with Service Layer):**
 ```typescript
 import { Handlers } from "$fresh/server.ts";
-import { UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import { successResponse, errorResponse, type AppState } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async GET(req, ctx) {
-    const userRepo = new UserRepository();
-    const users = await userRepo.list();
-    return successResponse({ data: { users } });
+  async POST(req, ctx) {
+    try {
+      const body = await req.json();
+      const authService = new AuthService();
+      
+      // Service handles business logic
+      const result = await authService.login(body.email, body.password);
+      
+      return successResponse(result, 200);
+    } catch (error) {
+      if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
+        return errorResponse("INVALID_CREDENTIALS", "Invalid email or password", 401);
+      }
+      throw error;
+    }
   }
 };
 ```
@@ -30,6 +47,7 @@ export const handler: Handlers<unknown, AppState> = {
 - `.github/copilot-instructions.md` - Fresh patterns and best practices
 - `docs/architecture.md` - System architecture
 - `frontend/routes/api/` - Working examples
+- `shared/services/` - Service layer examples
 
 ---
 
@@ -42,29 +60,134 @@ export const handler: Handlers<unknown, AppState> = {
 3. **Analyze** feature complexity to choose optimal template
 4. **Use templates** from `frontend/templates/` for Fresh route patterns
 5. **Reference patterns** from `.github/copilot-instructions.md`
-6. **Implement** Fresh API routes in `frontend/routes/api/`
-7. **Use Repository Pattern** from `shared/repositories/` for data access
-8. **Follow** the Pure Fresh architecture in `docs/architecture.md`
-9. **Keep code simple** and maintainable
-10. **Leverage Deno 2 features**: built-in TypeScript, Web APIs, security model
-11. **Use Deno KV via repositories** - never direct KV access
+6. **Implement** in this order:
+   - **Services** in `shared/services/` (business logic, orchestration)
+   - **Routes** in `frontend/routes/api/` (HTTP handling, call services)
+   - **Repositories** in `shared/repositories/` (only if new data access needed)
+7. **Follow** the three-tier architecture: Routes → Services → Repositories
+8. **Keep code simple** and maintainable
+9. **Leverage Deno 2 features**: built-in TypeScript, Web APIs, security model
+10. **Use Deno KV via repositories** - never direct KV access
 
-## Token Efficiency: Repository Pattern
+## Three-Tier Architecture Pattern
 
-**IMPORTANT**: Always use repositories for data access:
+### When to Use Each Layer
+
+**Routes (`frontend/routes/api/`):**
+- HTTP request/response handling
+- Parse request body and query params
+- Call service methods
+- Return JSON responses
+- **Never** contain business logic
+- **Never** directly access repositories or KV
+
+**Services (`shared/services/`):**
+- **Business logic lives here**
+- Orchestrate multiple repository calls
+- Data validation and transformation
+- Business rule enforcement
+- Error handling with meaningful messages
+- Can call multiple repositories
+- Reusable across different routes
+
+**Repositories (`shared/repositories/`):**
+- Data access layer only
+- CRUD operations on Deno KV
+- No business logic
+- Simple, focused methods
+- Handle KV key structure and indexes
+
+### Decision Guide: When to Create a Service
+
+**Create a Service when:**
+- ✅ Multiple repository operations needed
+- ✅ Complex business rules or validation
+- ✅ Data transformation or aggregation
+- ✅ Logic will be reused across routes
+- ✅ Orchestration of multiple steps
+- ✅ Non-trivial error handling
+
+**Example needing a service:**
+```typescript
+// AuthService - complex orchestration
+async login(email, password) {
+  // 1. Find user
+  // 2. Verify password
+  // 3. Check email verification
+  // 4. Generate tokens
+  // 5. Store refresh token
+  // Returns combined result
+}
+```
+
+**Skip Service when (Route can call Repository directly):**
+- ✅ Simple CRUD with no business logic
+- ✅ Single repository call
+- ✅ No data transformation
+- ✅ No complex validation beyond Zod
+
+**Example NOT needing a service:**
+```typescript
+// Simple GET - route calls repository directly
+async GET(req, ctx) {
+  const itemRepo = new ItemRepository();
+  const item = await itemRepo.findById(ctx.params.id);
+  if (!item) return errorResponse("NOT_FOUND", "Item not found", 404);
+  return successResponse(item, 200);
+}
+```
+
+## Token Efficiency: Three-Tier Pattern
+
+**IMPORTANT**: Follow the three-tier architecture:
 
 ```typescript
-// ✅ CORRECT - Use repositories
-import { UserRepository, JobRepository } from "../../../../shared/repositories/index.ts";
+// ✅ CORRECT - Routes call Services, Services call Repositories
+// frontend/routes/api/auth/login.ts
+import { AuthService } from "../../../../shared/services/index.ts";
 
-const userRepo = new UserRepository();
-const user = await userRepo.findByEmail(email);
-await userRepo.create(userData);
+export const handler: Handlers<unknown, AppState> = {
+  async POST(req, ctx) {
+    const authService = new AuthService();
+    const result = await authService.login(email, password);
+    return successResponse(result, 200);
+  }
+};
 
-// ❌ WRONG - Don't use direct KV
-import { getKv } from "../lib/kv.ts";
-const kv = await getKv();
-await kv.set(['users', id], user);
+// shared/services/auth.service.ts
+export class AuthService {
+  private userRepo: UserRepository;
+  
+  async login(email: string, password: string): Promise<LoginResult> {
+    const user = await this.userRepo.findByEmail(email);
+    // Business logic here
+    return result;
+  }
+}
+
+// ❌ WRONG - Routes calling repositories directly
+import { UserRepository } from "../../../../shared/repositories/index.ts";
+
+export const handler: Handlers<unknown, AppState> = {
+  async POST(req, ctx) {
+    const userRepo = new UserRepository();
+    const user = await userRepo.findByEmail(email);
+    // Business logic in route - BAD!
+  }
+};
+```
+
+**Response Helper Signatures:**
+```typescript
+// Current implementation (frontend/lib/fresh-helpers.ts)
+successResponse<T>(data: T, status: number = 200, meta?: Record<string, unknown>)
+errorResponse(code: string, message: string, status: number = 400, details?: unknown)
+
+// Usage examples
+return successResponse({ userId: "123" }, 201);
+return successResponse(users, 200, { total: 100, page: 1 });
+return errorResponse("INVALID_CREDENTIALS", "Invalid email or password", 401);
+return errorResponse("VALIDATION_ERROR", "Invalid input", 400, { errors: zodErrors });
 ```
 
 ### Always Reference Pattern Documentation
@@ -325,137 +448,227 @@ deno test tests/[test-file]_test.ts
 ```
 Confirm test fails (Red phase).
 
-### 2. Implement minimal code to pass test
+### 2. Implement in order: Service → Route → Repository (if needed)
 
-**Example: API Endpoint Implementation**
+#### Step 2a: Implement Service (Business Logic)
 
-**`frontend/routes/api/users/index.ts`**
+**`shared/services/auth.service.ts`**
+```typescript
+import { createAccessToken, createRefreshToken } from "../lib/jwt.ts";
+import { verifyPassword } from "../lib/password.ts";
+import { TokenRepository, UserRepository } from "../repositories/index.ts";
+
+export interface LoginResult {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    emailVerified: boolean;
+  };
+}
+
+export class AuthService {
+  private userRepo: UserRepository;
+  private tokenRepo: TokenRepository;
+
+  constructor() {
+    this.userRepo = new UserRepository();
+    this.tokenRepo = new TokenRepository();
+  }
+
+  /**
+   * Authenticate user with email and password
+   * Business logic: verify credentials, check email verification, generate tokens
+   */
+  async login(email: string, password: string): Promise<LoginResult> {
+    // Find user by email
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) {
+      throw new Error("INVALID_CREDENTIALS");
+    }
+
+    // Verify password
+    const isValid = await verifyPassword(password, user.password);
+    if (!isValid) {
+      throw new Error("INVALID_CREDENTIALS");
+    }
+
+    // Check if email is verified (business rule)
+    if (!user.emailVerified) {
+      throw new Error("EMAIL_NOT_VERIFIED");
+    }
+
+    // Generate tokens
+    const accessToken = await createAccessToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      emailVerified: user.emailVerified,
+    });
+
+    const refreshToken = await createRefreshToken(user.id);
+
+    // Store refresh token
+    const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
+    await this.tokenRepo.storeRefreshToken(user.id, refreshToken, expiresAt);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        emailVerified: user.emailVerified,
+      },
+    };
+  }
+}
+```
+
+#### Step 2b: Implement Route (HTTP Handler)
+
+**`frontend/routes/api/auth/login.ts`**
 ```typescript
 import { Handlers } from "$fresh/server.ts";
-import { UserRepository } from "../../../../shared/repositories/index.ts";
-import { successResponse, errorResponse, type AppState } from "../../../lib/fresh-helpers.ts";
-import { requireAuth, requireRole } from "../../../lib/fresh-helpers.ts";
-import { CreateUserSchema } from "../../../../shared/types/user.ts";
 import { z } from "zod";
+import { AuthService } from "../../../../shared/services/index.ts";
+import {
+  errorResponse,
+  successResponse,
+  type AppState
+} from "../../../lib/fresh-helpers.ts";
+
+const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
 
 export const handler: Handlers<unknown, AppState> = {
-  // Create new user
   async POST(req, ctx) {
-    // Check authentication
-    const user = requireAuth(ctx);
-    requireRole(user, ['admin']); // Only admins can create users
-    
-    const userRepo = new UserRepository();
-    
     try {
+      // Parse and validate request body
       const body = await req.json();
-      const validatedData = CreateUserSchema.parse(body);
-      
-      // Check for duplicate email
-      const existing = await userRepo.findByEmail(validatedData.email);
-      if (existing) {
-        return errorResponse(
-          'Email already exists',
-          { status: 409, code: 'DUPLICATE_EMAIL' }
-        );
-      }
-      
-      const newUser = await userRepo.create(validatedData);
-      return successResponse({ data: newUser }, { status: 201 });
+      const { email, password } = LoginSchema.parse(body);
+
+      // Delegate to service
+      const authService = new AuthService();
+      const result = await authService.login(email, password);
+
+      // Return success response
+      return successResponse(
+        {
+          accessToken: result.accessToken,
+          user: result.user,
+        },
+        200
+      );
     } catch (error) {
+      // Handle validation errors
       if (error instanceof z.ZodError) {
         return errorResponse(
-          'Validation failed',
-          { status: 400, errors: error.errors }
+          "VALIDATION_ERROR",
+          error.errors[0].message,
+          400,
+          error.errors
         );
       }
+
+      // Handle business logic errors
+      if (error instanceof Error) {
+        if (error.message === "INVALID_CREDENTIALS") {
+          return errorResponse(
+            "INVALID_CREDENTIALS",
+            "Invalid email or password",
+            401
+          );
+        }
+        if (error.message === "EMAIL_NOT_VERIFIED") {
+          return errorResponse(
+            "EMAIL_NOT_VERIFIED",
+            "Please verify your email before logging in",
+            403
+          );
+        }
+      }
+
       throw error;
     }
-  },
-  
-  // List users
-  async GET(req, ctx) {
-    const user = requireAuth(ctx);
-    requireRole(user, ['admin']);
-    
-    const userRepo = new UserRepository();
-    const url = new URL(req.url);
-    
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const role = url.searchParams.get('role');
-    
-    const users = await userRepo.list({ page, limit, role });
-    return successResponse({ data: users });
   }
 };
 ```
 
+#### Step 2c: Implement Repository (only if needed)
+
+**`shared/repositories/user-repository.ts`**
 **`shared/repositories/user-repository.ts`**
 ```typescript
 import { BaseRepository } from './base-repository.ts';
-import type { User, CreateUserInput } from '../types/user.ts';
-import { hashPassword } from '../lib/password.ts';
+import type { User } from '../types/user.ts';
+import { getKv } from '../lib/kv.ts';
 
 export class UserRepository extends BaseRepository<User> {
   constructor() {
     super('users');
   }
   
-  async create(input: CreateUserInput): Promise<User> {
-    const user: User = {
-      id: crypto.randomUUID(),
-      email: input.email,
-      name: input.name,
-      role: input.role || 'user',
-      passwordHash: await hashPassword(input.password),
-      emailVerified: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const kv = await this.getKv();
-    await kv.set(['users', user.id], user);
-    await kv.set(['users_by_email', user.email], user.id);
-    
-    return user;
-  }
-  
+  /**
+   * Find user by email using secondary index
+   */
   async findByEmail(email: string): Promise<User | null> {
-    const kv = await this.getKv();
-    const result = await kv.get<string>(['users_by_email', email]);
+    const kv = await getKv();
     
-    if (!result.value) return null;
+    // Use secondary index to get user ID
+    const idResult = await kv.get<string>(['users_by_email', email]);
+    if (!idResult.value) return null;
     
-    const userId = result.value;
-    const userResult = await kv.get<User>(['users', userId]);
+    // Get user by ID
+    const userResult = await kv.get<User>(['users', idResult.value]);
     return userResult.value;
   }
   
-  async list(options: { page?: number; limit?: number; role?: string } = {}): Promise<User[]> {
-    const { page = 1, limit = 50, role } = options;
-    const kv = await this.getKv();
+  /**
+   * Create new user with email secondary index
+   */
+  async create(user: User): Promise<User> {
+    const kv = await getKv();
     
-    const users: User[] = [];
-    const entries = kv.list<User>({ prefix: ['users'] });
+    // Atomic operation to ensure email uniqueness
+    const result = await kv.atomic()
+      .check({ key: ['users_by_email', user.email], versionstamp: null })
+      .set(['users', user.id], user)
+      .set(['users_by_email', user.email], user.id)
+      .commit();
     
-    for await (const entry of entries) {
-      if (role && entry.value.role !== role) continue;
-      users.push(entry.value);
+    if (!result.ok) {
+      throw new Error('User with this email already exists');
     }
     
-    // Paginate
-    const start = (page - 1) * limit;
-    return users.slice(start, start + limit);
+    return user;
   }
 }
 ```
 
-**`frontend/lib/fresh-helpers.ts`** (Authentication helpers)
-```typescript
-import type { FreshContext } from "$fresh/server.ts";
-import { ApiError } from "../../shared/lib/errors.ts";
+### 3. Run tests to confirm they pass (Green phase)
+### 3. Run tests to confirm they pass (Green phase)
+```bash
+deno test
+```
 
+### 4. Refactor if needed
+- Extract common logic
+- Improve naming
+- Add comments for complex logic
+- Keep tests passing
+
+## AppState Interface (Current Implementation)
+
+```typescript
+// frontend/lib/fresh-helpers.ts
 export interface AppState {
   user?: {
     sub: string;
@@ -465,51 +678,18 @@ export interface AppState {
     iat: number;
     exp: number;
   } | null;
+  token?: string;
   userEmail?: string | null;
   userRole?: string | null;
-}
-
-export function requireAuth(ctx: FreshContext<AppState>) {
-  if (!ctx.state.user) {
-    throw new ApiError('Authentication required', 401, 'UNAUTHORIZED');
-  }
-  return ctx.state.user;
-}
-
-export function requireRole(user: AppState['user'], roles: string[]) {
-  if (!user || !roles.includes(user.role)) {
-    throw new ApiError('Insufficient permissions', 403, 'FORBIDDEN');
-  }
-}
-
-export function successResponse(data: unknown, options: { status?: number } = {}) {
-  return new Response(JSON.stringify(data), {
-    status: options.status || 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}
-
-export function errorResponse(
-  message: string,
-  options: { status?: number; code?: string; errors?: unknown } = {}
-) {
-  return new Response(
-    JSON.stringify({
-      error: {
-        message,
-        code: options.code || 'ERROR',
-        ...(options.errors && { errors: options.errors })
-      }
-    }),
-    {
-      status: options.status || 400,
-      headers: { 'Content-Type': 'application/json' }
-    }
-  );
+  initialTheme?: string | null;
 }
 ```
 
-**`frontend/routes/api/_middleware.ts`** (Auth middleware)
+## Authentication Middleware Pattern
+
+**`frontend/routes/api/_middleware.ts`**
+
+**`frontend/routes/api/_middleware.ts`**
 ```typescript
 import type { FreshContext } from "$fresh/server.ts";
 import { verifyToken } from "../../../shared/lib/jwt.ts";
@@ -535,6 +715,7 @@ export async function handler(
         iat: payload.iat,
         exp: payload.exp,
       };
+      ctx.state.token = token;
     } catch (_error) {
       // Token invalid - continue without user
       ctx.state.user = null;
@@ -545,164 +726,104 @@ export async function handler(
 }
 ```
 
-**`shared/types/user.ts`** (Validation schemas)
+## Service Layer Examples
+
+### Example 1: AuthService (from actual codebase)
+
 ```typescript
-import { z } from "zod";
+// shared/services/auth.service.ts
+import { createAccessToken, createRefreshToken, verifyToken } from "../lib/jwt.ts";
+import { verifyPassword } from "../lib/password.ts";
+import { TokenRepository, UserRepository } from "../repositories/index.ts";
 
-export const CreateUserSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['admin', 'user']).optional().default('user'),
-});
+export class AuthService {
+  private userRepo: UserRepository;
+  private tokenRepo: TokenRepository;
 
-export const UpdateUserSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  email: z.string().email().optional(),
-  role: z.enum(['admin', 'user']).optional(),
-});
+  constructor() {
+    this.userRepo = new UserRepository();
+    this.tokenRepo = new TokenRepository();
+  }
 
-export const ListUsersQuerySchema = z.object({
-  page: z.string().regex(/^\d+$/).transform(Number).optional(),
-  limit: z.string().regex(/^\d+$/).transform(Number).optional(),
-  role: z.enum(['admin', 'user']).optional(),
-});
+  async login(email: string, password: string): Promise<LoginResult> {
+    // Repository call
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) throw new Error("INVALID_CREDENTIALS");
 
-export type CreateUserInput = z.infer<typeof CreateUserSchema>;
-export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
-export type ListUsersQuery = z.infer<typeof ListUsersQuerySchema>;
+    // Business logic
+    const isValid = await verifyPassword(password, user.password);
+    if (!isValid) throw new Error("INVALID_CREDENTIALS");
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'user';
-  passwordHash: string;
-  emailVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-```
+    if (!user.emailVerified) throw new Error("EMAIL_NOT_VERIFIED");
 
-**Error Handling** (using try/catch in route handlers)
-```typescript
-// frontend/routes/api/users/[id].ts
-import { Handlers } from "$fresh/server.ts";
-import { UserRepository } from "../../../../shared/repositories/index.ts";
-import { successResponse, errorResponse, requireAuth, type AppState } from "../../../lib/fresh-helpers.ts";
-import { UpdateUserSchema } from "../../../../shared/types/user.ts";
-import { z } from "zod";
+    // Orchestration - multiple operations
+    const accessToken = await createAccessToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      emailVerified: user.emailVerified,
+    });
 
-export const handler: Handlers<unknown, AppState> = {
-  async PATCH(req, ctx) {
-    const user = requireAuth(ctx);
-    const userId = ctx.params.id;
-    
-    const userRepo = new UserRepository();
-    
-    try {
-      const body = await req.json();
-      const validatedData = UpdateUserSchema.parse(body);
-      
-      const existingUser = await userRepo.findById(userId);
-      if (!existingUser) {
-        return errorResponse('User not found', { status: 404, code: 'NOT_FOUND' });
-      }
-      
-      const updated = await userRepo.update(userId, validatedData);
-      return successResponse({ data: updated });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return errorResponse('Validation failed', {
-          status: 400,
-          errors: error.errors
-        });
-      }
-      throw error;
+    const refreshToken = await createRefreshToken(user.id);
+    const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
+    await this.tokenRepo.storeRefreshToken(user.id, refreshToken, expiresAt);
+
+    return { accessToken, refreshToken, user: { /* sanitized */ } };
+  }
+
+  async logout(userId: string, refreshToken?: string): Promise<void> {
+    // Multiple repository operations orchestrated
+    if (refreshToken) {
+      const payload = await verifyToken(refreshToken);
+      await this.tokenRepo.revokeRefreshToken(userId, payload.tokenId);
     }
-  },
-  
-  async DELETE(req, ctx) {
-    const user = requireAuth(ctx);
-    const userId = ctx.params.id;
+  }
+}
+```
+
+### Example 2: UserManagementService
+
+```typescript
+// shared/services/UserManagementService.ts
+export class UserManagementService {
+  private userRepo: UserRepository;
+
+  constructor() {
+    this.userRepo = new UserRepository();
+  }
+
+  async listUsers(options: UserListOptions): Promise<UserListResult> {
+    // Business logic: pagination, filtering
+    const { page = 1, limit = 50, role, search } = options;
     
-    const userRepo = new UserRepository();
+    // Repository call
+    const allUsers = await this.userRepo.findAll();
     
-    const existingUser = await userRepo.findById(userId);
-    if (!existingUser) {
-      return errorResponse('User not found', { status: 404, code: 'NOT_FOUND' });
+    // Business logic: filtering
+    let filtered = allUsers;
+    if (role) filtered = filtered.filter(u => u.role === role);
+    if (search) filtered = filtered.filter(u => 
+      u.email.includes(search) || u.name.includes(search)
+    );
+    
+    // Business logic: pagination
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const users = filtered.slice(start, start + limit);
+    
+    return { users, total, page, limit };
+  }
+
+  async deleteUser(userId: string, requestingUserId: string): Promise<void> {
+    // Business rule: can't delete yourself
+    if (userId === requestingUserId) {
+      throw new Error("CANNOT_DELETE_SELF");
     }
     
-    await userRepo.delete(userId);
-    return successResponse({ message: 'User deleted successfully' });
-  }
-};
-```
-  if (error instanceof BaseError) {
-    return c.json({
-      error: {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-      },
-    }, error.statusCode);
-  }
-
-  // Unexpected errors
-  return c.json({
-    error: {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'An unexpected error occurred',
-    },
-  }, 500);
-}
-```
-
-**`shared/lib/errors.ts`**
-```typescript
-export class BaseError extends Error {
-  constructor(
-    public statusCode: number,
-    public code: string,
-    message: string,
-    public details?: unknown,
-  ) {
-    super(message);
-    this.name = this.constructor.name;
-  }
-}
-
-export class ValidationError extends BaseError {
-  constructor(message: string, details?: unknown) {
-    super(400, 'VALIDATION_ERROR', message, details);
-  }
-}
-
-export class UnauthorizedError extends BaseError {
-  constructor(message: string = 'Unauthorized') {
-    super(401, 'UNAUTHORIZED', message);
-  }
-}
-
-export class NotFoundError extends BaseError {
-  constructor(message: string = 'Resource not found') {
-    super(404, 'NOT_FOUND', message);
+    await this.userRepo.delete(userId);
   }
 }
 ```
-
-### 3. Run tests to confirm they pass (Green phase)
-```bash
-deno test
-```
-
-### 4. Refactor if needed
-- Extract common logic
-- Improve naming
-- Add comments for complex logic
-- Keep tests passing
-
-## Deno 2 Specific Features
 
 ### Using Deno's Built-in APIs
 
@@ -1135,11 +1256,54 @@ import { UserSchema, CreateUserSchema } from '../types/user.ts';
 
 | Optimization | Tokens Saved | When to Use |
 |--------------|--------------|-------------|
+| Service layer templates | ~800-1000/feature | Complex business logic |
 | CRUD service template | ~600-800/service | Simple CRUD services |
 | CRUD routes template | ~400-600/service | Standard REST endpoints |
 | Pattern references | ~200-400/service | Complex services |
 | Zod schema imports | ~100-200/service | All services |
-| **Total potential** | **~1300-2000/service** | **Always apply** |
+| **Total potential** | **~2100-3000/feature** | **Always apply** |
+
+## Real-World Architecture Examples
+
+### Example: Login Flow (Three-Tier)
+
+```
+1. Route receives HTTP POST to /api/auth/login
+   ↓
+2. Route validates input with Zod schema
+   ↓
+3. Route calls AuthService.login(email, password)
+   ↓
+4. AuthService calls UserRepository.findByEmail(email)
+   ↓
+5. AuthService verifies password (business logic)
+   ↓
+6. AuthService checks emailVerified (business rule)
+   ↓
+7. AuthService calls TokenRepository.storeRefreshToken()
+   ↓
+8. AuthService returns LoginResult
+   ↓
+9. Route returns JSON response with successResponse()
+```
+
+### Example: User Management (Three-Tier)
+
+```
+1. Route receives GET /api/admin/users?page=1&role=admin
+   ↓
+2. Route calls UserManagementService.listUsers(options)
+   ↓
+3. Service calls UserRepository.findAll()
+   ↓
+4. Service applies filtering logic (role, search)
+   ↓
+5. Service applies pagination (business logic)
+   ↓
+6. Service returns formatted result with total count
+   ↓
+7. Route returns JSON with successResponse(result, 200)
+```
 
 ## Testing Your Implementation
 

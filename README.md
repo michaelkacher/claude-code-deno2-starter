@@ -58,7 +58,7 @@ cd <your-project>
 cp .env.example .env
 ```
 
-Edit `.env` with your configuration.
+Edit `.env` with your configuration. (this is not required to run in dev mode)
 
 2. Run the project
 
@@ -68,6 +68,8 @@ deno task dev
 # Server: http://localhost:3000
 # API: http://localhost:3000/api/*
 ```
+
+3. Requirements (Not required but helps scope project)
 
 3. Customize your template (Recommended)
 
@@ -178,7 +180,7 @@ Quick workflows for common tasks:
 
 | Command | Level | Description | When to Use |
 |---------|-------|-------------|-------------|
-| `/customize` | **Initial Setup** | Customize template branding and configuration | First step after cloning template |
+| `/customize` | **Initial Setup** | Unified customization (setup, design system, quick updates) | Initial setup, branding, design changes |
 | `/requirements` | Optional | Gather project-wide requirements | Large projects (10+ features) or stakeholder docs |
 | `/architect` | Optional | **Update** architecture | Major changes only (DB migration, microservices) |
 | `/mockup` | **Visual** | Create UI mockup | Quick visual prototyping before building |

@@ -168,7 +168,11 @@ Format: `docs/adr/001-[decision-name].md`
 - **Runtime**: Deno 2 (default for this template)
 - **Language**: TypeScript (built-in with Deno)
 - **API Style**: REST (via Fresh file-based API routes in `frontend/routes/api/`)
-- **Architecture**: Single-server (no separate backend)
+- **Architecture**: Single-server Pure Fresh (no separate backend)
+- **Code Organization**: 3-tier (Routes → Services → Repositories)
+  - Routes: HTTP handling, validation, auth checks
+  - Services: Business logic, orchestration, cross-cutting concerns
+  - Repositories: Data access, CRUD operations
 
 ### Database
 - **Type**: [Deno KV (recommended) / PostgreSQL / SQLite / etc.]
@@ -257,6 +261,129 @@ Date: [YYYY-MM-DD]
 9. Deployment platform (**Deno Deploy recommended** - zero-config, edge network, built-in KV)
 
 **Note**: This template uses Pure Fresh (single-server) architecture. There is no separate backend framework - Fresh handles both SSR pages and API routes.
+
+## Three-Tier Architecture Pattern
+
+This template follows a **3-tier architecture** for backend code organization:
+
+```
+Routes (API) → Services (Business Logic) → Repositories (Data Access)
+```
+
+### Architecture Layers
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  API Routes (frontend/routes/api/**)                    │
+│  - HTTP request/response handling                       │
+│  - Input validation (Zod schemas)                       │
+│  - Authentication/authorization checks                  │
+│  - Call service layer methods                           │
+│  - Return standardized responses                        │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ↓
+┌─────────────────────────────────────────────────────────┐
+│  Service Layer (shared/services/**)                     │
+│  - Business logic and domain operations                 │
+│  - Orchestrate multiple repositories                    │
+│  - Transaction coordination                             │
+│  - Complex business rules                               │
+│  - Cross-cutting concerns (notifications, email)        │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ↓
+┌─────────────────────────────────────────────────────────┐
+│  Repository Layer (shared/repositories/**)              │
+│  - Direct Deno KV database access                       │
+│  - CRUD operations                                      │
+│  - Query methods                                        │
+│  - Data persistence only (no business logic)            │
+└─────────────────────────────────────────────────────────┘
+```
+
+### When to Create Services
+
+**Create a service when:**
+- ✅ Business logic spans multiple repositories
+- ✅ Complex domain operations (e.g., user registration, password reset)
+- ✅ Transaction coordination across entities
+- ✅ Need to orchestrate background jobs
+- ✅ Cross-cutting concerns (notifications, audit logs)
+
+**Don't create a service when:**
+- ❌ Simple CRUD operations (use repository directly from route)
+- ❌ No business logic (just data access)
+- ❌ Single repository operation with no additional logic
+
+**Existing Services in Template:**
+```
+shared/services/
+├── auth-service.ts              # Authentication, login, logout, token refresh
+├── user-management-service.ts   # User CRUD, profile updates, role changes
+├── two-factor-service.ts        # 2FA setup, verification, backup codes
+└── notification-service.ts      # Send notifications, mark as read, cleanup
+```
+
+### Response Helper Patterns
+
+**Standard response helpers** (from `frontend/lib/fresh-helpers.ts`):
+
+```typescript
+// Success response
+import { successResponse } from '@/lib/fresh-helpers.ts';
+
+return successResponse(
+  data,        // The payload
+  201,         // Optional status code (default: 200)
+  { page: 1 }  // Optional metadata
+);
+// Returns: { "data": {...}, "meta": {...} }
+
+// Error response
+import { errorResponse } from '@/lib/fresh-helpers.ts';
+
+return errorResponse(
+  'VALIDATION_ERROR',  // Error code (uppercase snake_case)
+  'Invalid email',     // Human-readable message
+  400,                 // HTTP status
+  { field: 'email' }   // Optional details object
+);
+// Returns: { "error": { "code": "...", "message": "...", "details": {...} } }
+```
+
+### Frontend Centralized Patterns
+
+**API Client** (from `frontend/lib/api-client.ts`):
+```typescript
+// Centralized API client with helpers
+import { authApi, userApi, notificationApi } from '@/lib/api-client.ts';
+
+// Use helpers instead of manual fetch
+const result = await authApi.login(email, password);
+const users = await userApi.list();
+const notifications = await notificationApi.getAll();
+```
+
+**Storage Abstraction** (from `frontend/lib/storage.ts`):
+```typescript
+// TokenStorage abstraction (localStorage wrapper)
+import { TokenStorage } from '@/lib/storage.ts';
+
+TokenStorage.setToken(token);
+const token = TokenStorage.getToken();
+TokenStorage.clear();
+```
+
+**Validation Utilities** (from `frontend/lib/validation.ts`):
+```typescript
+// Centralized validators
+import { validateEmail, validatePassword } from '@/lib/validation.ts';
+
+if (!validateEmail(email)) {
+  // Handle error
+}
+```
 
 ## Anti-Patterns to Avoid
 
