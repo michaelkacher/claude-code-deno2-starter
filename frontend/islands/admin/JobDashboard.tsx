@@ -10,14 +10,14 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { TokenStorage } from '../../lib/storage.ts';
 import {
-    jobs,
-    jobStats,
-    schedules,
-    setJobs,
-    setSchedules,
-    updateJob,
-    updateJobStats,
-    type Job
+  jobs,
+  jobStats,
+  schedules,
+  setJobs,
+  setSchedules,
+  updateJob,
+  updateJobStats,
+  type Job
 } from '../../lib/store.ts';
 import { subscribeToChannel } from '../../lib/websocket.ts';
 import CreateJobModal from './CreateJobModal.tsx';
@@ -751,6 +751,9 @@ export default function JobDashboard() {
           font-weight: 500;
           color: #111827;
         }
+        .dark .job-name {
+          color: #f3f4f6;
+        }
 
         .job-id {
           font-size: 12px;
@@ -869,6 +872,11 @@ export default function JobDashboard() {
           border-radius: 4px;
           font-family: monospace;
           font-size: 13px;
+          color: #374151;
+        }
+        .dark code {
+          background: #23272f;
+          color: #e5e7eb;
         }
       `}</style>
     </div>
