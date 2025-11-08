@@ -86,6 +86,77 @@ This approach is **3-5x faster** than writing tests from scratch!
 - Use `docs/api-spec.md` for overall project API design
 - Contains all APIs across all features
 
+## Test Structure: BDD Pattern
+
+**CRITICAL**: All tests MUST use BDD-style patterns with `describe()` and `it()` from `jsr:@std/testing/bdd`.
+
+### Required Pattern
+
+```typescript
+import { assertEquals, assertRejects } from 'jsr:@std/assert';
+import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { setupTestKv } from '../../helpers/kv-test.ts';
+
+describe('ServiceName', () => {
+  let kv: Deno.Kv;
+  let cleanup: () => Promise<void>;
+  let service: ServiceName;
+
+  beforeEach(async () => {
+    const setup = await setupTestKv();
+    kv = setup.kv;
+    cleanup = setup.cleanup;
+    service = new ServiceName(kv);
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  describe('operation', () => {
+    it('should handle expected behavior', async () => {
+      // Test implementation
+    });
+  });
+});
+```
+
+### Why BDD Pattern?
+
+1. **Better Organization**: Nested `describe()` blocks group related tests
+2. **DRY Code**: `beforeEach/afterEach` eliminate repetitive setup/cleanup
+3. **Clear Context**: Failed tests show the full describe hierarchy
+4. **Consistent**: Matches all templates and existing tests
+5. **No try/finally**: Hooks handle cleanup automatically
+
+### ❌ DON'T Use Deno.test()
+
+```typescript
+// WRONG - Old pattern, no longer used
+Deno.test('ServiceName - operation: should work', async () => {
+  const { kv, cleanup } = await setupTestKv();
+  try {
+    // ...
+  } finally {
+    await cleanup();
+  }
+});
+```
+
+### ✅ DO Use describe()/it()
+
+```typescript
+// CORRECT - Current pattern
+describe('ServiceName', () => {
+  // Setup in beforeEach
+  describe('operation', () => {
+    it('should work correctly', async () => {
+      // Test logic only
+    });
+  });
+});
+```
+
 ## TDD Process
 
 1. **Red**: Write a failing test
@@ -189,56 +260,59 @@ describe('[Feature Name]', () => {
 **`tests/unit/repositories/users.test.ts`** (RECOMMENDED - Business Logic)
 ```typescript
 import { assertEquals, assertRejects } from 'jsr:@std/assert';
+import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
 import { setupTestKv } from '../../helpers/kv-test.ts';
 import { UserRepository } from '../../../shared/repositories/user-repository.ts';
 
-Deno.test('UserRepository - business rule: valid email required', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const repo = new UserRepository(kv);
+describe('UserRepository', () => {
+  let kv: Deno.Kv;
+  let cleanup: () => Promise<void>;
+  let repo: UserRepository;
 
-    // Test YOUR business rule, not HTTP status codes
-    await assertRejects(
-      () => repo.create({ email: 'invalid', name: 'Test' }),
-      Error,
-      'Invalid email format',
-    );
-  } finally {
+  beforeEach(async () => {
+    const setup = await setupTestKv();
+    kv = setup.kv;
+    cleanup = setup.cleanup;
+    repo = new UserRepository(kv);
+  });
+
+  afterEach(async () => {
     await cleanup();
-  }
-});
+  });
 
-Deno.test('UserRepository - business rule: prevents duplicate emails', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const repo = new UserRepository(kv);
+  describe('business rule: valid email required', () => {
+    it('should reject invalid email format', async () => {
+      // Test YOUR business rule, not HTTP status codes
+      await assertRejects(
+        () => repo.create({ email: 'invalid', name: 'Test' }),
+        Error,
+        'Invalid email format',
+      );
+    });
+  });
 
-    // First user
-    await repo.create({ email: 'test@example.com', name: 'User 1' });
+  describe('business rule: prevents duplicate emails', () => {
+    it('should reject duplicate email addresses', async () => {
+      // First user
+      await repo.create({ email: 'test@example.com', name: 'User 1' });
 
-    // Test duplicate prevention (business rule)
-    await assertRejects(
-      () => repo.create({ email: 'test@example.com', name: 'User 2' }),
-      Error,
-      'Email already exists',
-    );
-  } finally {
-    await cleanup();
-  }
-});
+      // Test duplicate prevention (business rule)
+      await assertRejects(
+        () => repo.create({ email: 'test@example.com', name: 'User 2' }),
+        Error,
+        'Email already exists',
+      );
+    });
+  });
 
-Deno.test('UserRepository - business logic: assigns default role', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const repo = new UserRepository(kv);
+  describe('business logic: default role assignment', () => {
+    it('should assign default role to new users', async () => {
+      // Test business logic: default role assignment
+      const user = await repo.create({ email: 'test@example.com', name: 'Test' });
 
-    // Test business logic: default role assignment
-    const user = await repo.create({ email: 'test@example.com', name: 'Test' });
-
-    assertEquals(user.role, 'user'); // Business logic, not HTTP
-  } finally {
-    await cleanup();
-  }
+      assertEquals(user.role, 'user'); // Business logic, not HTTP
+    });
+  });
 });
 ```
 
@@ -251,59 +325,67 @@ Deno.test('UserRepository - business logic: assigns default role', async () => {
 **Testing with Deno KV** (FAST WAY - Use Helper)
 ```typescript
 import { assertEquals } from 'jsr:@std/assert';
+import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
 import { setupTestKv, seedKv } from '../../helpers/kv-test.ts';
 import { UserRepository } from '../../../shared/repositories/user-repository.ts';
 
-Deno.test('UserRepository - creates user in KV', async () => {
-  // Setup - automatic cleanup with try/finally
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const repo = new UserRepository(kv);
+describe('UserRepository', () => {
+  let kv: Deno.Kv;
+  let cleanup: () => Promise<void>;
+  let repo: UserRepository;
 
-    // Act
-    const user = await repo.create({
-      email: 'test@example.com',
-      name: 'Test User',
-    });
+  beforeEach(async () => {
+    const setup = await setupTestKv();
+    kv = setup.kv;
+    cleanup = setup.cleanup;
+    repo = new UserRepository(kv);
+  });
 
-    // Assert
-    assertEquals(user.email, 'test@example.com');
-
-    // Verify stored in KV
-    const stored = await kv.get(['users', user.id]);
-    assertEquals(stored.value, user);
-  } finally {
-    await cleanup(); // Automatic cleanup
-  }
-});
-
-Deno.test('UserRepository - finds user by email index', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    // Seed test data quickly
-    await seedKv(kv, [
-      { key: ['users', 'user-1'], value: { id: 'user-1', email: 'test@example.com' } },
-      { key: ['users_by_email', 'test@example.com'], value: 'user-1' },
-    ]);
-
-    const repo = new UserRepository(kv);
-
-    // Act
-    const user = await repo.findByEmail('test@example.com');
-
-    // Assert
-    assertEquals(user?.id, 'user-1');
-  } finally {
+  afterEach(async () => {
     await cleanup();
-  }
+  });
+
+  describe('create', () => {
+    it('should persist user in KV', async () => {
+      // Act
+      const user = await repo.create({
+        email: 'test@example.com',
+        name: 'Test User',
+      });
+
+      // Assert
+      assertEquals(user.email, 'test@example.com');
+
+      // Verify stored in KV
+      const stored = await kv.get(['users', user.id]);
+      assertEquals(stored.value, user);
+    });
+  });
+
+  describe('findByEmail', () => {
+    it('should retrieve user using email index', async () => {
+      // Seed test data quickly
+      await seedKv(kv, [
+        { key: ['users', 'user-1'], value: { id: 'user-1', email: 'test@example.com' } },
+        { key: ['users_by_email', 'test@example.com'], value: 'user-1' },
+      ]);
+
+      // Act
+      const user = await repo.findByEmail('test@example.com');
+
+      // Assert
+      assertEquals(user?.id, 'user-1');
+    });
+  });
 });
 ```
 
 **Benefits:**
 - ✅ Automatic :memory: KV (isolated, fast)
-- ✅ Automatic cleanup (no resource leaks)
+- ✅ Automatic cleanup with beforeEach/afterEach hooks
 - ✅ Quick data seeding
 - ✅ No manual try/finally needed
+- ✅ Clear test organization with nested describe blocks
 
 ### Frontend Tests (Fresh/Preact)
 
@@ -519,16 +601,32 @@ const server = setupServer(
 ### 1. Use CRUD Template for Simple Services
 **BAD** (wastes ~500 tokens):
 ```typescript
-// Writing 11 separate CRUD tests from scratch
-Deno.test('create succeeds', async () => { ... });
-Deno.test('create validates', async () => { ... });
-// ... 9 more tests
+// Writing 11 separate CRUD tests from scratch using old Deno.test() pattern
+Deno.test('create succeeds', async () => { 
+  const { kv, cleanup } = await setupTestKv();
+  try { ... } finally { await cleanup(); }
+});
+Deno.test('create validates', async () => { 
+  const { kv, cleanup } = await setupTestKv();
+  try { ... } finally { await cleanup(); }
+});
+// ... 9 more tests with repetitive setup
 ```
 
 **GOOD** (saves ~500 tokens):
 ```typescript
 // Copy service-crud.test.template.ts, fill in placeholders
-// All 11 CRUD tests ready with minimal customization
+// All 11 CRUD tests ready with BDD pattern and lifecycle hooks
+describe('ServiceName', () => {
+  beforeEach(async () => { /* setup once */ });
+  afterEach(async () => { /* cleanup once */ });
+  
+  describe('create', () => {
+    it('should succeed with valid data', async () => { ... });
+    it('should reject invalid data', async () => { ... });
+  });
+  // ... organized test groups
+});
 ```
 
 ### 2. Import Test Data Patterns
@@ -546,17 +644,32 @@ import { validUserData, invalidUserData, buildUser } from '../helpers/test-data-
 ### 3. Reference Validation Patterns
 **BAD** (wastes ~50 tokens per validation test):
 ```typescript
-// Manually write test for string length validation
+// Manually write test for string length validation with try/finally
 Deno.test('name too long', async () => {
-  await assertRejects(() => repo.create({ name: 'x'.repeat(101) }));
+  const { kv, cleanup } = await setupTestKv();
+  try {
+    const repo = new Repository(kv);
+    await assertRejects(() => repo.create({ name: 'x'.repeat(101) }));
+  } finally {
+    await cleanup();
+  }
 });
 ```
 
 **GOOD** (saves ~50 tokens):
 ```typescript
-// Reference pattern from TEST_PATTERNS.md
-// Pattern: VALIDATION_TESTS > String length limits
-import { stringLengthCases } from '../helpers/test-data-patterns.ts';
+// Use BDD pattern with lifecycle hooks
+describe('validation', () => {
+  it('should reject name exceeding max length', async () => {
+    // Setup already done in beforeEach
+    await assertRejects(
+      () => repo.create({ name: 'x'.repeat(101) }),
+      Error,
+      'too long'
+    );
+  });
+});
+// Pattern reference: VALIDATION_TESTS > String length limits (see TEST_PATTERNS.md)
 ```
 
 ### 4. Use Standard Assertions
@@ -583,6 +696,38 @@ assertEquals(typeof result.id, 'string');
 | Standard assertions | ~20/test | All tests |
 | Reference TEST_PATTERNS.md | ~200-400/service | Complex services |
 | **Total potential** | **~700-1200/service** | **Always apply** |
+
+## Running Tests
+
+**CRITICAL**: Always use `deno task test`, NOT `deno test` directly.
+
+```bash
+# ✅ CORRECT - Includes all necessary flags
+deno task test
+
+# ❌ WRONG - Will fail with permission errors
+deno test
+```
+
+The `test` task in `deno.json` includes required flags:
+- `--allow-read` - Read file system
+- `--allow-env` - Access environment variables
+- `--allow-net` - Network access for HTTP tests
+- `--allow-write` - Write to test database
+- `--unstable-kv` - Deno KV support
+
+### Running Specific Tests
+
+```bash
+# Run all tests
+deno task test
+
+# Run specific file
+deno task test tests/unit/queue/queue.test.ts
+
+# Run tests matching pattern
+deno task test --filter "JobQueue"
+```
 
 ## Test File Naming
 

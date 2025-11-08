@@ -118,36 +118,11 @@ deno task dev
 
 **WARNING**: There is the option `claude --dangerously-skip-permissions` to skip being prompted for running commands and changing files. THIS IS DANGEROUS as your system can be accessed. If you proceed with this command, it is recommended to execute it in a sandboxed environment.
 
-
-## Detailed Planning (Large/complex projects)
-
+6. Validate quality and tests
 ```bash
-# Step 1: Document comprehensive project vision
-/requirements
-
-# Step 2: Review or customize architecture (optional)
-/architect
-
-# Step 3: Create Mockups
-/mockup
-
-# Step 4: Build your first feature with tests
-/new-feature
+# This runs tests and validates the quality of the implemented feature
+/review
 ```
-
-**When to use this:**
-- Planning 10+ features upfront
-- Need detailed stakeholder documentation
-- Multiple user personas to consider
-- Complex integration requirements
-
-**The /architect agent is also valuable for:**
-- Migrating from Deno KV to PostgreSQL if the project outgrows KV
-- Splitting into microservices when scaling
-- Adding new infrastructure (Redis, message queues, etc.)
-- Major refactoring decisions (authentication changes, API versioning)
-- Creating ADRs for significant changes
-
 
 ## Architecture
 
@@ -158,6 +133,14 @@ Requirements → Architecture → API Design → Tests → Implementation → Re
      ↓             ↓              ↓          ↓           ↓            ↓
   (agent)      (agent)        (agent)   (agent)     (agents)      (command)
 ```
+
+
+**The /architect agent is also valuable for:**
+- Migrating from Deno KV to PostgreSQL if the project outgrows KV
+- Splitting into microservices when scaling
+- Adding new infrastructure (Redis, message queues, etc.)
+- Major refactoring decisions (authentication changes, API versioning)
+- Creating ADRs for significant changes
 
 ### Sub-Agents
 
@@ -172,38 +155,6 @@ Each agent is a specialized Claude Code agent with a specific purpose:
 | **frontend-agent** | Implement frontend (TDD Green) | Requirements, tests | Frontend components |
 
 **Note:** Architecture ships pre-defined. Most users won't need requirements-agent or architect-agent.
-
-### Slash Commands
-
-Quick workflows for common tasks:
-
-| Command | Level | Description | When to Use |
-|---------|-------|-------------|-------------|
-| `/customize` | **Initial Setup** | Unified customization (setup, design system, quick updates) | Initial setup, branding, design changes |
-| `/requirements` | Optional | Gather project-wide requirements | Large projects (10+ features) or stakeholder docs |
-| `/architect` | Optional | **Update** architecture | Major changes only (DB migration, microservices) |
-| `/mockup` | **Visual** | Create UI mockup | Quick visual prototyping before building |
-| `/new-feature` | **Recommended** | Full feature workflow (semi-automated) | Adding a complete new feature |
-| `/review` | Utility | Code review checklist | Before merging or deploying |
-
-## Automation Levels
-
-This template provides **3 levels of automation** to match your needs:
-
-### ⚙️ Level 1: Command Orchestration (Recommended)
-
-Semi-automated workflow with guided steps and user approval.
-
-```bash
-/new-feature
-> "Add user authentication"
-```
-
-**Best for:** Most projects (80% of use cases), production work, teams
-
-**Token usage:** ~25K per feature | **Time:** ~10 min | **Control:** ⭐⭐
-
----
 
 ### Understanding Feature-Scoped Workflow
 
@@ -372,312 +323,12 @@ deno task kv:inspect -- --prefix=users  # Show only 'users' keys
 deno task kv:inspect -- --limit=10      # Limit to 10 entries
 ```
 
-## Token Efficiency
-
-This template is designed to be token-efficient with **multiple optimization layers**:
-
-### API Design Optimizations (NEW ⭐)
-1. **Feature-scoped documentation**: Features documented separately, reducing context by 40-50%
-2. **Pattern reference system** ⭐: Reusable API patterns and error responses (saves ~500-800 tokens/feature)
-3. **Shorthand templates** ⭐: Condensed format for simple CRUD features (saves ~400-600 tokens/feature)
-4. **Smart agent instructions** ⭐: Agents automatically choose optimal templates and reference patterns
-
-**See [Token Optimization Guide](docs/guides/TOKEN_OPTIMIZATION_GUIDE.md) for API design details.**
-
-### Test Writing Optimizations (NEW ⭐)
-5. **CRUD test templates** ⭐: Pre-built test suite for simple services (saves ~400-600 tokens/service)
-6. **Test data patterns** ⭐: Reusable test data builders (saves ~100-150 tokens/file)
-7. **Test pattern references** ⭐: Common testing scenarios (saves ~200-400 tokens/service)
-
-**See [Test Optimization Guide](docs/guides/TEST_OPTIMIZATION_GUIDE.md) for test writing details.**
-
-### Backend Implementation Optimizations (NEW ⭐)
-8. **CRUD service templates** ⭐: Complete service implementation (saves ~600-800 tokens/service)
-9. **CRUD route templates** ⭐: Standard REST endpoints (saves ~400-600 tokens/service)
-10. **Backend pattern references** ⭐: Common backend patterns (saves ~200-400 tokens/service)
-
-**See [Backend Optimization Guide](docs/guides/BACKEND_OPTIMIZATION_GUIDE.md) for implementation details.**
-
-### Frontend Implementation Optimizations (NEW ⭐)
-11. **Fresh route templates** ⭐: Pre-built list/detail pages (saves ~500-700 tokens/page)
-12. **Design system components** ⭐: Button, Card, Input, Modal, etc. (saves ~300-500 tokens/feature)
-13. **Frontend pattern references** ⭐: Form islands, API clients, state management (saves ~400-600 tokens/feature)
-
-**See [Frontend Optimization Guide](docs/guides/FRONTEND_OPTIMIZATION_GUIDE.md) for UI implementation details.**
-
-### General Best Practices
-14. **Agents read files, not chat history**: Each agent reads output files from previous agents
-15. **Narrow agent scope**: Each agent has a specific, limited responsibility
-16. **Structured outputs**: Agents produce markdown files with clear structure
-17. **No redundancy**: Information is stored once in files, not repeated in context
-
-### Token Usage Comparison
-
-| Phase | Old Approach | New (Optimized) | Savings |
-|-------|--------------|-----------------|---------|
-| **API Design** | ~25,000 tokens | ~8-12,000 tokens | **52-68%** |
-| **Test Writing** | ~7,500 tokens | ~3,600 tokens | **52%** |
-| **Backend Implementation** | ~2,500 tokens | ~1,000 tokens | **60%** |
-| **Frontend Implementation** | ~3,000 tokens | ~1,200 tokens | **60%** |
-| **Total per feature** | **~38,000 tokens** | **~13,800-17,800 tokens** | **53-64%** |
-
-### Workflow Comparison
-
-| Approach | Tokens/Feature | Speed | Best For |
-|----------|----------------|-------|----------|
-| **Pattern-optimized** ⭐ | **~11-15K** | **Fast** | **New features (recommended)** |
-| Feature-scoped only | ~15-20K | Fast | Basic features |
-| Manual (Level 1) | ~20K | Slower | Learning, small projects |
-| Commands (Level 2) | ~25K | Fast | Initial project setup |
-| Orchestration (Level 3) | ~35K | Fastest | Complex projects |
-
-**NEW: Fully Optimized Workflow**: Use `/new-feature` to automatically apply all 13 optimization layers:
-- Feature-scoped documentation (40-50% savings on API design)
-- API pattern references (15-20% additional savings)
-- Shorthand API templates (10-15% additional savings)
-- CRUD test templates (50% savings on tests)
-- Test data patterns (additional test savings)
-- CRUD service templates (50-60% savings on backend)
-- CRUD route templates (additional backend savings)
-- Fresh route templates (55-65% savings on frontend pages)
-- Design system components (additional frontend savings)
-- **Total: 53-64% reduction in full feature development (API + Tests + Backend + Frontend)**
-
-## Best Practices
-
-### Architecture Principles
-
-- **Start Simple**: Don't over-engineer for future requirements
-- **Boring Technology**: Use mature, well-documented tools
-- **Clear Separation**: Routes → Controllers → Services → Models
-- **Avoid Complexity**: No microservices for small projects
-
-### Code Principles
-
-- **YAGNI**: You Ain't Gonna Need It
-- **KISS**: Keep It Simple, Stupid
-- **DRY**: Don't Repeat Yourself
-- **SOLID**: Single Responsibility, Open/Closed, etc.
-
-### Testing Principles
-
-- **Test First**: Write tests before implementation (TDD)
-- **AAA Pattern**: Arrange, Act, Assert
-- **One Assertion**: Focus each test on one thing
-- **Cover Edge Cases**: Test errors, nulls, boundaries
-
-## Technology Stack
-
-This template is built on **Deno 2** with modern, production-ready tools optimized for **serverless edge deployment**.
-
-### Backend (Deno 2)
-- **Runtime**: Deno 2.0+ (secure, TypeScript-first)
-- **Framework**: Fresh 1.7.3 API routes (file-based routing, SSR-friendly)
-- **Language**: TypeScript (built-in, no build step)
-- **Database**: **Deno KV** - zero-config, distributed, edge-ready, built-in
-- **Testing**: Deno's built-in test runner with in-memory KV
-- **Validation**: Zod
-- **Deployment**: **Deno Deploy** - zero-config serverless with global KV replication
-
-### Frontend (Fresh + Preact)
-- **Framework**: Fresh 1.7+ (Deno-native, SSR, Islands architecture)
-- **UI Library**: Preact (lightweight React alternative)
-- **State**: Preact Signals (reactive state management)
-- **Styling**: Tailwind CSS (built-in with Fresh)
-- **Deployment**: Works seamlessly on Deno Deploy
-
-### Database: Deno KV
-
-**This template uses Deno KV as the primary data storage solution.**
-
-✅ **Zero Configuration** - No setup, connection strings, or migrations needed
-✅ **Built-in** - Ships with Deno runtime, no external database required
-✅ **Edge-Ready** - Globally distributed on Deno Deploy
-✅ **ACID Transactions** - Atomic operations for data consistency
-✅ **Fast** - Optimized for key-value and simple queries
-✅ **Easy Testing** - In-memory mode (`:memory:`) for isolated tests
-✅ **Serverless-Native** - Perfect for edge deployment
-✅ **Free Tier** - Generous limits on Deno Deploy
-
-**Note**: This template is optimized for Deno KV. If you need complex SQL queries, consider customizing the data layer.
-
-### Deployment: Deno Deploy (Default)
-
-**Why Deno Deploy is the recommended deployment target:**
-
-✅ **Zero Configuration** - No Docker, no infrastructure, just deploy
-✅ **Global Edge Network** - Low latency worldwide (35+ regions)
-✅ **Built-in Deno KV** - Distributed key-value store at the edge
-✅ **Auto-Scaling** - Serverless, scales automatically
-✅ **GitHub Integration** - Deploy on push with GitHub Actions
-✅ **Free Tier** - Generous free tier for small projects
-✅ **HTTPS Included** - Automatic SSL certificates
-
-**When to use alternative deployment:**
-- Need containerization (Docker/Kubernetes)
-- Existing cloud infrastructure (AWS/GCP/Azure)
-- On-premise requirements
-- Heavy CPU/memory workloads
-
-### Why Deno 2?
-
-✅ **Zero Configuration** - TypeScript, testing, linting, formatting built-in
-✅ **Secure by Default** - Explicit permissions for file, network, env access
-✅ **Modern Web APIs** - fetch, crypto, Web Streams natively supported
-✅ **Fast Package Resolution** - JSR registry, npm compatibility
-✅ **Built-in Deno KV** - Key-value database included
-✅ **Single Executable** - Compile to standalone binary (optional)
-✅ **Edge-Ready** - Perfect for Deno Deploy and serverless
-
-You can still use npm packages when needed via `npm:` specifier.
-
-## Customization
-
-### Template Customization (Quick Start)
-
-Use the `/customize` command to quickly personalize the template:
-
-```bash
-# Claude Code:
-/customize
-
-# GitHub Copilot:
-@workspace customize starter
-```
-
-This guided workflow helps you configure:
-- **Site Identity**: Name, description, URL, logo
-- **Branding**: Primary, secondary, and accent colors
-- **Navigation**: Menu items for desktop, mobile, and footer
-- **Features**: Toggle notifications, 2FA, file uploads, admin panel, dark mode
-- **API Settings**: Base URL, timeout, retry configuration
-- **Social Links**: GitHub, Twitter, LinkedIn, Discord
-
-**Output:** Creates/updates `frontend/lib/config.ts` with your settings.
-
-All customizations use TypeScript interfaces for type safety and are automatically applied through CSS custom properties and component rendering.
-
-See `.claude/commands/customize.md` or `.github/copilot-workflows.md` for detailed workflow documentation.
-
-### Adding Custom Agents
-
-Create a new file in `.claude/agents/`:
-
-```markdown
-# My Custom Agent
-
-Your agent description and responsibilities...
-
-## Output Format
-[What this agent produces]
-```
-
-### Adding Custom Commands
-
-Create a new file in `.claude/commands/`:
-
-```markdown
----
-description: Short description for the command
----
-
-Your command instructions...
-```
-
-## Examples
-
-### Example 1: Building Your First Feature (Recommended)
-
-Starting from a fresh template:
-
-```bash
-# Step 1: Define your project
-/requirements
-> "I want to build a task management app where users can create,
-   complete, and organize tasks into projects"
-
-# Step 2: Design architecture
-/architect
-# Agent evaluates requirements and recommends:
-# - Fresh API routes for REST API
-# - Deno KV for data storage (tasks + projects)
-# - Fresh Islands for interactive UI
-# - Creates docs/architecture.md and ADRs
-
-# Step 3: Build first feature
-/new-feature
-> "task-creation"
-
-# The command will guide you through:
-# - Gather detailed requirements for task creation
-# - Design API endpoint (POST /api/tasks)
-# - Design Deno KV schema for tasks
-# - Write tests following TDD
-# - Implement backend logic
-# - Implement frontend form
-```
-
-### Example 2: Quick Start with Defaults
-
-Skip requirements/architecture and jump right in:
-
-```bash
-/new-feature
-> "user-authentication"
-
-# First-run detection triggers:
-⚠️  I noticed this might be your first feature!
-
-Would you like to:
-a) Run /requirements + /architect first (recommended)
-b) Continue with default architecture (Fresh + Deno KV)
-c) Skip architecture setup
-
-# Choose (b) for quick start with sensible defaults
-# The agent will use the template's default stack
-```
-
-
-
 ## Troubleshooting
-
-### Rate Limiting / "429 Too Many Requests"
-
-The API has rate limiting enabled for security. In development mode, limits are 10x more lenient.
-
-**Quick fix:**
-```bash
-deno task reset-rate-limits
-```
-
-**Verify development mode:**
-Ensure your `.env` file has:
-```bash
-DENO_ENV=development
-```
-
-See [docs/RATE_LIMITING.md](docs/RATE_LIMITING.md) for detailed information about:
-- Rate limit configuration (dev vs production)
-- Auto-refresh intervals (JobDashboard refreshes every 30s)
-- How to adjust or disable auto-refresh
-- Best practices for avoiding rate limits
-
-### Tests Failing
-
-1. Check that you're in the Green phase (tests should be written first)
-2. Review test expectations vs. implementation
-3. Run specific test: `deno task test <file-name>`
-
-### Agent Not Following Architecture
-
-1. Ensure `docs/architecture.md` exists and is up-to-date
-2. Remind the agent to read architecture docs
-3. Update ADRs for new decisions
 
 ### API Mismatch Between Frontend/Backend
 
 1. Check `docs/api-spec.md` is the source of truth
-2. Both agents should reference this file
+2. Frontend, backend, and testing agents should reference this file
 3. Update spec first, then regenerate code
 
 ## Contributing
@@ -688,21 +339,6 @@ To improve the template:
 1. Fork this repository
 2. Make your changes
 3. Submit a pull request
-
-## License
-
-MIT License - feel free to use for any purpose.
-
-## Resources
-
-- [Quick Reference](docs/QUICK_REFERENCE.md) - Condensed guide for common patterns
-- [Detailed Guides](docs/guides/) - Comprehensive guides for advanced topics
-- [Claude Code Documentation](https://docs.claude.com/claude-code)
-- [Test-Driven Development](https://martinfowler.com/bliki/TestDrivenDevelopment.html)
-- [Architecture Decision Records](https://adr.github.io/)
-- [Quick Start Guide](QUICKSTART.md) - Get started in 5 minutes
-- [Fresh Documentation](https://fresh.deno.dev/docs/getting-started)
-- [Deno Documentation](https://deno.com/)
 
 ## Deployment to Deno Deploy
 
@@ -781,81 +417,7 @@ deno task kv:inspect   # View stored data
 - ✅ Add `data/*.db` to `.gitignore` (already configured)
 - ✅ See `docs/guides/DENO_KV_GUIDE.md` for complete guide
 
-## Deno 2 Quick Reference
 
-```bash
-# Development
-deno task dev              # Start dev server (both backend + frontend)
-deno task test                  # Run tests
-deno task test:coverage    # Test coverage
-deno lint                  # Lint code
-deno fmt                   # Format code
-deno task type-check       # Type checking
-
-# Deployment (Deno Deploy - Recommended)
-deno task deploy           # Deploy to production
-deno task deploy:preview   # Deploy preview environment
-git push origin main       # Auto-deploy via GitHub Actions
-
-# Build (for Docker/VPS deployment)
-deno task build            # Build for production
-deno compile               # Create standalone executable
-deno task start            # Run production build
-```
-
-## Support
-
-For issues or questions:
-- Check existing documentation in `docs/`
-- Use `/review` to validate your implementation
-- Consult the agent definitions in `.claude/agents/`
-- [Deno Documentation](https://deno.land/manual)
-- [Fresh Documentation](https://fresh.deno.dev)
-
----
-
-**Happy Building! 🚀**
-
-**Recommended:** Start with `/new-feature` for most projects.
-
-**Learning:** Use `/requirements` and `/architect` commands during initial setup to understand the workflow.
-
-See [Quick Reference](docs/QUICK_REFERENCE.md) for common patterns.
-
-# Backlog
-* the docs will load a lot of the guides for claude code, does the claudeignore need to be updated or these docs moved?
-
-* Does the /design command also impact layout? If not, should there be a layout? Maybe add some common layouts?
-* Confirm it still works with no .env file. Should a /setup command exist to create the .env file?
-* Add a hamburger menu to the menu bar and option to add new screen to menu if it exists
-
-* Does test user always get populated first go? Command to create test user? Update docs? Logging in with test@example.com / password123
-
-
-* Setup integration tests to to test the api layer directly. Confirm that e2e and integration test added on /new-feature
-
-* update home screen with:
-*  all commands and up to date info. 
-* How to set up auth
-* Evaluate Open API implementation, is Redoc the right choice?
-* Error monitoring: Optional setting to integrate with something like Datadog?
-
-
-Auth Priority Nice to Have:
-
-
-The server is running at http://localhost:3000/
-
-Test User Credentials:
-Email: test@example.com
-Password: password123
-
-Quick Tests:
-Login Flow: Try logging in - you'll get both access + refresh tokens
-Auto-Refresh: Check browser console in 13 minutes - it should auto-refresh
-CSRF Protection: Try login without the CSRF token header (should fail)
-Token Revocation: Logout and verify the refresh token is invalidated
-Security Headers: Check DevTools Network tab for CSP, HSTS, etc.
 
 ## Admin Panel
 
@@ -902,9 +464,16 @@ deno task users:list
 deno task users:make-admin email@example.com
 ```
 
-### Documentation
+## License
 
-- [Production Admin Setup](docs/PRODUCTION_ADMIN_SETUP.md) - **How to set up first admin in production**
-- [Admin Panel Quick Start](docs/ADMIN_QUICK_START.md) - Quick reference
-- [Admin Panel Guide](docs/ADMIN_PANEL.md) - Complete documentation
-- [Admin Implementation Summary](docs/ADMIN_IMPLEMENTATION_SUMMARY.md) - Technical details
+MIT License - feel free to use for any purpose.
+
+## Support
+
+For issues or questions:
+- Check existing documentation in `docs/`
+- Use `/review` to validate your implementation
+- Consult the agent definitions in `.claude/agents/`
+- [Deno Documentation](https://deno.land/manual)
+- [Fresh Documentation](https://fresh.deno.dev)
+- Submit an issue to the repository
