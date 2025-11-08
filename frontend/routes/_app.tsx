@@ -41,18 +41,8 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
         {/* Token refresh script - automatically refreshes access tokens */}
         <script type="module" src="/lib/token-refresh.ts"></script>
         {/* Prevent FOUC (Flash of Unstyled Content) by setting dark mode class early */}
-        {/* Note: Uses localStorage directly instead of ThemeStorage because this runs before JS modules load */}
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              const theme = localStorage.getItem('theme');
-              const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-              if (theme === 'dark' || (!theme && prefersDark)) {
-                document.documentElement.classList.add('dark');
-              }
-            })();
-          `
-        }} />
+        {/* Note: Must run synchronously before page renders to prevent flash */}
+        <script src="/scripts/theme-init.js"></script>
       </head>
       <body f-client-nav style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
         {/* Navigation and banner are outside partials - they persist across navigations */}

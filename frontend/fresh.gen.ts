@@ -79,6 +79,7 @@ import * as $AvatarUpload from "./islands/AvatarUpload.tsx";
 import * as $DarkModeToggle from "./islands/DarkModeToggle.tsx";
 import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
 import * as $EmailVerificationBanner from "./islands/EmailVerificationBanner.tsx";
+import * as $ForgotPasswordForm from "./islands/ForgotPasswordForm.tsx";
 import * as $ImageUpload from "./islands/ImageUpload.tsx";
 import * as $LoginForm from "./islands/LoginForm.tsx";
 import * as $MobileMenuToggle from "./islands/MobileMenuToggle.tsx";
@@ -86,6 +87,7 @@ import * as $Navigation from "./islands/Navigation.tsx";
 import * as $NotificationBell from "./islands/NotificationBell.tsx";
 import * as $NotificationList from "./islands/NotificationList.tsx";
 import * as $ProfileSettings from "./islands/ProfileSettings.tsx";
+import * as $ResendVerificationForm from "./islands/ResendVerificationForm.tsx";
 import * as $ResetPasswordForm from "./islands/ResetPasswordForm.tsx";
 import * as $SignupForm from "./islands/SignupForm.tsx";
 import * as $TwoFactorSetup from "./islands/TwoFactorSetup.tsx";
@@ -182,6 +184,7 @@ const manifest = {
     "./islands/DarkModeToggle.tsx": $DarkModeToggle,
     "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
     "./islands/EmailVerificationBanner.tsx": $EmailVerificationBanner,
+    "./islands/ForgotPasswordForm.tsx": $ForgotPasswordForm,
     "./islands/ImageUpload.tsx": $ImageUpload,
     "./islands/LoginForm.tsx": $LoginForm,
     "./islands/MobileMenuToggle.tsx": $MobileMenuToggle,
@@ -189,6 +192,7 @@ const manifest = {
     "./islands/NotificationBell.tsx": $NotificationBell,
     "./islands/NotificationList.tsx": $NotificationList,
     "./islands/ProfileSettings.tsx": $ProfileSettings,
+    "./islands/ResendVerificationForm.tsx": $ResendVerificationForm,
     "./islands/ResetPasswordForm.tsx": $ResetPasswordForm,
     "./islands/SignupForm.tsx": $SignupForm,
     "./islands/TwoFactorSetup.tsx": $TwoFactorSetup,
