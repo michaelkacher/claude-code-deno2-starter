@@ -4,7 +4,7 @@
 
 import { assertEquals, assertExists } from 'jsr:@std/assert';
 import { beforeEach, describe, it } from 'jsr:@std/testing/bdd';
-import { CronPatterns, JobScheduler } from './scheduler.ts';
+import { CronPatterns, JobScheduler } from '../../../shared/lib/scheduler.ts';
 
 describe('JobScheduler', () => {
   let scheduler: JobScheduler;

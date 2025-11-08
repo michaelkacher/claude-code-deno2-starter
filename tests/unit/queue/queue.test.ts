@@ -4,8 +4,8 @@
 
 import { assertEquals, assertExists } from 'jsr:@std/assert';
 import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
-import { closeKv } from './kv.ts';
-import { JobQueue } from './queue.ts';
+import { closeKv } from '../../../shared/lib/kv.ts';
+import { JobQueue } from '../../../shared/lib/queue.ts';
 
 describe('JobQueue', {
   sanitizeResources: false,
@@ -174,7 +174,7 @@ describe('JobQueue', {
         job.status = 'completed';
         job.completedAt = new Date('2020-01-01').toISOString();
         // Save updated job manually for test
-        const { getKv } = await import('./kv.ts');
+        const { getKv } = await import('../../../shared/lib/kv.ts');
         const kv = await getKv();
         await kv.set(['jobs', jobId], job);
       }
