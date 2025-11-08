@@ -2,13 +2,14 @@
  * Login Form Island
  * Handles authentication and JWT token storage
  *
- * MIGRATED TO PREACT SIGNALS
+ * MIGRATED TO API CLIENT
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { authApi } from '../lib/api-client.ts';
 import { TokenStorage } from '../lib/storage.ts';
-import { setUser, setAccessToken } from '../lib/store.ts';
+import { setAccessToken, setUser } from '../lib/store.ts';
 
 interface LoginFormProps {
   redirectTo?: string;
@@ -35,67 +36,36 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
     }
 
     try {
-      // Get CSRF token first
-      const csrfResponse = await fetch(`/api/auth/csrf-token`, {
-        credentials: 'include',
-      });
-      const csrfData = await csrfResponse.json();
-      const csrfToken = csrfData.data.csrfToken;
-
-      const response = await fetch(`/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email: email.value, password: password.value }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Handle rate limiting specifically
-        if (response.status === 429) {
-          const retryAfter = data.error?.retryAfter;
-          const retryMessage = retryAfter
-            ? `Too many attempts. Please try again in ${Math.ceil(retryAfter / 60)} minutes.`
-            : data.error?.message || 'Too many attempts. Please try again later.';
-          error.value = retryMessage;
-        } else {
-          error.value = data.error?.message || 'Login failed';
-        }
-        isLoading.value = false;
-        return;
-      }
+      // Use API client for login
+      const data = await authApi.login(email.value, password.value);
 
       // Store user session using storage abstraction
       if (IS_BROWSER) {
         TokenStorage.setUserSession({
-          accessToken: data.data.accessToken,
-          email: data.data.user.email,
-          role: data.data.user.role,
-          emailVerified: data.data.user.emailVerified,
+          accessToken: data.accessToken,
+          email: data.user.email,
+          role: data.user.role,
+          emailVerified: data.user.emailVerified,
         });
 
         // Update global state store
         setUser({
-          email: data.data.user.email,
-          role: data.data.user.role,
-          emailVerified: data.data.user.emailVerified,
+          email: data.user.email,
+          role: data.user.role,
+          emailVerified: data.user.emailVerified,
         });
-        setAccessToken(data.data.accessToken);
+        setAccessToken(data.accessToken);
 
         // Also set access token in cookie for server-side auth check (15 minutes expiry)
         const expiryDate = new Date();
         expiryDate.setMinutes(expiryDate.getMinutes() + 15);
-        document.cookie = `auth_token=${data.data.accessToken}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+        document.cookie = `auth_token=${data.accessToken}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
 
         // Redirect to intended page or home
         window.location.href = redirectTo;
       }
     } catch (err) {
-      error.value = 'Network error. Please try again.';
+      error.value = err instanceof Error ? err.message : 'Login failed';
       isLoading.value = false;
     }
   };

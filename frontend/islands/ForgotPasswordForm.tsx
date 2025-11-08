@@ -3,9 +3,12 @@
  * 
  * Interactive form for requesting password reset emails.
  * Handles form submission, validation, and error/success messages.
+ * 
+ * MIGRATED TO API CLIENT
  */
 
 import { useRef, useState } from 'preact/hooks';
+import { authApi } from '../lib/api-client.ts';
 
 interface FormState {
   isSubmitting: boolean;
@@ -28,45 +31,27 @@ export default function ForgotPasswordForm() {
     setState({ isSubmitting: true, message: null });
 
     try {
-      const apiUrl = window.location.origin;
-      const response = await fetch(`${apiUrl}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Use API client for forgot password
+      await authApi.forgotPassword(email);
+      
+      setState({
+        isSubmitting: false,
+        message: {
+          type: 'success',
+          content: 'Password reset email sent! If you don\'t receive an email within a few minutes, please check your spam folder.',
         },
-        body: JSON.stringify({ email }),
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setState({
-          isSubmitting: false,
-          message: {
-            type: 'success',
-            content: `${data.data.message}. If you don't receive an email within a few minutes, please check your spam folder.`,
-          },
-        });
-        
-        // Reset form on success
-        if (emailRef.current) {
-          emailRef.current.value = '';
-        }
-      } else {
-        setState({
-          isSubmitting: false,
-          message: {
-            type: 'error',
-            content: data.error?.message || 'Failed to send reset email',
-          },
-        });
+      
+      // Reset form on success
+      if (emailRef.current) {
+        emailRef.current.value = '';
       }
     } catch (error) {
       setState({
         isSubmitting: false,
         message: {
           type: 'error',
-          content: 'Network error. Please check your connection and try again.',
+          content: error instanceof Error ? error.message : 'Failed to send reset email',
         },
       });
     }

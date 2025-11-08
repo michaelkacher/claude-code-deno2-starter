@@ -2,14 +2,15 @@
  * Signup Form Island
  * Handles user registration with validation
  *
- * MIGRATED TO PREACT SIGNALS
+ * MIGRATED TO API CLIENT
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useSignal, useComputed } from '@preact/signals';
+import { useSignal } from '@preact/signals';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
-import { setUser, setAccessToken } from '../lib/store.ts';
+import { authApi } from '../lib/api-client.ts';
 import { TokenStorage } from '../lib/storage.ts';
+import { setAccessToken, setUser } from '../lib/store.ts';
 
 interface SignupFormProps {
   redirectTo?: string;
@@ -67,79 +68,44 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
     isLoading.value = true;
 
     try {
-      const apiUrl = IS_BROWSER
-        ? window.location.origin
-        : 'http://localhost:3000';
-
-      // Get CSRF token first
-      const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
-        credentials: 'include',
-      });
-      const csrfData = await csrfResponse.json();
-      const csrfToken = csrfData.data.csrfToken;
-
-      const response = await fetch(`${apiUrl}/api/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          email: email.value,
-          password: password.value,
-          name: name.value,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        error.value = data.error?.message || 'Signup failed';
-        isLoading.value = false;
-        return;
-      }
+      // Use API client for signup
+      const data = await authApi.signup(email.value, password.value, name.value);
 
       // Store access token in localStorage (refresh token is in httpOnly cookie)
       if (IS_BROWSER) {
         TokenStorage.setUserSession({
-          accessToken: data.data.accessToken,
-          email: data.data.user.email,
-          role: data.data.user.role,
-          emailVerified: data.data.user.emailVerified,
+          accessToken: data.accessToken,
+          email: data.user.email,
+          role: data.user.role,
+          emailVerified: data.user.emailVerified,
         });
 
         // Update global state store
         setUser({
-          email: data.data.user.email,
-          role: data.data.user.role,
-          emailVerified: data.data.user.emailVerified,
+          email: data.user.email,
+          role: data.user.role,
+          emailVerified: data.user.emailVerified,
         });
-        setAccessToken(data.data.accessToken);
+        setAccessToken(data.accessToken);
 
         // Also set access token in cookie for server-side auth check (15 minutes expiry)
         const expiryDate = new Date();
         expiryDate.setMinutes(expiryDate.getMinutes() + 15);
-        document.cookie = `auth_token=${data.data.accessToken}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+        document.cookie = `auth_token=${data.accessToken}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
 
-        // Show success message about email verification
-        if (data.data.message) {
-          success.value = true;
-          successMessage.value = data.data.message;
-          isLoading.value = false;
+        // Check for success message (email verification notice)
+        // Note: We need to adjust API to return message, for now show generic message
+        success.value = true;
+        successMessage.value = 'Please check your email to verify your account.';
+        isLoading.value = false;
 
-          // Redirect to intended page after 3 seconds
-          setTimeout(() => {
-            window.location.href = redirectTo;
-          }, 3000);
-          return;
-        }
-
-        // If no message, redirect immediately
-        window.location.href = redirectTo;
+        // Redirect to intended page after 3 seconds
+        setTimeout(() => {
+          window.location.href = redirectTo;
+        }, 3000);
       }
     } catch (err) {
-      error.value = 'Network error. Please try again.';
+      error.value = err instanceof Error ? err.message : 'Signup failed';
       isLoading.value = false;
     }
   };

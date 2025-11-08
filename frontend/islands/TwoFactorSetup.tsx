@@ -2,12 +2,12 @@
  * Two-Factor Authentication Setup Island
  * Handles 2FA enrollment with QR code display
  *
- * MIGRATED TO PREACT SIGNALS
+ * MIGRATED TO API CLIENT
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
-import { TokenStorage } from '../lib/storage.ts';
+import { twoFactorApi } from '../lib/api-client.ts';
 
 interface TwoFactorSetupProps {
   onComplete?: () => void;
@@ -29,40 +29,14 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
     isLoading.value = true;
 
     try {
-      if (!IS_BROWSER) return;
-
-      const apiUrl = window.location.origin;
-      const accessToken = TokenStorage.getAccessToken();
+      // Use API client for 2FA setup
+      const data = await twoFactorApi.setup(password.value);
       
-      const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
-        credentials: 'include',
-      });
-      const csrfData = await csrfResponse.json();
-      
-      const response = await fetch(`${apiUrl}/api/2fa/setup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'X-CSRF-Token': csrfData.data.csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        error.value = data.error?.message || 'Failed to setup 2FA';
-        isLoading.value = false;
-        return;
-      }
-
-      qrCodeURL.value = data.data.qrCodeURL;
-      manualKey.value = data.data.manualEntryKey;
+      qrCodeURL.value = data.qrCodeURL;
+      manualKey.value = data.manualEntryKey;
       step.value = 'scan';
     } catch (err) {
-      error.value = 'Network error. Please try again.';
+      error.value = err instanceof Error ? err.message : 'Failed to setup 2FA';
     } finally {
       isLoading.value = false;
     }
@@ -74,39 +48,13 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
     isLoading.value = true;
 
     try {
-      if (!IS_BROWSER) return;
-
-      const apiUrl = window.location.origin;
-      const accessToken = TokenStorage.getAccessToken();
+      // Use API client for 2FA enable
+      const data = await twoFactorApi.enable(verificationCode.value);
       
-      const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
-        credentials: 'include',
-      });
-      const csrfData = await csrfResponse.json();
-      
-      const response = await fetch(`${apiUrl}/api/2fa/enable`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'X-CSRF-Token': csrfData.data.csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ code: verificationCode }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        error.value = data.error?.message || 'Invalid verification code';
-        isLoading.value = false;
-        return;
-      }
-
-      backupCodes.value = data.data.backupCodes;
+      backupCodes.value = data.backupCodes;
       step.value = 'backup';
     } catch (err) {
-      error.value = 'Network error. Please try again.';
+      error.value = err instanceof Error ? err.message : 'Invalid verification code';
     } finally {
       isLoading.value = false;
     }

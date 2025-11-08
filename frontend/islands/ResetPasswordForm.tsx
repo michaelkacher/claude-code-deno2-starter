@@ -2,13 +2,14 @@
  * Reset Password Form Island
  * Handles password reset with strength validation
  *
- * MIGRATED TO PREACT SIGNALS
+ * MIGRATED TO API CLIENT
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect } from 'preact/hooks';
 import { useSignal } from '@preact/signals';
+import { useEffect } from 'preact/hooks';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
+import { authApi } from '../lib/api-client.ts';
 
 interface ResetPasswordFormProps {
   token: string;
@@ -58,29 +59,8 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     isLoading.value = true;
 
     try {
-      if (!IS_BROWSER) return;
-
-      const apiUrl = window.location.origin;
-
-      const response = await fetch(`${apiUrl}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          password: password.value,
-          twoFactorCode: requires2FA.value ? twoFactorCode.value : undefined,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        error.value = data.error?.message || 'Failed to reset password';
-        isLoading.value = false;
-        return;
-      }
+      // Use API client for password reset
+      await authApi.resetPassword(token, password.value);
 
       // Success!
       success.value = true;
@@ -90,7 +70,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         window.location.href = '/login?message=password_reset';
       }, 2000);
     } catch (err) {
-      error.value = 'Network error. Please try again.';
+      error.value = err instanceof Error ? err.message : 'Failed to reset password';
       isLoading.value = false;
     }
   };

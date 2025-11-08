@@ -3,9 +3,12 @@
  * 
  * Interactive form for requesting a new email verification link.
  * Handles form submission, validation, and error/success messages.
+ * 
+ * MIGRATED TO API CLIENT
  */
 
 import { useRef, useState } from 'preact/hooks';
+import { authApi } from '../lib/api-client.ts';
 
 interface FormState {
   isSubmitting: boolean;
@@ -28,45 +31,27 @@ export default function ResendVerificationForm() {
     setState({ isSubmitting: true, message: null });
 
     try {
-      const apiUrl = window.location.origin;
-      const response = await fetch(`${apiUrl}/api/auth/resend-verification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Use API client for resend verification
+      await authApi.resendVerification(email);
+      
+      setState({
+        isSubmitting: false,
+        message: {
+          type: 'success',
+          content: 'Verification email sent! Please check your inbox.',
         },
-        body: JSON.stringify({ email }),
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setState({
-          isSubmitting: false,
-          message: {
-            type: 'success',
-            content: data.data.message || 'Verification email sent! Please check your inbox.',
-          },
-        });
-        
-        // Reset form on success
-        if (emailRef.current) {
-          emailRef.current.value = '';
-        }
-      } else {
-        setState({
-          isSubmitting: false,
-          message: {
-            type: 'error',
-            content: data.error?.message || 'Failed to send verification email',
-          },
-        });
+      
+      // Reset form on success
+      if (emailRef.current) {
+        emailRef.current.value = '';
       }
     } catch (error) {
       setState({
         isSubmitting: false,
         message: {
           type: 'error',
-          content: 'Network error. Please try again later.',
+          content: error instanceof Error ? error.message : 'Failed to send verification email',
         },
       });
     }

@@ -1,12 +1,13 @@
 /**
  * Profile Settings Island
  *
- * MIGRATED TO PREACT SIGNALS
+ * MIGRATED TO API CLIENT
  */
 
 import { IS_BROWSER } from "$fresh/runtime.ts";
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
+import { userApi } from "../lib/api-client.ts";
 import { TokenStorage } from "../lib/storage.ts";
 
 interface User {
@@ -35,25 +36,16 @@ export default function ProfileSettings() {
           return;
         }
 
-        const response = await fetch("/api/auth/me", {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            TokenStorage.removeAccessToken();
-            window.location.href = "/login?redirect=/profile";
-            return;
-          }
-          throw new Error("Failed to load profile");
-        }
-
-        const data = await response.json();
-        user.value = data.data;
+        // Use API client for profile fetch
+        const data = await userApi.getProfile();
+        user.value = data as unknown as User;
       } catch (err) {
         console.error("Profile fetch error:", err);
+        if (err instanceof Error && err.message.includes('Authentication required')) {
+          TokenStorage.removeAccessToken();
+          window.location.href = "/login?redirect=/profile";
+          return;
+        }
         error.value = "Unable to load profile. Please try again.";
       } finally {
         loading.value = false;
