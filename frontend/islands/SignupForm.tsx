@@ -3,6 +3,7 @@
  * Handles user registration with validation
  *
  * MIGRATED TO API CLIENT
+ * REFACTORED: Uses centralized validation utilities
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
@@ -11,6 +12,7 @@ import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
 import { authApi } from '../lib/api-client.ts';
 import { TokenStorage } from '../lib/storage.ts';
 import { setAccessToken, setUser } from '../lib/store.ts';
+import { validateSignupForm } from '../lib/validation.ts';
 
 interface SignupFormProps {
   redirectTo?: string;
@@ -26,42 +28,20 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
   const successMessage = useSignal('');
   const isLoading = useSignal(false);
 
-  // Client-side validation
-  const validateForm = () => {
-    if (!name.value.trim()) {
-      error.value = 'Name is required';
-      return false;
-    }
-
-    if (!email.value.trim()) {
-      error.value = 'Email is required';
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.value)) {
-      error.value = 'Please enter a valid email address';
-      return false;
-    }
-
-    if (password.value.length < 8) {
-      error.value = 'Password must be at least 8 characters long';
-      return false;
-    }
-
-    if (password.value !== confirmPassword.value) {
-      error.value = 'Passwords do not match';
-      return false;
-    }
-
-    return true;
-  };
-
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
     error.value = '';
 
-    if (!validateForm()) {
+    // Use centralized validation
+    const validation = validateSignupForm({
+      name: name.value,
+      email: email.value,
+      password: password.value,
+      confirmPassword: confirmPassword.value,
+    });
+
+    if (!validation.isValid) {
+      error.value = validation.error || 'Validation failed';
       return;
     }
 

@@ -3,6 +3,7 @@
  * Handles authentication and JWT token storage
  *
  * MIGRATED TO API CLIENT
+ * REFACTORED: Uses centralized validation utilities
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
@@ -10,6 +11,7 @@ import { useSignal } from '@preact/signals';
 import { authApi } from '../lib/api-client.ts';
 import { TokenStorage } from '../lib/storage.ts';
 import { setAccessToken, setUser } from '../lib/store.ts';
+import { validateLoginForm } from '../lib/validation.ts';
 
 interface LoginFormProps {
   redirectTo?: string;
@@ -24,6 +26,18 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
     error.value = '';
+
+    // Use centralized validation
+    const validation = validateLoginForm({
+      email: email.value,
+      password: password.value,
+    });
+
+    if (!validation.isValid) {
+      error.value = validation.error || 'Validation failed';
+      return;
+    }
+
     isLoading.value = true;
 
     // Clear any existing auth cookies before logging in

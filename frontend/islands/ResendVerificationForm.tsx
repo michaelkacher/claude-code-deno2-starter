@@ -5,10 +5,12 @@
  * Handles form submission, validation, and error/success messages.
  * 
  * MIGRATED TO API CLIENT
+ * REFACTORED: Uses centralized validation utilities
  */
 
 import { useRef, useState } from 'preact/hooks';
 import { authApi } from '../lib/api-client.ts';
+import { validateEmailForm } from '../lib/validation.ts';
 
 interface FormState {
   isSubmitting: boolean;
@@ -25,8 +27,20 @@ export default function ResendVerificationForm() {
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
     
-    const email = emailRef.current?.value;
-    if (!email) return;
+    const email = emailRef.current?.value || '';
+
+    // Use centralized validation
+    const validation = validateEmailForm(email);
+    if (!validation.isValid) {
+      setState({
+        isSubmitting: false,
+        message: {
+          type: 'error',
+          content: validation.error || 'Validation failed',
+        },
+      });
+      return;
+    }
 
     setState({ isSubmitting: true, message: null });
 

@@ -77,14 +77,6 @@ export default function Error404() {
                 Home Page
               </a>
             </div>
-
-            {/* Support Link */}
-            <p class="text-center text-sm text-gray-500">
-              Need help?{' '}
-              <a href="/contact" class="text-blue-600 hover:text-blue-500 font-medium">
-                Contact Support
-              </a>
-            </p>
           </div>
         </div>
       </div>

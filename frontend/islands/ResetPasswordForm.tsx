@@ -3,6 +3,7 @@
  * Handles password reset with strength validation
  *
  * MIGRATED TO API CLIENT
+ * REFACTORED: Uses centralized validation utilities
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
@@ -10,6 +11,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
 import { authApi } from '../lib/api-client.ts';
+import { validatePasswordResetForm } from '../lib/validation.ts';
 
 interface ResetPasswordFormProps {
   token: string;
@@ -45,14 +47,14 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     e.preventDefault();
     error.value = '';
 
-    // Validation
-    if (password.value.length < 8) {
-      error.value = 'Password must be at least 8 characters long';
-      return;
-    }
+    // Use centralized validation
+    const validation = validatePasswordResetForm({
+      password: password.value,
+      confirmPassword: confirmPassword.value,
+    });
 
-    if (password.value !== confirmPassword.value) {
-      error.value = 'Passwords do not match';
+    if (!validation.isValid) {
+      error.value = validation.error || 'Validation failed';
       return;
     }
 
