@@ -1,40 +1,47 @@
-import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect, useRef, useState } from 'preact/hooks';
+/**
+ * Notification List Island
+ *
+ * MIGRATED TO PREACT SIGNALS - uses global state store
+ */
 
-interface Notification {
-  id: string;
-  userId: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  title: string;
-  message: string;
-  read: boolean;
-  link?: string;
-  createdAt: string;
-  readAt?: string;
-}
+import { IS_BROWSER } from '$fresh/runtime.ts';
+import { useEffect } from 'preact/hooks';
+import { useSignal, useComputed } from '@preact/signals';
+import {
+  accessToken,
+  notifications,
+  unreadCount,
+  isWsConnected,
+  markNotificationAsRead as markAsReadGlobal,
+  markAllNotificationsAsRead as markAllAsReadGlobal,
+  removeNotification as removeNotificationGlobal,
+} from '../lib/store.ts';
 
 export default function NotificationList() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<number | null>(null);
+  const isLoading = useSignal(true);
+  const filter = useSignal<'all' | 'unread'>('all');
+
+  // Filtered notifications based on current filter
+  const filteredNotifications = useComputed(() =>
+    filter.value === 'unread'
+      ? notifications.value.filter((n) => !n.read)
+      : notifications.value
+  );
 
   // Fetch all notifications
   const fetchNotifications = async () => {
+    if (!IS_BROWSER) return;
+
+    const token = accessToken.value;
+    if (!token) {
+      isLoading.value = false;
+      return;
+    }
+
+    isLoading.value = true;
+
     try {
-      setIsLoading(true);
-      const apiUrl = IS_BROWSER
-        ? window.location.origin
-        : 'http://localhost:3000';
-      
-      const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
+      const apiUrl = window.location.origin;
 
       const response = await fetch(`${apiUrl}/api/notifications?limit=100`, {
         headers: {
@@ -45,26 +52,25 @@ export default function NotificationList() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('[NotificationList] API response:', data);
-        setNotifications(data.data?.notifications || []);
-        setUnreadCount(data.data?.unreadCount || 0);
+        notifications.value = data.data?.notifications || [];
+        unreadCount.value = data.data?.unreadCount || 0;
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
-      setIsLoading(false);
+      isLoading.value = false;
     }
   };
 
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
+    if (!IS_BROWSER) return;
+
+    const token = accessToken.value;
+    if (!token) return;
+
     try {
-      const apiUrl = IS_BROWSER
-        ? window.location.origin
-        : 'http://localhost:3000';
-      
-      const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      if (!token) return;
+      const apiUrl = window.location.origin;
 
       const response = await fetch(
         `${apiUrl}/api/notifications/${notificationId}/read`,
@@ -78,12 +84,7 @@ export default function NotificationList() {
       );
 
       if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) =>
-            n.id === notificationId ? { ...n, read: true } : n
-          )
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        markAsReadGlobal(notificationId);
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -92,13 +93,13 @@ export default function NotificationList() {
 
   // Mark all as read
   const markAllAsRead = async () => {
+    if (!IS_BROWSER) return;
+
+    const token = accessToken.value;
+    if (!token) return;
+
     try {
-      const apiUrl = IS_BROWSER
-        ? window.location.origin
-        : 'http://localhost:3000';
-      
-      const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      if (!token) return;
+      const apiUrl = window.location.origin;
 
       const response = await fetch(`${apiUrl}/api/notifications/read-all`, {
         method: 'POST',
@@ -109,8 +110,7 @@ export default function NotificationList() {
       });
 
       if (response.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
+        markAllAsReadGlobal();
       }
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -119,13 +119,13 @@ export default function NotificationList() {
 
   // Delete notification
   const deleteNotification = async (notificationId: string) => {
+    if (!IS_BROWSER) return;
+
+    const token = accessToken.value;
+    if (!token) return;
+
     try {
-      const apiUrl = IS_BROWSER
-        ? window.location.origin
-        : 'http://localhost:3000';
-      
-      const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      if (!token) return;
+      const apiUrl = window.location.origin;
 
       const response = await fetch(
         `${apiUrl}/api/notifications/${notificationId}`,
@@ -139,124 +139,19 @@ export default function NotificationList() {
       );
 
       if (response.ok) {
-        const notification = notifications.find((n) => n.id === notificationId);
-        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-        if (notification && !notification.read) {
-          setUnreadCount((prev) => Math.max(0, prev - 1));
-        }
+        removeNotificationGlobal(notificationId);
       }
     } catch (error) {
       console.error('Error deleting notification:', error);
     }
   };
 
-  // Connect to WebSocket for real-time updates
-  const connectWebSocket = () => {
-    if (!IS_BROWSER) return;
-
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
-
-    // Close existing connection
-    if (wsRef.current) {
-      wsRef.current.close();
-    }
-
-    // Create WebSocket connection
-    const wsUrl = window.location.origin
-      .replace('http://', 'ws://')
-      .replace('https://', 'wss://');
-    
-    const ws = new WebSocket(`${wsUrl}/api/notifications/ws`);
-
-    ws.onopen = () => {
-      console.log('[WebSocket] Connection opened, waiting for auth prompt...');
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        switch (data.type) {
-          case 'auth_required':
-            console.log('[WebSocket] Auth required, sending token...');
-            ws.send(JSON.stringify({
-              type: 'auth',
-              token: token,
-            }));
-            break;
-
-          case 'auth_failed':
-            console.error('[WebSocket] Authentication failed');
-            setIsConnected(false);
-            ws.close();
-            break;
-
-          case 'connected':
-            console.log('[WebSocket] Authenticated and connected');
-            setIsConnected(true);
-            break;
-
-          case 'notification_update':
-          case 'new_notification':
-            // Refresh the full list on any update
-            fetchNotifications();
-            break;
-
-          case 'ping':
-            ws.send(JSON.stringify({ type: 'pong' }));
-            break;
-        }
-      } catch (error) {
-        console.error('[WebSocket] Error parsing message:', error);
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('[WebSocket] Error:', error);
-      setIsConnected(false);
-    };
-
-    ws.onclose = () => {
-      console.log('[WebSocket] Disconnected');
-      setIsConnected(false);
-
-      // Attempt to reconnect
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      reconnectTimeoutRef.current = setTimeout(() => {
-        if (IS_BROWSER && localStorage.getItem('access_token')) {
-          connectWebSocket();
-        }
-      }, 5000);
-    };
-
-    wsRef.current = ws;
-  };
-
   useEffect(() => {
     if (!IS_BROWSER) return;
-    
     fetchNotifications();
-    connectWebSocket();
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
   }, []);
 
   if (!IS_BROWSER) return null;
-
-  // Filter notifications
-  const filteredNotifications = filter === 'unread'
-    ? notifications.filter((n) => !n.read)
-    : notifications;
 
   // Icon colors based on notification type
   const getTypeColor = (type: string) => {
@@ -340,37 +235,37 @@ export default function NotificationList() {
             <div class="flex items-center gap-2 text-sm">
               <span
                 class={`w-2 h-2 rounded-full ${
-                  isConnected ? 'bg-green-500' : 'bg-gray-400 animate-pulse'
+                  isWsConnected.value ? 'bg-green-500' : 'bg-gray-400 animate-pulse'
                 }`}
               />
               <span class="text-gray-500">
-                {isConnected ? 'Real-time' : 'Reconnecting...'}
+                {isWsConnected.value ? 'Real-time' : 'Reconnecting...'}
               </span>
             </div>
-            
+
             <button
-              onClick={() => setFilter('all')}
+              onClick={() => filter.value = 'all'}
               class={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'all'
+                filter.value === 'all'
                   ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              All ({notifications.length})
+              All ({notifications.value.length})
             </button>
             <button
-              onClick={() => setFilter('unread')}
+              onClick={() => filter.value = 'unread'}
               class={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'unread'
+                filter.value === 'unread'
                   ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              Unread ({unreadCount})
+              Unread ({unreadCount.value})
             </button>
           </div>
 
-          {unreadCount > 0 && (
+          {unreadCount.value > 0 && (
             <button
               onClick={markAllAsRead}
               class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
@@ -383,12 +278,12 @@ export default function NotificationList() {
 
       {/* Notifications list */}
       <div class="divide-y divide-gray-200">
-        {isLoading ? (
+        {isLoading.value ? (
           <div class="px-6 py-12 text-center">
             <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <p class="mt-4 text-gray-600">Loading notifications...</p>
           </div>
-        ) : filteredNotifications.length === 0 ? (
+        ) : filteredNotifications.value.length === 0 ? (
           <div class="px-6 py-12 text-center">
             <svg
               class="w-16 h-16 mx-auto mb-4 text-gray-400"
@@ -404,16 +299,16 @@ export default function NotificationList() {
               />
             </svg>
             <h3 class="text-lg font-medium text-gray-900 mb-1">
-              {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+              {filter.value === 'unread' ? 'No unread notifications' : 'No notifications yet'}
             </h3>
             <p class="text-gray-600">
-              {filter === 'unread'
+              {filter.value === 'unread'
                 ? 'All caught up! You have no unread notifications.'
                 : 'When you receive notifications, they will appear here.'}
             </p>
           </div>
         ) : (
-          filteredNotifications.map((notification) => (
+          filteredNotifications.value.map((notification) => (
             <div
               key={notification.id}
               class={`px-6 py-4 hover:bg-gray-50 transition-colors ${

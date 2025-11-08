@@ -2,10 +2,11 @@
  * Image Upload Island Component
  *
  * Interactive island for uploading images with preview
+ *
+ * MIGRATED TO PREACT SIGNALS
  */
 
-import { useState } from 'preact/hooks';
-import { Signal, useSignal } from '@preact/signals';
+import { useSignal } from '@preact/signals';
 
 export interface ImageUploadProps {
   /** Upload endpoint */

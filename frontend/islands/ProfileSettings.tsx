@@ -1,5 +1,12 @@
+/**
+ * Profile Settings Island
+ *
+ * MIGRATED TO PREACT SIGNALS
+ */
+
 import { IS_BROWSER } from "$fresh/runtime.ts";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect } from "preact/hooks";
+import { useSignal } from "@preact/signals";
 
 interface User {
   id: string;
@@ -12,9 +19,9 @@ interface User {
 }
 
 export default function ProfileSettings() {
-  const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const user = useSignal<User | null>(null);
+  const error = useSignal<string | null>(null);
+  const loading = useSignal(true);
 
   useEffect(() => {
     if (!IS_BROWSER) return;
@@ -43,12 +50,12 @@ export default function ProfileSettings() {
         }
 
         const data = await response.json();
-        setUser(data.data);
+        user.value = data.data;
       } catch (err) {
         console.error("Profile fetch error:", err);
-        setError("Unable to load profile. Please try again.");
+        error.value = "Unable to load profile. Please try again.";
       } finally {
-        setLoading(false);
+        loading.value = false;
       }
     }
 
@@ -61,7 +68,7 @@ export default function ProfileSettings() {
     </div>;
   }
 
-  if (loading) {
+  if (loading.value) {
     return (
       <div class="min-h-screen bg-gray-50 flex items-center justify-center">
         <div class="text-center">
@@ -72,7 +79,7 @@ export default function ProfileSettings() {
     );
   }
 
-  if (error || !user) {
+  if (error.value || !user.value) {
     return (
       <div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div class="sm:mx-auto sm:w-full sm:max-w-md">
@@ -84,9 +91,9 @@ export default function ProfileSettings() {
               <h2 class="mt-4 text-center text-2xl font-bold text-gray-900">
                 Unable to load profile
               </h2>
-              {error && (
+              {error.value && (
                 <div class="mt-3 bg-red-50 border border-red-200 rounded-md p-3">
-                  <p class="text-sm text-red-800">{error}</p>
+                  <p class="text-sm text-red-800">{error.value}</p>
                 </div>
               )}
               <p class="mt-4 text-center text-sm text-gray-600">
@@ -128,22 +135,22 @@ export default function ProfileSettings() {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700">Email</label>
-                <p class="mt-1 text-sm text-gray-900">{user.email}</p>
+                <p class="mt-1 text-sm text-gray-900">{user.value.email}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Role</label>
-                <p class="mt-1 text-sm text-gray-900 capitalize">{user.role}</p>
+                <p class="mt-1 text-sm text-gray-900 capitalize">{user.value.role}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Member Since</label>
                 <p class="mt-1 text-sm text-gray-900">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {new Date(user.value.createdAt).toLocaleDateString()}
                 </p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Email Status</label>
                 <div class="mt-1 flex items-center">
-                  {user.emailVerified ? (
+                  {user.value.emailVerified ? (
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       ✓ Verified
                     </span>
@@ -168,14 +175,14 @@ export default function ProfileSettings() {
               <div>
                 <h3 class="text-sm font-medium text-gray-900">Two-Factor Authentication</h3>
                 <p class="text-sm text-gray-600">
-                  {user.twoFactorEnabled 
-                    ? 'Extra security for your account is enabled' 
+                  {user.value.twoFactorEnabled
+                    ? 'Extra security for your account is enabled'
                     : 'Add an extra layer of security to your account'
                   }
                 </p>
               </div>
               <div class="flex items-center">
-                {user.twoFactorEnabled ? (
+                {user.value.twoFactorEnabled ? (
                   <>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-3">
                       ✓ Enabled
@@ -230,7 +237,7 @@ export default function ProfileSettings() {
                 <p class="text-xs text-gray-600 mt-1">Manage your notification preferences</p>
               </a>
               
-              {user.role === 'admin' && (
+              {user.value.role === 'admin' && (
                 <a
                   href="/admin/users"
                   class="border border-gray-300 rounded-lg p-4 hover:border-purple-500 hover:bg-purple-50 transition-colors"

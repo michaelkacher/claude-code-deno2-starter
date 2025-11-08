@@ -278,17 +278,19 @@ Stacked avatar display.
 Centered dialog overlay.
 
 ```tsx
-const [isOpen, setIsOpen] = useState(false);
+import { useSignal } from '@preact/signals';
+
+const isOpen = useSignal(false);
 
 <Modal
-  isOpen={isOpen}
-  onClose={() => setIsOpen(false)}
+  isOpen={isOpen.value}
+  onClose={() => isOpen.value = false}
   title="Modal Title"
   size="md"
   showClose
 >
   <p>Modal content</p>
-  <Button onClick={() => setIsOpen(false)}>Close</Button>
+  <Button onClick={() => isOpen.value = false}>Close</Button>
 </Modal>
 ```
 
@@ -306,11 +308,13 @@ const [isOpen, setIsOpen] = useState(false);
 Side sliding panel/drawer.
 
 ```tsx
-const [isOpen, setIsOpen] = useState(false);
+import { useSignal } from '@preact/signals';
+
+const isOpen = useSignal(false);
 
 <Panel
-  isOpen={isOpen}
-  onClose={() => setIsOpen(false)}
+  isOpen={isOpen.value}
+  onClose={() => isOpen.value = false}
   position="right"
   size="md"
   title="Panel Title"

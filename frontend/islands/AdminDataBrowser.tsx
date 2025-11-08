@@ -1,10 +1,13 @@
 /**
  * Admin Data Browser Island
  * Browse and filter all models in Deno KV storage
+ *
+ * MIGRATED TO PREACT SIGNALS
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
+import { useSignal } from '@preact/signals';
 
 interface Model {
   name: string;
@@ -24,19 +27,19 @@ interface ModelData {
 }
 
 export default function AdminDataBrowser() {
-  const [models, setModels] = useState<Model[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>('');
-  const [modelData, setModelData] = useState<ModelData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filterProperty, setFilterProperty] = useState('');
-  const [filterValue, setFilterValue] = useState('');
-  const [debouncedFilterValue, setDebouncedFilterValue] = useState('');
-  
+  const models = useSignal<Model[]>([]);
+  const selectedModel = useSignal<string>('');
+  const modelData = useSignal<ModelData | null>(null);
+  const loading = useSignal(false);
+  const error = useSignal('');
+
+  const currentPage = useSignal(1);
+  const filterProperty = useSignal('');
+  const filterValue = useSignal('');
+  const debouncedFilterValue = useSignal('');
+
   const debounceTimerRef = useRef<number | null>(null);
-  
+
   // Debounce time: 500ms
   const DEBOUNCE_DELAY_MS = 500;
 
@@ -56,7 +59,7 @@ export default function AdminDataBrowser() {
 
     // Set new timer
     debounceTimerRef.current = setTimeout(() => {
-      setDebouncedFilterValue(filterValue);
+      debouncedFilterValue.value = filterValue.value;
     }, DEBOUNCE_DELAY_MS);
 
     // Cleanup on unmount or when filterValue changes
@@ -65,14 +68,14 @@ export default function AdminDataBrowser() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [filterValue]);
+  }, [filterValue.value]);
 
   // Fetch model data when selection or filters change (using debounced value)
   useEffect(() => {
-    if (IS_BROWSER && selectedModel) {
+    if (IS_BROWSER && selectedModel.value) {
       fetchModelData();
     }
-  }, [selectedModel, currentPage, filterProperty, debouncedFilterValue]);
+  }, [selectedModel.value, currentPage.value, filterProperty.value, debouncedFilterValue.value]);
 
   const fetchModels = async () => {
     try {
@@ -87,34 +90,34 @@ export default function AdminDataBrowser() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error?.message || 'Failed to fetch models');
+        error.value = data.error?.message || 'Failed to fetch models';
         return;
       }
 
-      setModels(data.data.models);
+      models.value = data.data.models;
     } catch (err) {
-      setError('Network error. Please try again.');
+      error.value = 'Network error. Please try again.';
     }
   };
 
   const fetchModelData = async () => {
-    setLoading(true);
-    setError('');
+    loading.value = true;
+    error.value = '';
 
     try {
       const accessToken = localStorage.getItem('access_token');
 
       const params = new URLSearchParams({
-        page: currentPage.toString(),
+        page: currentPage.value.toString(),
         limit: '20',
       });
 
-      if (filterProperty && debouncedFilterValue) {
-        params.append('filterProperty', filterProperty);
-        params.append('filterValue', debouncedFilterValue);
+      if (filterProperty.value && debouncedFilterValue.value) {
+        params.append('filterProperty', filterProperty.value);
+        params.append('filterValue', debouncedFilterValue.value);
       }
 
-      const response = await fetch(`/api/admin/data/${selectedModel}?${params}`, {
+      const response = await fetch(`/api/admin/data/${selectedModel.value}?${params}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -123,36 +126,36 @@ export default function AdminDataBrowser() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error?.message || 'Failed to fetch model data');
-        setLoading(false);
+        error.value = data.error?.message || 'Failed to fetch model data';
+        loading.value = false;
         return;
       }
 
-      setModelData(data.data);
+      modelData.value = data.data;
     } catch (err) {
-      setError('Network error. Please try again.');
+      error.value = 'Network error. Please try again.';
     } finally {
-      setLoading(false);
+      loading.value = false;
     }
   };
 
   const handleModelSelect = (modelName: string) => {
-    setSelectedModel(modelName);
-    setCurrentPage(1);
-    setFilterProperty('');
-    setFilterValue('');
-    setModelData(null);
+    selectedModel.value = modelName;
+    currentPage.value = 1;
+    filterProperty.value = '';
+    filterValue.value = '';
+    modelData.value = null;
   };
 
   const handleFilterApply = () => {
-    setCurrentPage(1);
+    currentPage.value = 1;
     fetchModelData();
   };
 
   const handleFilterClear = () => {
-    setFilterProperty('');
-    setFilterValue('');
-    setCurrentPage(1);
+    filterProperty.value = '';
+    filterValue.value = '';
+    currentPage.value = 1;
   };
 
   const renderValue = (value: any): string => {
@@ -165,18 +168,18 @@ export default function AdminDataBrowser() {
 
   return (
     <div class="space-y-6">
-      {error && (
+      {error.value && (
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {error}
+          {error.value}
         </div>
       )}
 
       {/* Model Selection */}
-      {!selectedModel && (
+      {!selectedModel.value && (
         <div>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Select a Model</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {models.map((model) => (
+            {models.value.map((model) => (
               <button
                 key={model.name}
                 onClick={() => handleModelSelect(model.name)}
@@ -191,22 +194,22 @@ export default function AdminDataBrowser() {
       )}
 
       {/* Model Data View */}
-      {selectedModel && (
+      {selectedModel.value && (
         <div>
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-4">
               <button
-                onClick={() => setSelectedModel('')}
+                onClick={() => selectedModel.value = ''}
                 class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
               >
                 ← Back to Models
               </button>
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedModel}</h2>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedModel.value}</h2>
             </div>
-            
-            {modelData && (
+
+            {modelData.value && (
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                Total: {modelData.pagination.total} entries
+                Total: {modelData.value.pagination.total} entries
               </p>
             )}
           </div>
@@ -218,41 +221,41 @@ export default function AdminDataBrowser() {
               <div class="flex-1">
                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Property</label>
                 <select
-                  value={filterProperty}
-                  onChange={(e) => setFilterProperty((e.target as HTMLSelectElement).value)}
+                  value={filterProperty.value}
+                  onChange={(e) => filterProperty.value = (e.target as HTMLSelectElement).value}
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                   <option value="">Select property...</option>
-                  {modelData?.properties
+                  {modelData.value?.properties
                     .filter(p => !p.startsWith('_'))
                     .map(prop => (
                       <option key={prop} value={prop}>{prop}</option>
                     ))}
                 </select>
               </div>
-              
+
               <div class="flex-1">
                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Value</label>
                 <input
                   type="text"
-                  value={filterValue}
-                  onInput={(e) => setFilterValue((e.target as HTMLInputElement).value)}
+                  value={filterValue.value}
+                  onInput={(e) => filterValue.value = (e.target as HTMLInputElement).value}
                   placeholder="Filter value..."
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 />
               </div>
-              
+
               <div class="flex gap-2">
                 <button
                   onClick={handleFilterApply}
-                  disabled={!filterProperty || !filterValue}
+                  disabled={!filterProperty.value || !filterValue.value}
                   class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                 >
                   Apply
                 </button>
                 <button
                   onClick={handleFilterClear}
-                  disabled={!filterProperty && !filterValue}
+                  disabled={!filterProperty.value && !filterValue.value}
                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-sm font-medium"
                 >
                   Clear
@@ -262,20 +265,20 @@ export default function AdminDataBrowser() {
           </div>
 
           {/* Data Table */}
-          {loading && (
+          {loading.value && (
             <div class="flex justify-center items-center py-12">
               <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
           )}
 
-          {!loading && modelData && (
+          {!loading.value && modelData.value && (
             <div>
               <div class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                   <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        {modelData.properties.map((prop) => (
+                        {modelData.value.properties.map((prop) => (
                           <th
                             key={prop}
                             class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap"
@@ -286,9 +289,9 @@ export default function AdminDataBrowser() {
                       </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {modelData.items.map((item, idx) => (
+                      {modelData.value.items.map((item, idx) => (
                         <tr key={idx} class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          {modelData.properties.map((prop) => (
+                          {modelData.value!.properties.map((prop) => (
                             <td key={prop} class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">
                               <span title={renderValue(item[prop])}>
                                 {renderValue(item[prop])}
@@ -305,20 +308,20 @@ export default function AdminDataBrowser() {
               {/* Pagination */}
               <div class="mt-4 flex items-center justify-between">
                 <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => currentPage.value = Math.max(1, currentPage.value - 1)}
+                  disabled={currentPage.value === 1}
                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-sm font-medium"
                 >
                   Previous
                 </button>
-                
+
                 <span class="text-sm text-gray-600 dark:text-gray-400">
-                  Page {currentPage}
+                  Page {currentPage.value}
                 </span>
-                
+
                 <button
-                  onClick={() => setCurrentPage(p => p + 1)}
-                  disabled={!modelData.pagination.hasMore}
+                  onClick={() => currentPage.value = currentPage.value + 1}
+                  disabled={!modelData.value.pagination.hasMore}
                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-sm font-medium"
                 >
                   Next

@@ -1,46 +1,39 @@
-import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect, useRef, useState } from 'preact/hooks';
+/**
+ * Notification Bell Island
+ * Real-time notifications dropdown
+ *
+ * MIGRATED TO PREACT SIGNALS - uses global state store
+ */
 
-interface Notification {
-  id: string;
-  userId: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  title: string;
-  message: string;
-  read: boolean;
-  link?: string;
-  createdAt: string;
-  readAt?: string;
-}
+import { IS_BROWSER } from '$fresh/runtime.ts';
+import { useSignal, useComputed } from '@preact/signals';
+import { useEffect } from 'preact/hooks';
+import {
+  accessToken,
+  notifications,
+  unreadCount,
+  isWsConnected,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  removeNotification,
+  type Notification,
+} from '../lib/store.ts';
 
 export default function NotificationBell() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<number | null>(null);
-  const lastFetchTimeRef = useRef<number>(0);
-  
-  // Cache expiration time: 30 seconds
-  const CACHE_EXPIRY_MS = 30 * 1000;
+  // Local UI state
+  const isOpen = useSignal(false);
+  const isLoading = useSignal(false);
 
-  // Fetch notifications from API (with cache check)
-  const fetchNotifications = async (force = false) => {
-    // Check cache expiration (skip if data is fresh)
-    const now = Date.now();
-    const timeSinceLastFetch = now - lastFetchTimeRef.current;
-    
-    if (!force && timeSinceLastFetch < CACHE_EXPIRY_MS) {
-      console.log(`[NotificationBell] Using cached data (${Math.round(timeSinceLastFetch / 1000)}s old)`);
-      return;
-    }
-    
+  // Fetch notifications from API
+  const fetchNotifications = async () => {
+    if (!IS_BROWSER) return;
+
+    const token = accessToken.value;
+    if (!token) return;
+
+    isLoading.value = true;
+
     try {
-      const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      if (!token) return;
-
       const response = await fetch(`/api/notifications?limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -50,22 +43,24 @@ export default function NotificationBell() {
 
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-        lastFetchTimeRef.current = Date.now();
-        console.log('[NotificationBell] Notifications fetched and cached');
+        notifications.value = data.notifications || [];
+        unreadCount.value = data.unreadCount || 0;
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
+    } finally {
+      isLoading.value = false;
     }
   };
 
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
-    try {
-      const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      if (!token) return;
+    if (!IS_BROWSER) return;
 
+    const token = accessToken.value;
+    if (!token) return;
+
+    try {
       const response = await fetch(
         `/api/notifications/${notificationId}/read`,
         {
@@ -78,13 +73,8 @@ export default function NotificationBell() {
       );
 
       if (response.ok) {
-        // Update local state
-        setNotifications((prev) =>
-          prev.map((n) =>
-            n.id === notificationId ? { ...n, read: true } : n
-          )
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        // Update global state
+        markNotificationAsRead(notificationId);
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -93,11 +83,14 @@ export default function NotificationBell() {
 
   // Mark all as read
   const markAllAsRead = async () => {
-    setIsLoading(true);
-    try {
-      const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      if (!token) return;
+    if (!IS_BROWSER) return;
 
+    const token = accessToken.value;
+    if (!token) return;
+
+    isLoading.value = true;
+
+    try {
       const response = await fetch(`/api/notifications/read-all`, {
         method: 'POST',
         headers: {
@@ -107,25 +100,24 @@ export default function NotificationBell() {
       });
 
       if (response.ok) {
-        // Update local state
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
-        // Invalidate cache since data changed
-        lastFetchTimeRef.current = 0;
+        // Update global state
+        markAllNotificationsAsRead();
       }
     } catch (error) {
       console.error('Error marking all as read:', error);
     } finally {
-      setIsLoading(false);
+      isLoading.value = false;
     }
   };
 
   // Delete notification
   const deleteNotification = async (notificationId: string) => {
-    try {
-      const token = IS_BROWSER ? localStorage.getItem('access_token') : null;
-      if (!token) return;
+    if (!IS_BROWSER) return;
 
+    const token = accessToken.value;
+    if (!token) return;
+
+    try {
       const response = await fetch(
         `/api/notifications/${notificationId}`,
         {
@@ -138,187 +130,20 @@ export default function NotificationBell() {
       );
 
       if (response.ok) {
-        // Update local state
-        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-        // Decrement unread count if notification was unread
-        const notification = notifications.find((n) => n.id === notificationId);
-        if (notification && !notification.read) {
-          setUnreadCount((prev) => Math.max(0, prev - 1));
-        }
+        // Update global state
+        removeNotification(notificationId);
       }
     } catch (error) {
       console.error('Error deleting notification:', error);
     }
   };
 
-  // Connect to WebSocket for real-time updates
-  const connectWebSocket = () => {
-    if (!IS_BROWSER) return;
-
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
-
-    // Close existing connection
-    if (wsRef.current) {
-      try {
-        const readyState = wsRef.current.readyState;
-        if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) {
-          wsRef.current.close();
-          }
-        } catch (error) {
-          console.error('Error closing existing WebSocket:', error);
-      }
-      wsRef.current = null;
-    }
-
-    // Create WebSocket connection with proper URL (same origin)
-    const wsUrl = window.location.origin
-      .replace('http://', 'ws://')
-      .replace('https://', 'wss://');
-    
-    const ws = new WebSocket(`${wsUrl}/api/notifications/ws?token=${encodeURIComponent(token)}`);
-    let authSent = false;
-
-    ws.onopen = () => {
-      console.log('[WebSocket] Connection opened, waiting for auth prompt...');
-      // Server will send 'auth_required' message
-      // We'll respond to that with our token
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('[WebSocket] Message:', data);
-
-        switch (data.type) {
-          case 'auth_required':
-            if (authSent) {
-              console.log('[WebSocket] Ignoring duplicate auth_required - already sent auth');
-              break;
-            }
-            console.log('[WebSocket] Auth required, sending token...');
-            authSent = true;
-            // Send authentication
-            ws.send(JSON.stringify({
-              type: 'auth',
-              token: token,
-            }));
-            break;
-
-          case 'auth_failed':
-            console.error('[WebSocket] Authentication failed - token may be expired');
-            setIsConnected(false);
-            ws.close();
-            // Don't automatically redirect - the component will just not show
-            // User can refresh or navigate to get redirected by middleware if truly logged out
-            break;
-
-          case 'connected':
-            console.log('[WebSocket] Authenticated and connected');
-            setIsConnected(true);
-            // Fetch initial notifications after successful auth (force refresh)
-            fetchNotifications(true);
-            break;
-
-          case 'unread_count':
-            setUnreadCount(data.unreadCount);
-            break;
-
-          case 'notification_update':
-            setUnreadCount(data.unreadCount);
-            // If dropdown is open, refresh the list (force refresh for real-time updates)
-            if (isOpen) {
-              fetchNotifications(true);
-            }
-            break;
-
-          case 'new_notification':
-            // New notification received - add to list if dropdown is open (force refresh)
-            if (isOpen) {
-              fetchNotifications(true);
-            } else {
-              // Just update the count
-              setUnreadCount((prev) => prev + 1);
-            }
-            break;
-
-          case 'ping':
-            // Respond to heartbeat
-            ws.send(JSON.stringify({ type: 'pong' }));
-            break;
-        }
-      } catch (error) {
-        console.error('[WebSocket] Error parsing message:', error);
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('[WebSocket] Error:', error);
-      setIsConnected(false);
-    };
-
-    ws.onclose = (event) => {
-      console.log('[WebSocket] Disconnected');
-      setIsConnected(false);
-
-      // Attempt to reconnect after 5 seconds
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-      reconnectTimeoutRef.current = setTimeout(() => {
-        if (IS_BROWSER && localStorage.getItem('access_token')) {
-          console.log('[WebSocket] Attempting to reconnect...');
-          connectWebSocket();
-        }
-      }, 5000);
-    };
-
-    wsRef.current = ws;
-  };
-
-  // Initialize WebSocket connection
+  // Refresh notifications when dropdown opens
   useEffect(() => {
-    if (!IS_BROWSER) return;
-
-    // Don't connect if user is not logged in
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
-
-    connectWebSocket();
-
-    return () => {
-      // Cleanup: close WebSocket and clear reconnect timeout
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-
-      if (wsRef.current) {
-        try {
-          const readyState = wsRef.current.readyState;
-          if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) {
-            wsRef.current.close();
-          }
-         } catch (error) {
-            console.debug('Error closing existing WebSocket during cleanup (non-critical):', error);
-         }
-        
-        wsRef.current = null;
-      }
-    };
-  }, []);
-
-  // Refresh notifications when dropdown opens (use cache if fresh)
-  useEffect(() => {
-    if (isOpen && IS_BROWSER) {
-      // Don't force refresh - will use cache if data is < 30s old
-      fetchNotifications(false);
+    if (isOpen.value && IS_BROWSER) {
+      fetchNotifications();
     }
-  }, [isOpen]);
+  }, [isOpen.value]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -327,25 +152,24 @@ export default function NotificationBell() {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('.notification-dropdown')) {
-        setIsOpen(false);
+        isOpen.value = false;
       }
     };
 
-    if (isOpen) {
+    if (isOpen.value) {
       document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen.value]);
 
   // Don't render on server
   if (!IS_BROWSER) return null;
 
   // Don't render if user is not logged in
-  const token = localStorage.getItem('access_token');
-  if (!token) return null;
+  if (!accessToken.value) return null;
 
   // Icon colors based on notification type
   const getTypeColor = (type: string) => {
@@ -395,7 +219,7 @@ export default function NotificationBell() {
     <div class="notification-dropdown relative">
       {/* Bell Icon with Badge */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => isOpen.value = !isOpen.value}
         class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
         aria-label="Notifications"
       >
@@ -416,29 +240,29 @@ export default function NotificationBell() {
         {/* WebSocket Connection Status Indicator */}
         <span
           class={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
-            isConnected ? 'bg-green-500' : 'bg-gray-400 animate-pulse'
+            isWsConnected.value ? 'bg-green-500' : 'bg-gray-400 animate-pulse'
           }`}
-          title={isConnected ? 'Connected (Real-time)' : 'Reconnecting...'}
+          title={isWsConnected.value ? 'Connected (Real-time)' : 'Reconnecting...'}
         />
 
         {/* Unread Count Badge */}
-        {unreadCount > 0 && (
+        {unreadCount.value > 0 && (
           <span class="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount.value > 9 ? '9+' : unreadCount.value}
           </span>
         )}
       </button>
 
       {/* Dropdown Menu */}
-      {isOpen && (
+      {isOpen.value && (
         <div class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
           {/* Header */}
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
-            {notifications.length > 0 && unreadCount > 0 && (
+            {notifications.value.length > 0 && unreadCount.value > 0 && (
               <button
                 onClick={markAllAsRead}
-                disabled={isLoading}
+                disabled={isLoading.value}
                 class="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
               >
                 Mark all read
@@ -448,7 +272,7 @@ export default function NotificationBell() {
 
           {/* Notification List */}
           <div class="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
+            {notifications.value.length === 0 ? (
               <div class="px-4 py-8 text-center text-gray-500">
                 <svg
                   class="w-12 h-12 mx-auto mb-2 text-gray-400"
@@ -466,7 +290,7 @@ export default function NotificationBell() {
                 <p>No notifications yet</p>
               </div>
             ) : (
-              notifications.map((notification) => (
+              notifications.value.map((notification) => (
                 <div
                   key={notification.id}
                   class={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
@@ -539,7 +363,7 @@ export default function NotificationBell() {
                           class="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
                           onClick={() => {
                             markAsRead(notification.id);
-                            setIsOpen(false);
+                            isOpen.value = false;
                           }}
                         >
                           View details →
@@ -553,12 +377,12 @@ export default function NotificationBell() {
           </div>
 
           {/* Footer */}
-          {notifications.length > 0 && (
+          {notifications.value.length > 0 && (
             <div class="px-4 py-3 border-t border-gray-200 text-center">
               <a
                 href="/notifications"
                 class="text-sm text-blue-600 hover:text-blue-800"
-                onClick={() => setIsOpen(false)}
+                onClick={() => isOpen.value = false}
               >
                 View all notifications
               </a>

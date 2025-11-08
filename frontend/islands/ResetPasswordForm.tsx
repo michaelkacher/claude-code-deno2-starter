@@ -1,10 +1,13 @@
 /**
  * Reset Password Form Island
  * Handles password reset with strength validation
+ *
+ * MIGRATED TO PREACT SIGNALS
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect } from 'preact/hooks';
+import { useSignal } from '@preact/signals';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
 
 interface ResetPasswordFormProps {
@@ -12,14 +15,14 @@ interface ResetPasswordFormProps {
 }
 
 export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [twoFactorCode, setTwoFactorCode] = useState('');
-  const [requires2FA, setRequires2FA] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [checkingToken, setCheckingToken] = useState(true);
+  const password = useSignal('');
+  const confirmPassword = useSignal('');
+  const twoFactorCode = useSignal('');
+  const requires2FA = useSignal(false);
+  const error = useSignal('');
+  const success = useSignal(false);
+  const isLoading = useSignal(false);
+  const checkingToken = useSignal(true);
 
   // Check if token is valid and if 2FA is required
   useEffect(() => {
@@ -29,36 +32,36 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         .then(res => res.json())
         .then(data => {
           if (data.data?.requires2FA) {
-            setRequires2FA(true);
+            requires2FA.value = true;
           }
-          setCheckingToken(false);
+          checkingToken.value = false;
         })
-        .catch(() => setCheckingToken(false));
+        .catch(() => checkingToken.value = false);
     }
   }, [token]);
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    setError('');
+    error.value = '';
 
     // Validation
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+    if (password.value.length < 8) {
+      error.value = 'Password must be at least 8 characters long';
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    if (password.value !== confirmPassword.value) {
+      error.value = 'Passwords do not match';
       return;
     }
 
-    setIsLoading(true);
+    isLoading.value = true;
 
     try {
       if (!IS_BROWSER) return;
 
       const apiUrl = window.location.origin;
-      
+
       const response = await fetch(`${apiUrl}/api/auth/reset-password`, {
         method: 'POST',
         headers: {
@@ -66,33 +69,33 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         },
         body: JSON.stringify({
           token,
-          password,
-          twoFactorCode: requires2FA ? twoFactorCode : undefined,
+          password: password.value,
+          twoFactorCode: requires2FA.value ? twoFactorCode.value : undefined,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error?.message || 'Failed to reset password');
-        setIsLoading(false);
+        error.value = data.error?.message || 'Failed to reset password';
+        isLoading.value = false;
         return;
       }
 
       // Success!
-      setSuccess(true);
-      
+      success.value = true;
+
       // Redirect to login after 2 seconds
       setTimeout(() => {
         window.location.href = '/login?message=password_reset';
       }, 2000);
     } catch (err) {
-      setError('Network error. Please try again.');
-      setIsLoading(false);
+      error.value = 'Network error. Please try again.';
+      isLoading.value = false;
     }
   };
 
-  if (success) {
+  if (success.value) {
     return (
       <div class="bg-green-50 border border-green-200 rounded-lg p-6">
         <div class="flex items-center gap-3 mb-2">
@@ -113,9 +116,9 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   return (
     <form onSubmit={handleSubmit} class="space-y-4">
-      {error && (
+      {error.value && (
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
+          {error.value}
         </div>
       )}
 
@@ -126,15 +129,15 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         <input
           type="password"
           id="password"
-          value={password}
-          onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
+          value={password.value}
+          onInput={(e) => password.value = (e.target as HTMLInputElement).value}
           required
           minLength={8}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           placeholder="Enter new password"
-          disabled={isLoading}
+          disabled={isLoading.value}
         />
-        <PasswordStrengthMeter password={password} />
+        <PasswordStrengthMeter password={password.value} />
       </div>
 
       <div>
@@ -144,18 +147,18 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         <input
           type="password"
           id="confirmPassword"
-          value={confirmPassword}
-          onInput={(e) => setConfirmPassword((e.target as HTMLInputElement).value)}
+          value={confirmPassword.value}
+          onInput={(e) => confirmPassword.value = (e.target as HTMLInputElement).value}
           required
           minLength={8}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           placeholder="Confirm new password"
-          disabled={isLoading}
+          disabled={isLoading.value}
         />
-        {password && confirmPassword && password !== confirmPassword && (
+        {password.value && confirmPassword.value && password.value !== confirmPassword.value && (
           <p class="text-xs text-red-600 mt-1">Passwords do not match</p>
         )}
-        {password && confirmPassword && password === confirmPassword && (
+        {password.value && confirmPassword.value && password.value === confirmPassword.value && (
           <p class="text-xs text-green-600 mt-1 flex items-center gap-1">
             <span>✓</span>
             <span>Passwords match</span>
@@ -163,7 +166,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         )}
       </div>
 
-      {requires2FA && (
+      {requires2FA.value && (
         <div class="border-t border-gray-200 pt-4">
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
             <p class="text-sm text-blue-800">
@@ -176,13 +179,13 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           <input
             type="text"
             id="twoFactorCode"
-            value={twoFactorCode}
-            onInput={(e) => setTwoFactorCode((e.target as HTMLInputElement).value)}
-            required={requires2FA}
+            value={twoFactorCode.value}
+            onInput={(e) => twoFactorCode.value = (e.target as HTMLInputElement).value}
+            required={requires2FA.value}
             maxLength={8}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-xl tracking-wider"
             placeholder="000000"
-            disabled={isLoading}
+            disabled={isLoading.value}
           />
           <p class="text-xs text-gray-500 mt-1">
             Enter 6-digit authenticator code or 8-character backup code
@@ -192,12 +195,11 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
       <button
         type="submit"
-        disabled={isLoading || password !== confirmPassword || (requires2FA && !twoFactorCode)}
+        disabled={isLoading.value || password.value !== confirmPassword.value || (requires2FA.value && !twoFactorCode.value)}
         class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
       >
-        {isLoading ? 'Resetting Password...' : 'Reset Password'}
+        {isLoading.value ? 'Resetting Password...' : 'Reset Password'}
       </button>
     </form>
   );
 }
-

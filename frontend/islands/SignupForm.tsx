@@ -1,51 +1,54 @@
 /**
  * Signup Form Island
  * Handles user registration with validation
+ *
+ * MIGRATED TO PREACT SIGNALS
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useState } from 'preact/hooks';
+import { useSignal, useComputed } from '@preact/signals';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
+import { setUser, setAccessToken } from '../lib/store.ts';
 
 interface SignupFormProps {
   redirectTo?: string;
 }
 
 export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const email = useSignal('');
+  const password = useSignal('');
+  const confirmPassword = useSignal('');
+  const name = useSignal('');
+  const error = useSignal('');
+  const success = useSignal(false);
+  const successMessage = useSignal('');
+  const isLoading = useSignal(false);
 
   // Client-side validation
   const validateForm = () => {
-    if (!name.trim()) {
-      setError('Name is required');
+    if (!name.value.trim()) {
+      error.value = 'Name is required';
       return false;
     }
 
-    if (!email.trim()) {
-      setError('Email is required');
+    if (!email.value.trim()) {
+      error.value = 'Email is required';
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address');
+    if (!emailRegex.test(email.value)) {
+      error.value = 'Please enter a valid email address';
       return false;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+    if (password.value.length < 8) {
+      error.value = 'Password must be at least 8 characters long';
       return false;
     }
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    if (password.value !== confirmPassword.value) {
+      error.value = 'Passwords do not match';
       return false;
     }
 
@@ -54,26 +57,26 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    setError('');
+    error.value = '';
 
     if (!validateForm()) {
       return;
     }
 
-    setIsLoading(true);
+    isLoading.value = true;
 
     try {
-      const apiUrl = IS_BROWSER 
+      const apiUrl = IS_BROWSER
         ? window.location.origin
         : 'http://localhost:3000';
-      
+
       // Get CSRF token first
       const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
         credentials: 'include',
       });
       const csrfData = await csrfResponse.json();
       const csrfToken = csrfData.data.csrfToken;
-      
+
       const response = await fetch(`${apiUrl}/api/auth/signup`, {
         method: 'POST',
         headers: {
@@ -81,14 +84,18 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
           'X-CSRF-Token': csrfToken,
         },
         credentials: 'include',
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({
+          email: email.value,
+          password: password.value,
+          name: name.value,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error?.message || 'Signup failed');
-        setIsLoading(false);
+        error.value = data.error?.message || 'Signup failed';
+        isLoading.value = false;
         return;
       }
 
@@ -98,36 +105,44 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
         localStorage.setItem('user_email', data.data.user.email);
         localStorage.setItem('user_role', data.data.user.role);
         localStorage.setItem('email_verified', data.data.user.emailVerified ? 'true' : 'false');
-        
+
+        // Update global state store
+        setUser({
+          email: data.data.user.email,
+          role: data.data.user.role,
+          emailVerified: data.data.user.emailVerified,
+        });
+        setAccessToken(data.data.accessToken);
+
         // Also set access token in cookie for server-side auth check (15 minutes expiry)
         const expiryDate = new Date();
         expiryDate.setMinutes(expiryDate.getMinutes() + 15);
         document.cookie = `auth_token=${data.data.accessToken}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
-        
+
         // Show success message about email verification
         if (data.data.message) {
-          setSuccess(true);
-          setSuccessMessage(data.data.message);
-          setIsLoading(false);
-          
+          success.value = true;
+          successMessage.value = data.data.message;
+          isLoading.value = false;
+
           // Redirect to intended page after 3 seconds
           setTimeout(() => {
             window.location.href = redirectTo;
           }, 3000);
           return;
         }
-        
+
         // If no message, redirect immediately
         window.location.href = redirectTo;
       }
     } catch (err) {
-      setError('Network error. Please try again.');
-      setIsLoading(false);
+      error.value = 'Network error. Please try again.';
+      isLoading.value = false;
     }
   };
 
   // If signup was successful, show success message
-  if (success) {
+  if (success.value) {
     return (
       <div class="space-y-6">
         <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-900 rounded-lg p-6">
@@ -138,7 +153,7 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">Account Created Successfully!</h3>
               <p class="text-green-800 dark:text-green-200 mb-4">
-                {successMessage}
+                {successMessage.value}
               </p>
               <p class="text-sm text-green-700 dark:text-green-300">
                 Redirecting you to the app in 3 seconds...
@@ -146,7 +161,7 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
             </div>
           </div>
         </div>
-        
+
         <div class="flex justify-center">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
         </div>
@@ -156,12 +171,12 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
 
   return (
     <form onSubmit={handleSubmit} class="space-y-6">
-      {error && (
+      {error.value && (
         <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg text-sm">
-          {error}
+          {error.value}
         </div>
       )}
-      
+
       <div>
         <label htmlFor="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Full Name
@@ -169,12 +184,12 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
         <input
           type="text"
           id="name"
-          value={name}
-          onInput={(e) => setName((e.target as HTMLInputElement).value)}
+          value={name.value}
+          onInput={(e) => name.value = (e.target as HTMLInputElement).value}
           required
           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="John Doe"
-          disabled={isLoading}
+          disabled={isLoading.value}
         />
       </div>
 
@@ -185,12 +200,12 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
         <input
           type="email"
           id="email"
-          value={email}
-          onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
+          value={email.value}
+          onInput={(e) => email.value = (e.target as HTMLInputElement).value}
           required
           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="you@example.com"
-          disabled={isLoading}
+          disabled={isLoading.value}
         />
       </div>
 
@@ -201,15 +216,15 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
         <input
           type="password"
           id="password"
-          value={password}
-          onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
+          value={password.value}
+          onInput={(e) => password.value = (e.target as HTMLInputElement).value}
           required
           minLength={8}
           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="••••••••"
-          disabled={isLoading}
+          disabled={isLoading.value}
         />
-        <PasswordStrengthMeter password={password} />
+        <PasswordStrengthMeter password={password.value} />
       </div>
 
       <div>
@@ -219,24 +234,23 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
         <input
           type="password"
           id="confirmPassword"
-          value={confirmPassword}
-          onInput={(e) => setConfirmPassword((e.target as HTMLInputElement).value)}
+          value={confirmPassword.value}
+          onInput={(e) => confirmPassword.value = (e.target as HTMLInputElement).value}
           required
           minLength={8}
           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="••••••••"
-          disabled={isLoading}
+          disabled={isLoading.value}
         />
       </div>
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading.value}
         class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
       >
-        {isLoading ? 'Creating Account...' : 'Sign Up'}
+        {isLoading.value ? 'Creating Account...' : 'Sign Up'}
       </button>
     </form>
   );
 }
-

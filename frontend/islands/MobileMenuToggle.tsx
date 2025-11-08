@@ -1,16 +1,22 @@
+/**
+ * Mobile Menu Toggle Island
+ *
+ * MIGRATED TO PREACT SIGNALS
+ */
+
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useState } from 'preact/hooks';
+import { useSignal } from '@preact/signals';
 
 interface MobileMenuToggleProps {
   children: preact.ComponentChildren;
 }
 
 export default function MobileMenuToggle({ children }: MobileMenuToggleProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobileMenuOpen = useSignal(false);
 
   const toggleMobileMenu = () => {
     if (!IS_BROWSER) return;
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+    isMobileMenuOpen.value = !isMobileMenuOpen.value;
   };
 
   return (
@@ -23,7 +29,7 @@ export default function MobileMenuToggle({ children }: MobileMenuToggleProps) {
         <span class="sr-only">Open main menu</span>
         {/* Hamburger icon */}
         <svg
-          class={`h-6 w-6 ${isMobileMenuOpen ? 'hidden' : 'block'}`}
+          class={`h-6 w-6 ${isMobileMenuOpen.value ? 'hidden' : 'block'}`}
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -33,7 +39,7 @@ export default function MobileMenuToggle({ children }: MobileMenuToggleProps) {
         </svg>
         {/* Close icon */}
         <svg
-          class={`h-6 w-6 ${isMobileMenuOpen ? 'block' : 'hidden'}`}
+          class={`h-6 w-6 ${isMobileMenuOpen.value ? 'block' : 'hidden'}`}
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -44,7 +50,7 @@ export default function MobileMenuToggle({ children }: MobileMenuToggleProps) {
       </button>
 
       {/* Mobile menu */}
-      {isMobileMenuOpen && (
+      {isMobileMenuOpen.value && (
         <div class="md:hidden absolute top-16 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
           <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50">
             {children}

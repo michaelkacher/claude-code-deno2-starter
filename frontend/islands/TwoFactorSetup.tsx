@@ -1,29 +1,31 @@
 /**
  * Two-Factor Authentication Setup Island
  * Handles 2FA enrollment with QR code display
+ *
+ * MIGRATED TO PREACT SIGNALS
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useState } from 'preact/hooks';
+import { useSignal } from '@preact/signals';
 
 interface TwoFactorSetupProps {
   onComplete?: () => void;
 }
 
 export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
-  const [step, setStep] = useState<'password' | 'scan' | 'verify' | 'backup'>('password');
-  const [password, setPassword] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [qrCodeURL, setQrCodeURL] = useState('');
-  const [manualKey, setManualKey] = useState('');
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const step = useSignal<'password' | 'scan' | 'verify' | 'backup'>('password');
+  const password = useSignal('');
+  const verificationCode = useSignal('');
+  const qrCodeURL = useSignal('');
+  const manualKey = useSignal('');
+  const backupCodes = useSignal<string[]>([]);
+  const error = useSignal('');
+  const isLoading = useSignal(false);
 
   const handlePasswordSubmit = async (e: Event) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    error.value = '';
+    isLoading.value = true;
 
     try {
       if (!IS_BROWSER) return;
@@ -50,25 +52,25 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error?.message || 'Failed to setup 2FA');
-        setIsLoading(false);
+        error.value = data.error?.message || 'Failed to setup 2FA';
+        isLoading.value = false;
         return;
       }
 
-      setQrCodeURL(data.data.qrCodeURL);
-      setManualKey(data.data.manualEntryKey);
-      setStep('scan');
+      qrCodeURL.value = data.data.qrCodeURL;
+      manualKey.value = data.data.manualEntryKey;
+      step.value = 'scan';
     } catch (err) {
-      setError('Network error. Please try again.');
+      error.value = 'Network error. Please try again.';
     } finally {
-      setIsLoading(false);
+      isLoading.value = false;
     }
   };
 
   const handleVerifyCode = async (e: Event) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    error.value = '';
+    isLoading.value = true;
 
     try {
       if (!IS_BROWSER) return;
@@ -95,17 +97,17 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error?.message || 'Invalid verification code');
-        setIsLoading(false);
+        error.value = data.error?.message || 'Invalid verification code';
+        isLoading.value = false;
         return;
       }
 
-      setBackupCodes(data.data.backupCodes);
-      setStep('backup');
+      backupCodes.value = data.data.backupCodes;
+      step.value = 'backup';
     } catch (err) {
-      setError('Network error. Please try again.');
+      error.value = 'Network error. Please try again.';
     } finally {
-      setIsLoading(false);
+      isLoading.value = false;
     }
   };
 
@@ -119,7 +121,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
 
   const copyBackupCodes = () => {
     if (IS_BROWSER) {
-      navigator.clipboard.writeText(backupCodes.join('\n'));
+      navigator.clipboard.writeText(backupCodes.value.join('\n'));
       alert('Backup codes copied to clipboard!');
     }
   };
@@ -127,16 +129,16 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
   return (
     <div class="max-w-2xl mx-auto">
       {/* Password Confirmation Step */}
-      {step === 'password' && (
+      {step.value === 'password' && (
         <div class="bg-white rounded-lg shadow-lg p-8">
           <h2 class="text-2xl font-bold text-gray-900 mb-4">Enable Two-Factor Authentication</h2>
           <p class="text-gray-600 mb-6">
             Add an extra layer of security to your account. You'll need an authenticator app like Google Authenticator or Authy.
           </p>
 
-          {error && (
+          {error.value && (
             <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
-              {error}
+              {error.value}
             </div>
           )}
 
@@ -148,28 +150,28 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
               <input
                 type="password"
                 id="password"
-                value={password}
-                onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
+                value={password.value}
+                onInput={(e) => password.value = (e.target as HTMLInputElement).value}
                 required
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Enter your password"
-                disabled={isLoading}
+                disabled={isLoading.value}
               />
             </div>
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading.value}
               class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
             >
-              {isLoading ? 'Setting up...' : 'Continue'}
+              {isLoading.value ? 'Setting up...' : 'Continue'}
             </button>
           </form>
         </div>
       )}
 
       {/* QR Code Scan Step */}
-      {step === 'scan' && (
+      {step.value === 'scan' && (
         <div class="bg-white rounded-lg shadow-lg p-8">
           <h2 class="text-2xl font-bold text-gray-900 mb-4">Scan QR Code</h2>
           <p class="text-gray-600 mb-6">
@@ -177,16 +179,16 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
           </p>
 
           <div class="flex justify-center mb-6">
-            <img src={qrCodeURL} alt="2FA QR Code" class="border border-gray-300 rounded-lg" />
+            <img src={qrCodeURL.value} alt="2FA QR Code" class="border border-gray-300 rounded-lg" />
           </div>
 
           <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
             <p class="text-sm font-medium text-gray-700 mb-2">Can't scan? Enter this key manually:</p>
-            <code class="text-sm text-gray-900 break-all">{manualKey}</code>
+            <code class="text-sm text-gray-900 break-all">{manualKey.value}</code>
           </div>
 
           <button
-            onClick={() => setStep('verify')}
+            onClick={() => step.value = 'verify'}
             class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
           >
             I've Scanned the Code
@@ -195,16 +197,16 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
       )}
 
       {/* Verification Step */}
-      {step === 'verify' && (
+      {step.value === 'verify' && (
         <div class="bg-white rounded-lg shadow-lg p-8">
           <h2 class="text-2xl font-bold text-gray-900 mb-4">Verify Setup</h2>
           <p class="text-gray-600 mb-6">
             Enter the 6-digit code from your authenticator app to complete setup:
           </p>
 
-          {error && (
+          {error.value && (
             <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
-              {error}
+              {error.value}
             </div>
           )}
 
@@ -216,28 +218,28 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
               <input
                 type="text"
                 id="code"
-                value={verificationCode}
-                onInput={(e) => setVerificationCode((e.target as HTMLInputElement).value)}
+                value={verificationCode.value}
+                onInput={(e) => verificationCode.value = (e.target as HTMLInputElement).value}
                 required
                 maxLength={6}
                 pattern="\d{6}"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-2xl tracking-widest"
                 placeholder="000000"
-                disabled={isLoading}
+                disabled={isLoading.value}
               />
             </div>
 
             <button
               type="submit"
-              disabled={isLoading || verificationCode.length !== 6}
+              disabled={isLoading.value || verificationCode.value.length !== 6}
               class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
             >
-              {isLoading ? 'Verifying...' : 'Verify and Enable'}
+              {isLoading.value ? 'Verifying...' : 'Verify and Enable'}
             </button>
 
             <button
               type="button"
-              onClick={() => setStep('scan')}
+              onClick={() => step.value = 'scan'}
               class="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors"
             >
               Back
@@ -247,7 +249,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
       )}
 
       {/* Backup Codes Step */}
-      {step === 'backup' && (
+      {step.value === 'backup' && (
         <div class="bg-white rounded-lg shadow-lg p-8">
           <div class="flex items-center gap-3 mb-4">
             <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -266,7 +268,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
 
           <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 mb-4">
             <div class="grid grid-cols-2 gap-2">
-              {backupCodes.map((code, index) => (
+              {backupCodes.value.map((code, index) => (
                 <code key={index} class="text-sm text-gray-900 font-mono bg-white px-3 py-2 rounded border border-gray-200">
                   {code}
                 </code>

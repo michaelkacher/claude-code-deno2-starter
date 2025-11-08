@@ -2,6 +2,8 @@
  * Avatar Upload Island Component
  *
  * Specialized component for uploading user avatars with circular preview
+ *
+ * MIGRATED TO PREACT SIGNALS
  */
 
 import { useSignal } from '@preact/signals';

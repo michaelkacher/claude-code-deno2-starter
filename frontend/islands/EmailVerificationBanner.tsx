@@ -1,16 +1,19 @@
 /**
  * Email Verification Banner Island
  * Shows a banner prompting users to verify their email
+ *
+ * MIGRATED TO PREACT SIGNALS
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect } from 'preact/hooks';
+import { useSignal } from '@preact/signals';
 
 export default function EmailVerificationBanner() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [message, setMessage] = useState('');
-  const [userEmail, setUserEmail] = useState('');
+  const isVisible = useSignal(false);
+  const isResending = useSignal(false);
+  const message = useSignal('');
+  const userEmail = useSignal('');
 
   useEffect(() => {
     if (!IS_BROWSER) return;
@@ -20,45 +23,45 @@ export default function EmailVerificationBanner() {
     const email = localStorage.getItem('user_email');
 
     if (email && emailVerified === 'false') {
-      setIsVisible(true);
-      setUserEmail(email);
+      isVisible.value = true;
+      userEmail.value = email;
     }
   }, []);
 
   const handleResend = async () => {
-    setIsResending(true);
-    setMessage('');
+    isResending.value = true;
+    message.value = '';
 
     try {
       const apiUrl = window.location.origin;
-      
+
       const response = await fetch(`${apiUrl}/api/auth/resend-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: userEmail }),
+        body: JSON.stringify({ email: userEmail.value }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('Verification email sent! Please check your inbox.');
+        message.value = 'Verification email sent! Please check your inbox.';
       } else {
-        setMessage(data.error?.message || 'Failed to send verification email');
+        message.value = data.error?.message || 'Failed to send verification email';
       }
     } catch (error) {
-      setMessage('Network error. Please try again later.');
+      message.value = 'Network error. Please try again later.';
     } finally {
-      setIsResending(false);
+      isResending.value = false;
     }
   };
 
   const handleDismiss = () => {
-    setIsVisible(false);
+    isVisible.value = false;
   };
 
-  if (!isVisible) return null;
+  if (!isVisible.value) return null;
 
   return (
     <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
@@ -73,18 +76,18 @@ export default function EmailVerificationBanner() {
             <strong class="font-medium">Email verification required.</strong>
             {' '}Please check your inbox and verify your email address to access all features.
           </p>
-          {message && (
-            <p class={`text-sm mt-2 ${message.includes('sent') ? 'text-green-700' : 'text-red-700'}`}>
-              {message}
+          {message.value && (
+            <p class={`text-sm mt-2 ${message.value.includes('sent') ? 'text-green-700' : 'text-red-700'}`}>
+              {message.value}
             </p>
           )}
           <div class="mt-2 flex items-center gap-4">
             <button
               onClick={handleResend}
-              disabled={isResending}
+              disabled={isResending.value}
               class="text-sm font-medium text-yellow-700 hover:text-yellow-600 underline disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isResending ? 'Sending...' : 'Resend verification email'}
+              {isResending.value ? 'Sending...' : 'Resend verification email'}
             </button>
             <button
               onClick={handleDismiss}
@@ -111,4 +114,3 @@ export default function EmailVerificationBanner() {
     </div>
   );
 }
-

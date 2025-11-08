@@ -38,6 +38,49 @@ All mockup documentation should be embedded in the TSX file header as comments.
 
 ## Mockup Structure
 
+### CRITICAL: Fresh Island Architecture
+
+**Fresh requires a specific architecture for interactive components:**
+
+1. **Route files** (`frontend/routes/mockups/*.tsx`):
+   - ❌ CANNOT use `useSignal`, `useEffect`, or any hooks
+   - ✅ CAN only import and render island components
+   - ✅ Should contain documentation in header comments
+   - ✅ Keep minimal - just imports and rendering
+
+2. **Island files** (`frontend/islands/mockups/*.tsx`):
+   - ✅ CAN use `useSignal`, `useComputed`, `useEffect` and all hooks
+   - ✅ Contains ALL interactive logic
+   - ✅ Contains mock data
+   - ✅ Must have default export
+
+**Always create TWO files for interactive mockups:**
+
+```
+frontend/routes/mockups/example-mockup.tsx    (route wrapper - no hooks)
+frontend/islands/mockups/ExampleMockup.tsx    (island component - with hooks)
+```
+
+**Route file pattern:**
+```tsx
+import ExampleMockup from "../../islands/mockups/ExampleMockup.tsx";
+
+export default function ExampleMockupRoute() {
+  return <ExampleMockup />;
+}
+```
+
+**Island file pattern:**
+```tsx
+import { useSignal } from "@preact/signals";
+import { Button, Card } from "../../components/design-system/index.ts";
+
+export default function ExampleMockup() {
+  const count = useSignal(0);
+  // ... rest of component with signals
+}
+```
+
 ### Fresh Route Template with Embedded Documentation
 
 **Location:** `frontend/routes/mockups/{mockup-name}.tsx`
@@ -190,6 +233,59 @@ The design system includes:
 - Accessible and responsive
 
 **Use design system components in mockups** for consistency with final implementation.
+
+### CRITICAL: Component Import Rules
+
+**ALWAYS import from the design system index:**
+
+```tsx
+// ✅ CORRECT - Import from design system index
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Grid,
+  Stack,
+} from "../../components/design-system/index.ts";
+
+// ❌ WRONG - Don't import individual files
+import { Button } from "../../components/Button.tsx";
+import { Card } from "../../components/Card.tsx";
+```
+
+**Available Design System Components:**
+- Layout: `PageLayout`, `PageHeader`, `Grid`, `Stack`, `Divider`
+- Cards: `Card`, `CardHeader`, `CardBody`, `CardFooter`
+- Buttons: `Button`
+- Forms: `Input` (for text/email/password inputs only)
+- Badges: `Badge`
+- Avatars: `Avatar`, `AvatarGroup`
+- Modals: `Modal`, `Panel`
+- Progress: `ProgressBar`, `Spinner`, `Steps`
+
+**For form elements NOT in design system, use native HTML:**
+- ✅ Use `<select>` for dropdowns (design system doesn't have Select)
+- ✅ Use `<textarea>` for multi-line text (design system doesn't have Textarea)
+- ✅ Use `<checkbox>` and `<radio>` for those inputs
+- Apply consistent Tailwind styling to match design system theme
+
+**Example native select styling:**
+```tsx
+<select
+  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-600/50 min-h-[44px]"
+>
+  <option value="1">Option 1</option>
+</select>
+```
+
+**Example native textarea styling:**
+```tsx
+<textarea
+  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-600/50 min-h-[100px] resize-y"
+  placeholder="Enter text..."
+/>
+```
 
 ## Mock Data Patterns
 

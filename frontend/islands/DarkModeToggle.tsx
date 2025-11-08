@@ -1,78 +1,60 @@
 /**
  * Dark Mode Toggle Island
  * Client-side component for toggling between light and dark themes
+ *
+ * MIGRATED TO PREACT SIGNALS - uses global theme store
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect } from 'preact/hooks';
 import { ThemeStorage } from '../lib/storage.ts';
+import { theme, isDarkMode, toggleTheme, setTheme } from '../lib/store.ts';
 
 interface DarkModeToggleProps {
   initialTheme?: 'light' | 'dark' | null;
 }
 
 export default function DarkModeToggle({ initialTheme }: DarkModeToggleProps) {
-  // Initialize with server-provided theme, or check DOM if in browser
-  const [isDark, setIsDark] = useState(() => {
-    if (initialTheme) {
-      return initialTheme === 'dark';
-    }
-    if (IS_BROWSER) {
-      return document.documentElement.classList.contains('dark');
-    }
-    // Default to false (light mode) for SSR
-    return false;
-  });
-
-  // Initialize dark mode from localStorage and system preference
+  // Initialize theme from props if provided
   useEffect(() => {
     if (!IS_BROWSER) return;
 
-    // Sync state with current dark mode
+    if (initialTheme && theme.value !== initialTheme) {
+      setTheme(initialTheme);
+    }
+
+    // Sync state with current dark mode from DOM
     const currentIsDark = document.documentElement.classList.contains('dark');
-    setIsDark(currentIsDark);
+    if (currentIsDark !== isDarkMode.value) {
+      setTheme(currentIsDark ? 'dark' : 'light');
+    }
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
       // Only auto-switch if user hasn't set a preference
       if (!ThemeStorage.getTheme()) {
-        setIsDark(e.matches);
-        if (e.matches) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
+        setTheme(e.matches ? 'dark' : 'light');
       }
     };
-    
+
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  const toggleDarkMode = () => {
+  const handleToggle = () => {
     if (!IS_BROWSER) return;
-
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    
-    if (newIsDark) {
-      document.documentElement.classList.add('dark');
-      ThemeStorage.setTheme('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      ThemeStorage.setTheme('light');
-    }
+    toggleTheme();
   };
 
   return (
     <button
-      onClick={toggleDarkMode}
+      onClick={handleToggle}
       class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={isDarkMode.value ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={isDarkMode.value ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {isDark ? (
+      {isDarkMode.value ? (
         // Sun icon for light mode
         <svg
           class="w-5 h-5 text-gray-700 dark:text-gray-300"

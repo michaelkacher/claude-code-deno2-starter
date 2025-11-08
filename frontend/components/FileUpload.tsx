@@ -21,7 +21,13 @@
  * ```
  */
 
-import { useState } from 'preact/hooks';
+/**
+ * File Upload Component
+ *
+ * MIGRATED TO PREACT SIGNALS
+ */
+
+import { useSignal } from '@preact/signals';
 
 export interface FileUploadProps {
   /** Accepted file types (e.g., "image/*", ".pdf") */
@@ -52,19 +58,19 @@ export function FileUpload({
   className = '',
   label = 'Upload File',
 }: FileUploadProps) {
-  const [dragging, setDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
+  const dragging = useSignal(false);
+  const uploading = useSignal(false);
+  const preview = useSignal<string | null>(null);
+  const error = useSignal<string | null>(null);
+  const progress = useSignal(0);
 
   const handleFileSelect = async (file: File) => {
-    setError(null);
+    error.value = null;
 
     // Validate file size
     if (file.size > maxSize) {
       const errorMsg = `File too large. Maximum size is ${formatBytes(maxSize)}`;
-      setError(errorMsg);
+      error.value = errorMsg);
       onError?.(errorMsg);
       return;
     }
@@ -73,7 +79,7 @@ export function FileUpload({
     if (showPreview && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setPreview(e.target?.result as string);
+        preview.value = e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -83,8 +89,8 @@ export function FileUpload({
   };
 
   const uploadFile = async (file: File) => {
-    setUploading(true);
-    setProgress(0);
+    uploading.value = true);
+    progress.value = 0);
 
     try {
       const formData = new FormData();
@@ -96,7 +102,7 @@ export function FileUpload({
         credentials: 'include',
       });
 
-      setProgress(100);
+      progress.value = 100);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -107,17 +113,17 @@ export function FileUpload({
       onUpload?.(data.data.url, file);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Upload failed';
-      setError(errorMsg);
+      error.value = errorMsg);
       onError?.(errorMsg);
-      setPreview(null);
+      preview.value = null);
     } finally {
-      setUploading(false);
+      uploading.value = false);
     }
   };
 
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
-    setDragging(false);
+    dragging.value = false);
 
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
@@ -127,11 +133,11 @@ export function FileUpload({
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
-    setDragging(true);
+    dragging.value = true);
   };
 
   const handleDragLeave = () => {
-    setDragging(false);
+    dragging.value = false);
   };
 
   const handleInputChange = (e: Event) => {

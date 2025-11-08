@@ -90,12 +90,12 @@ The agent will create TWO files following Fresh's island architecture:
 - No useState or interactive hooks (Fresh restriction)
 
 **Island file** (`frontend/islands/mockups/[MockupName].tsx`):
-- All interactive logic with useState/useEffect hooks
+- All interactive logic with hooks
 - Mock data inline
 - Visual UI components
 - Default export of the island component
 
-**CRITICAL:** Fresh requires that any component using hooks (useState, useEffect, etc.) must be in the `islands/` directory. The route file should only import and render the island component.
+**CRITICAL:** Fresh requires that any component using hooks (useEffect, etc.) must be in the `islands/` directory. The route file should only import and render the island component.
 
 ### Step 5: Start Dev Server (if needed)
 
