@@ -359,6 +359,7 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
                         markAsRead(notification.id);
                       }
                       if (notification.link) {
+                        isDropdownOpen.value = false;
                         window.location.href = notification.link;
                       }
                     }}
@@ -386,6 +387,7 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
             {notifications.value.length > 0 && (
               <a
                 href="/notifications"
+                onClick={() => isDropdownOpen.value = false}
                 class="block text-center text-xs text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-400 mt-2 py-1"
               >
                 View all notifications
@@ -399,6 +401,7 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
               {user.value?.role === 'admin' && (
                 <a
                   href="/admin/users"
+                  onClick={() => isDropdownOpen.value = false}
                   class="block w-full text-left px-3 py-2 text-sm text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900 rounded transition-colors"
                 >
                   🛠️ Admin Panel
@@ -406,6 +409,7 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
               )}
               <a
                 href="/profile"
+                onClick={() => isDropdownOpen.value = false}
                 class="block w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors"
               >
                 👤 Profile Settings
