@@ -1198,6 +1198,52 @@ const port = Deno.env.get('PORT');
 4. **Type Safety**: Use TypeScript strict mode
 5. **Security**: Leverage Deno's permission system
 6. **Testing**: Use Deno's built-in test runner
+7. **Logging**: Use `shared/lib/logger.ts` instead of `console.log`
+
+### Logging Best Practice
+
+**❌ DON'T use console.log:**
+```typescript
+console.log("User logged in:", userId);  // BAD - no context, no levels
+console.error("Error:", error);          // BAD - not structured
+```
+
+**✅ DO use the logger library:**
+```typescript
+import { logger } from "../../../shared/lib/logger.ts";
+
+// Info logging with context
+logger.info("User logged in", { userId, email });
+
+// Error logging with details
+logger.error("Login failed", { error: error.message, email });
+
+// Debug logging (only in development)
+logger.debug("Processing request", { body, headers });
+
+// Warning logging
+logger.warn("Rate limit approaching", { userId, attempts });
+```
+
+**Logger Features:**
+- Structured logging with context
+- Log levels (debug, info, warn, error)
+- Automatic timestamps
+- JSON format for easy parsing
+- Environment-aware (debug only in dev)
+- Consistent log format across codebase
+
+**Import path:**
+```typescript
+// From routes (frontend/routes/api/)
+import { logger } from "../../../../shared/lib/logger.ts";
+
+// From services (shared/services/)
+import { logger } from "../lib/logger.ts";
+
+// From repositories (shared/repositories/)
+import { logger } from "../lib/logger.ts";
+```
 
 ## Anti-Patterns to Avoid
 
@@ -1206,6 +1252,7 @@ const port = Deno.env.get('PORT');
 - ❌ Hardcoded values instead of env vars
 - ❌ Broad permissions (use minimal required)
 - ❌ Mixing npm and JSR when JSR package exists
+- ❌ Using `console.log` instead of `logger` from `shared/lib/logger.ts`
 
 ## Token Efficiency Best Practices
 

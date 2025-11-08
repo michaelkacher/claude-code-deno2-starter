@@ -28,6 +28,7 @@
 - **Design System**: Use components from `frontend/components/design-system/` for all UI work—do not create custom UI unless necessary.
 - **Testing**: Only test business/domain logic. Do not test framework code (routing, HTTP status, etc.). See `tests/README.md`.
 - **Mockups**: All UI mockups are embedded as comments in TSX files in `frontend/routes/mockups/`.
+- **Logging**: Use `shared/lib/logger.ts` for all server-side logging (API routes, services, repositories). Never use `console.log` in server code.
 
 ## Integration & Patterns
 - **API**: REST endpoints live in `frontend/routes/api/`. Use shorthand templates for simple CRUD.
