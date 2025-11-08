@@ -9,11 +9,11 @@ import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
 import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
-    errorResponse,
-    parseJsonBody,
-    requireUser,
-    successResponse,
-    type AppState,
+  errorResponse,
+  parseJsonBody,
+  requireUser,
+  successResponse,
+  type AppState,
 } from "../../../lib/fresh-helpers.ts";
 
 const Disable2FASchema = z.object({

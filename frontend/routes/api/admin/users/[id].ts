@@ -1,10 +1,12 @@
 /**
  * GET /api/admin/users/[id]
  * Get detailed user information
+ * 
+ * REFACTORED: Uses UserManagementService to eliminate duplicate logic
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { TokenRepository, UserRepository } from "../../../../../shared/repositories/index.ts";
+import { UserManagementService } from "../../../../../shared/services/index.ts";
 import {
     errorResponse,
     requireAdmin,
@@ -13,40 +15,24 @@ import {
 } from "../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async GET(req, ctx) {
+  async GET(_req, ctx) {
     try {
-      // Require admin role
       requireAdmin(ctx);
 
       const userId = ctx.params.id;
-      const userRepo = new UserRepository();
-      const tokenRepo = new TokenRepository();
+      const userMgmt = new UserManagementService();
 
-      // Get user
-      const user = await userRepo.findById(userId);
-      if (!user) {
-        return errorResponse("USER_NOT_FOUND", "User not found", 404);
-      }
+      const user = await userMgmt.getUserDetails(userId);
 
-      // Get user's refresh tokens
-      const tokens = await tokenRepo.listUserRefreshTokens(userId);
-
-      // Return user data (mask sensitive fields)
-      return successResponse({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        emailVerified: user.emailVerified,
-        twoFactorEnabled: user.twoFactorEnabled,
-        twoFactorSecret: user.twoFactorSecret ? "***MASKED***" : null,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        activeSessions: tokens.length,
-      });
+      return successResponse(user);
     } catch (error) {
-      if (error.message === "Admin access required") {
-        return errorResponse("FORBIDDEN", "Admin access required", 403);
+      if (error instanceof Error) {
+        if (error.message === "Admin access required") {
+          return errorResponse("FORBIDDEN", "Admin access required", 403);
+        }
+        if (error.message === "User not found") {
+          return errorResponse("USER_NOT_FOUND", error.message, 404);
+        }
       }
       console.error("Get user error:", error);
       return errorResponse("SERVER_ERROR", "Failed to get user", 500);

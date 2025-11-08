@@ -1,10 +1,12 @@
 /**
  * GET /api/admin/users
  * List all users with optional filtering
+ * 
+ * REFACTORED: Uses UserManagementService to eliminate duplicate logic
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { UserRepository } from "../../../../../shared/repositories/index.ts";
+import { UserManagementService } from "../../../../../shared/services/index.ts";
 import {
     errorResponse,
     requireAdmin,
@@ -15,51 +17,20 @@ import {
 export const handler: Handlers<unknown, AppState> = {
   async GET(req, ctx) {
     try {
-      // Require admin role
       requireAdmin(ctx);
 
       const url = new URL(req.url);
       const limit = parseInt(url.searchParams.get("limit") || "100");
-      const role = url.searchParams.get("role") || undefined;
+      const role = url.searchParams.get("role") as "user" | "admin" | undefined;
 
-      const userRepo = new UserRepository();
+      const userMgmt = new UserManagementService();
+      const result = await userMgmt.listUsers({ limit, role });
 
-      // Get users (with in-memory filtering for role if needed)
-      const result = await userRepo.listUsers({ limit });
-      let users = result.items;
+      console.log('[Admin Users API] Returning users:', result.users.length);
 
-      // Filter by role if specified
-      if (role) {
-        users = users.filter((u) => u.role === role);
-      }
-
-      // Remove sensitive fields
-      const sanitizedUsers = users.map((user) => ({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        emailVerified: user.emailVerified,
-        twoFactorEnabled: user.twoFactorEnabled,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      }));
-
-      console.log('[Admin Users API] Returning users:', sanitizedUsers.length);
-
-      return successResponse({
-        users: sanitizedUsers,
-        pagination: {
-          page: 1,
-          limit,
-          total: sanitizedUsers.length,
-          totalPages: 1,
-          hasNext: false,
-          hasPrev: false,
-        },
-      });
+      return successResponse(result);
     } catch (error) {
-      if (error.message === "Admin access required") {
+      if (error instanceof Error && error.message === "Admin access required") {
         return errorResponse("FORBIDDEN", "Admin access required", 403);
       }
       console.error("List users error:", error);

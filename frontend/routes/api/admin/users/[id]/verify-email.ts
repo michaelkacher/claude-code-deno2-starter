@@ -1,10 +1,12 @@
 /**
  * POST /api/admin/users/[id]/verify-email
  * Admin-initiated email verification
+ * 
+ * REFACTORED: Uses UserManagementService to eliminate duplicate logic
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { UserRepository } from "../../../../../../shared/repositories/index.ts";
+import { UserManagementService } from "../../../../../../shared/services/index.ts";
 import {
     errorResponse,
     requireAdmin,
@@ -13,38 +15,29 @@ import {
 } from "../../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
+  async POST(_req, ctx) {
     try {
-      // Require admin role
       requireAdmin(ctx);
 
       const userId = ctx.params.id;
-      const userRepo = new UserRepository();
+      const userMgmt = new UserManagementService();
 
-      // Check if user exists
-      const user = await userRepo.findById(userId);
-      if (!user) {
-        return errorResponse("USER_NOT_FOUND", "User not found", 404);
-      }
-
-      // Check if already verified
-      if (user.emailVerified) {
-        return errorResponse(
-          "ALREADY_VERIFIED",
-          "Email is already verified",
-          400
-        );
-      }
-
-      // Verify email
-      await userRepo.verifyEmail(userId);
+      await userMgmt.verifyUserEmail(userId);
 
       return successResponse({
         message: "User email verified successfully",
       });
     } catch (error) {
-      if (error.message === "Admin access required") {
-        return errorResponse("FORBIDDEN", "Admin access required", 403);
+      if (error instanceof Error) {
+        if (error.message === "Admin access required") {
+          return errorResponse("FORBIDDEN", "Admin access required", 403);
+        }
+        if (error.message === "User not found") {
+          return errorResponse("USER_NOT_FOUND", error.message, 404);
+        }
+        if (error.message === "Email is already verified") {
+          return errorResponse("ALREADY_VERIFIED", error.message, 400);
+        }
       }
       console.error("Verify email error:", error);
       return errorResponse("SERVER_ERROR", "Failed to verify email", 500);

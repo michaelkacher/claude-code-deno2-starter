@@ -19,3 +19,12 @@ export type {
     TwoFactorSetupResult,
     TwoFactorVerifyResult
 } from "./TwoFactorService.ts";
+
+export { UserManagementService } from "./UserManagementService.ts";
+export type {
+    DetailedUser,
+    SanitizedUser,
+    UserListOptions,
+    UserListResult
+} from "./UserManagementService.ts";
+
