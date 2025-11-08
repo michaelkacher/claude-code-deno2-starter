@@ -3,147 +3,154 @@
  */
 
 import { assertEquals, assertExists } from 'jsr:@std/assert';
+import { beforeEach, describe, it } from 'jsr:@std/testing/bdd';
 import { CronPatterns, JobScheduler } from './scheduler.ts';
 
-Deno.test('Scheduler - schedule a job', () => {
-  const scheduler = new JobScheduler();
+describe('JobScheduler', () => {
+  let scheduler: JobScheduler;
 
-  scheduler.schedule('test-job', '* * * * *', async () => {
-    // Job execution (for future testing)
+  beforeEach(() => {
+    scheduler = new JobScheduler();
   });
 
-  const schedules = scheduler.getSchedules();
-  assertEquals(schedules.length, 1);
-  assertEquals(schedules[0].name, 'test-job');
-  assertEquals(schedules[0].enabled, true);
-  assertExists(schedules[0].nextRun);
-});
+  describe('schedule', () => {
+    it('should schedule a job with correct properties', () => {
+      scheduler.schedule('test-job', '* * * * *', async () => {
+        // Job execution (for future testing)
+      });
 
-Deno.test('Scheduler - get schedule', () => {
-  const scheduler = new JobScheduler();
-
-  scheduler.schedule('my-schedule', CronPatterns.DAILY, async () => {});
-
-  const schedule = scheduler.getSchedule('my-schedule');
-  assertExists(schedule);
-  assertEquals(schedule.name, 'my-schedule');
-  assertEquals(schedule.cron, CronPatterns.DAILY);
-});
-
-Deno.test('Scheduler - enable/disable schedule', () => {
-  const scheduler = new JobScheduler();
-
-  scheduler.schedule('toggle-job', '0 * * * *', async () => {}, {
-    enabled: true,
+      const schedules = scheduler.getSchedules();
+      assertEquals(schedules.length, 1);
+      assertEquals(schedules[0].name, 'test-job');
+      assertEquals(schedules[0].enabled, true);
+      assertExists(schedules[0].nextRun);
+    });
   });
 
-  let schedule = scheduler.getSchedule('toggle-job');
-  assertEquals(schedule?.enabled, true);
+  describe('getSchedule', () => {
+    it('should retrieve schedule by name', () => {
+      scheduler.schedule('my-schedule', CronPatterns.DAILY, async () => {});
 
-  scheduler.disable('toggle-job');
-  schedule = scheduler.getSchedule('toggle-job');
-  assertEquals(schedule?.enabled, false);
-
-  scheduler.enable('toggle-job');
-  schedule = scheduler.getSchedule('toggle-job');
-  assertEquals(schedule?.enabled, true);
-});
-
-Deno.test('Scheduler - unschedule job', () => {
-  const scheduler = new JobScheduler();
-
-  scheduler.schedule('temp-job', '* * * * *', async () => {});
-
-  let schedule = scheduler.getSchedule('temp-job');
-  assertExists(schedule);
-
-  scheduler.unschedule('temp-job');
-
-  schedule = scheduler.getSchedule('temp-job');
-  assertEquals(schedule, undefined);
-});
-
-Deno.test('Scheduler - manual trigger', async () => {
-  const scheduler = new JobScheduler();
-
-  let executed = false;
-
-  scheduler.schedule('trigger-test', '0 0 1 1 *', async () => {
-    executed = true;
+      const schedule = scheduler.getSchedule('my-schedule');
+      assertExists(schedule);
+      assertEquals(schedule.name, 'my-schedule');
+      assertEquals(schedule.cron, CronPatterns.DAILY);
+    });
   });
 
-  await scheduler.trigger('trigger-test');
+  describe('enable/disable', () => {
+    it('should toggle schedule enabled state', () => {
+      scheduler.schedule('toggle-job', '0 * * * *', async () => {}, {
+        enabled: true,
+      });
 
-  assertEquals(executed, true);
-});
+      let schedule = scheduler.getSchedule('toggle-job');
+      assertEquals(schedule?.enabled, true);
 
-Deno.test('Scheduler - cron patterns', () => {
-  assertEquals(CronPatterns.EVERY_MINUTE, '* * * * *');
-  assertEquals(CronPatterns.EVERY_5_MINUTES, '*/5 * * * *');
-  assertEquals(CronPatterns.EVERY_HOUR, '0 * * * *');
-  assertEquals(CronPatterns.DAILY, '0 0 * * *');
-  assertEquals(CronPatterns.WEEKLY, '0 0 * * 0');
-  assertEquals(CronPatterns.MONTHLY, '0 0 1 * *');
-});
+      scheduler.disable('toggle-job');
+      schedule = scheduler.getSchedule('toggle-job');
+      assertEquals(schedule?.enabled, false);
 
-Deno.test('Scheduler - next run calculation', () => {
-  const scheduler = new JobScheduler();
-
-  scheduler.schedule('run-test', CronPatterns.DAILY, async () => {});
-
-  const schedule = scheduler.getSchedule('run-test');
-  assertExists(schedule?.nextRun);
-
-  const nextRun = new Date(schedule.nextRun);
-  const now = new Date();
-
-  // Next run should be in the future
-  assertEquals(nextRun > now, true);
-});
-
-Deno.test('Scheduler - start/stop', () => {
-  const scheduler = new JobScheduler();
-
-  scheduler.schedule('lifecycle-test', '* * * * *', async () => {});
-
-  scheduler.start();
-  // Scheduler should be running (no direct check, but we can stop it)
-
-  scheduler.stop();
-  // Scheduler should be stopped
-});
-
-Deno.test('Scheduler - execute job at scheduled time', async () => {
-  const scheduler = new JobScheduler();
-
-  let runCount = 0;
-
-  // Schedule for every minute
-  scheduler.schedule('exec-test', '* * * * *', async () => {
-    runCount++;
+      scheduler.enable('toggle-job');
+      schedule = scheduler.getSchedule('toggle-job');
+      assertEquals(schedule?.enabled, true);
+    });
   });
 
-  scheduler.start();
+  describe('unschedule', () => {
+    it('should remove job from schedule', () => {
+      scheduler.schedule('temp-job', '* * * * *', async () => {});
 
-  // Wait for potential execution
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+      let schedule = scheduler.getSchedule('temp-job');
+      assertExists(schedule);
 
-  scheduler.stop();
+      scheduler.unschedule('temp-job');
 
-  // We can't guarantee execution in tests, but structure is validated
-  assertEquals(typeof runCount, 'number');
-});
+      schedule = scheduler.getSchedule('temp-job');
+      assertEquals(schedule, undefined);
+    });
+  });
 
-Deno.test('Scheduler - run count tracking', async () => {
-  const scheduler = new JobScheduler();
+  describe('trigger', () => {
+    it('should manually trigger job execution', async () => {
+      let executed = false;
 
-  scheduler.schedule('count-test', '0 0 1 1 *', async () => {});
+      scheduler.schedule('trigger-test', '0 0 1 1 *', async () => {
+        executed = true;
+      });
 
-  const before = scheduler.getSchedule('count-test');
-  assertEquals(before?.runCount, 0);
+      await scheduler.trigger('trigger-test');
 
-  await scheduler.trigger('count-test');
+      assertEquals(executed, true);
+    });
 
-  const after = scheduler.getSchedule('count-test');
-  assertEquals(after?.runCount, 1);
+    it('should track run count when triggered', async () => {
+      scheduler.schedule('count-test', '0 0 1 1 *', async () => {});
+
+      const before = scheduler.getSchedule('count-test');
+      assertEquals(before?.runCount, 0);
+
+      await scheduler.trigger('count-test');
+
+      const after = scheduler.getSchedule('count-test');
+      assertEquals(after?.runCount, 1);
+    });
+  });
+
+  describe('CronPatterns', () => {
+    it('should provide standard cron patterns', () => {
+      assertEquals(CronPatterns.EVERY_MINUTE, '* * * * *');
+      assertEquals(CronPatterns.EVERY_5_MINUTES, '*/5 * * * *');
+      assertEquals(CronPatterns.EVERY_HOUR, '0 * * * *');
+      assertEquals(CronPatterns.DAILY, '0 0 * * *');
+      assertEquals(CronPatterns.WEEKLY, '0 0 * * 0');
+      assertEquals(CronPatterns.MONTHLY, '0 0 1 * *');
+    });
+  });
+
+  describe('nextRun calculation', () => {
+    it('should calculate next run time in the future', () => {
+      scheduler.schedule('run-test', CronPatterns.DAILY, async () => {});
+
+      const schedule = scheduler.getSchedule('run-test');
+      assertExists(schedule?.nextRun);
+
+      const nextRun = new Date(schedule.nextRun);
+      const now = new Date();
+
+      // Next run should be in the future
+      assertEquals(nextRun > now, true);
+    });
+  });
+
+  describe('lifecycle', () => {
+    it('should start and stop scheduler', () => {
+      scheduler.schedule('lifecycle-test', '* * * * *', async () => {});
+
+      scheduler.start();
+      // Scheduler should be running (no direct check, but we can stop it)
+
+      scheduler.stop();
+      // Scheduler should be stopped
+    });
+
+    it('should execute job at scheduled time', async () => {
+      let runCount = 0;
+
+      // Schedule for every minute
+      scheduler.schedule('exec-test', '* * * * *', async () => {
+        runCount++;
+      });
+
+      scheduler.start();
+
+      // Wait for potential execution
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      scheduler.stop();
+
+      // We can't guarantee execution in tests, but structure is validated
+      assertEquals(typeof runCount, 'number');
+    });
+  });
 });
