@@ -70,7 +70,7 @@ export function FileUpload({
     // Validate file size
     if (file.size > maxSize) {
       const errorMsg = `File too large. Maximum size is ${formatBytes(maxSize)}`;
-      error.value = errorMsg);
+      error.value = errorMsg;
       onError?.(errorMsg);
       return;
     }
@@ -79,7 +79,7 @@ export function FileUpload({
     if (showPreview && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        preview.value = e.target?.result as string);
+        preview.value = e.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -89,8 +89,8 @@ export function FileUpload({
   };
 
   const uploadFile = async (file: File) => {
-    uploading.value = true);
-    progress.value = 0);
+    uploading.value = true;
+    progress.value = 0;
 
     try {
       const formData = new FormData();
@@ -102,7 +102,7 @@ export function FileUpload({
         credentials: 'include',
       });
 
-      progress.value = 100);
+      progress.value = 100;
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -113,17 +113,17 @@ export function FileUpload({
       onUpload?.(data.data.url, file);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Upload failed';
-      error.value = errorMsg);
+      error.value = errorMsg;
       onError?.(errorMsg);
-      preview.value = null);
+      preview.value = null;
     } finally {
-      uploading.value = false);
+      uploading.value = false;
     }
   };
 
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
-    dragging.value = false);
+    dragging.value = false;
 
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
@@ -133,11 +133,11 @@ export function FileUpload({
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
-    dragging.value = true);
+    dragging.value = true;
   };
 
   const handleDragLeave = () => {
-    dragging.value = false);
+    dragging.value = false;
   };
 
   const handleInputChange = (e: Event) => {

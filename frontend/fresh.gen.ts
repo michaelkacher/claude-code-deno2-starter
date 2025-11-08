@@ -76,7 +76,6 @@ import * as $AdminDataBrowser from "./islands/AdminDataBrowser.tsx";
 import * as $AdminHeaderActions from "./islands/AdminHeaderActions.tsx";
 import * as $AdminUserTable from "./islands/AdminUserTable.tsx";
 import * as $AvatarUpload from "./islands/AvatarUpload.tsx";
-import * as $Counter from "./islands/Counter.tsx";
 import * as $DarkModeToggle from "./islands/DarkModeToggle.tsx";
 import * as $DesignSystemShowcase from "./islands/DesignSystemShowcase.tsx";
 import * as $EmailVerificationBanner from "./islands/EmailVerificationBanner.tsx";
@@ -180,7 +179,6 @@ const manifest = {
     "./islands/AdminHeaderActions.tsx": $AdminHeaderActions,
     "./islands/AdminUserTable.tsx": $AdminUserTable,
     "./islands/AvatarUpload.tsx": $AvatarUpload,
-    "./islands/Counter.tsx": $Counter,
     "./islands/DarkModeToggle.tsx": $DarkModeToggle,
     "./islands/DesignSystemShowcase.tsx": $DesignSystemShowcase,
     "./islands/EmailVerificationBanner.tsx": $EmailVerificationBanner,

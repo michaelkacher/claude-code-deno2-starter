@@ -8,6 +8,12 @@
  * - Future: analytics, chat, collaboration, etc.
  * 
  * Uses global signals from store.ts for state management.
+ * 
+ * **Race Condition Prevention:**
+ * - Delayed initialization (100ms) ensures signals from localStorage are hydrated
+ * - Debouncing (500ms) prevents rapid successive connection attempts
+ * - Connection state guards prevent concurrent connection attempts
+ * - Authentication state is validated before each connection attempt
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
@@ -36,6 +42,8 @@ type ChannelName = 'jobs' | 'analytics' | 'chat' | string;
 
 const RECONNECT_DELAY_MS = 3000;
 const PING_INTERVAL_MS = 30000;
+const DEBOUNCE_DELAY_MS = 500; // Debounce auth state changes
+const INITIAL_LOAD_DELAY_MS = 100; // Delay on initial page load to ensure signals are hydrated
 
 // ============================================================================
 // State
@@ -44,10 +52,22 @@ const PING_INTERVAL_MS = 30000;
 let reconnectTimeout: number | null = null;
 let pingInterval: number | null = null;
 let authSent = false;
+let debounceTimeout: number | null = null;
+let isInitialized = false; // Track if module has completed initialization
 
 // Channel subscription management
 const channelHandlers = new Map<ChannelName, Set<ChannelHandler>>();
 const subscribedChannels = new Set<ChannelName>();
+
+// Connection state guards
+enum ConnectionState {
+  DISCONNECTED = 'disconnected',
+  CONNECTING = 'connecting',
+  CONNECTED = 'connected',
+  RECONNECTING = 'reconnecting',
+}
+
+let connectionState: ConnectionState = ConnectionState.DISCONNECTED;
 
 // ============================================================================
 // WebSocket Connection Management
@@ -59,17 +79,28 @@ const subscribedChannels = new Set<ChannelName>();
 export function connectWebSocket() {
   if (!IS_BROWSER) return;
 
+  // Connection state guard: prevent concurrent connection attempts
+  if (connectionState === ConnectionState.CONNECTING || connectionState === ConnectionState.RECONNECTING) {
+    console.log('[WebSocket] Connection already in progress, skipping...');
+    return;
+  }
+
   // Don't connect if not authenticated
   if (!isAuthenticated.value || !accessToken.value) {
     console.log('[WebSocket] Not authenticated, skipping connection');
+    connectionState = ConnectionState.DISCONNECTED;
     return;
   }
 
   // Don't reconnect if already connected
   if (wsConnection.value && wsConnection.value.readyState === WebSocket.OPEN) {
     console.log('[WebSocket] Already connected');
+    connectionState = ConnectionState.CONNECTED;
     return;
   }
+
+  // Set connecting state
+  connectionState = ConnectionState.CONNECTING;
 
   // Close existing connection if any
   if (wsConnection.value) {
@@ -103,6 +134,7 @@ export function connectWebSocket() {
       console.error('[WebSocket] Error:', error);
       console.error('[WebSocket] readyState:', ws.readyState);
       setWsConnected(false);
+      connectionState = ConnectionState.DISCONNECTED;
 
       // Stop reconnection if no longer authenticated
       if (!isAuthenticated.value) {
@@ -113,6 +145,7 @@ export function connectWebSocket() {
     ws.onclose = () => {
       console.log('[WebSocket] Disconnected');
       setWsConnected(false);
+      connectionState = ConnectionState.DISCONNECTED;
 
       // Clear ping interval
       if (pingInterval) {
@@ -132,6 +165,7 @@ export function connectWebSocket() {
   } catch (error) {
     console.error('[WebSocket] Connection error:', error);
     setWsConnected(false);
+    connectionState = ConnectionState.DISCONNECTED;
   }
 }
 
@@ -160,6 +194,7 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
       case 'connected':
         console.log('[WebSocket] Authenticated and connected');
         setWsConnected(true);
+        connectionState = ConnectionState.CONNECTED;
 
         // Clear any pending reconnection
         if (reconnectTimeout) {
@@ -184,6 +219,7 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
       case 'auth_failed':
         console.error('[WebSocket] Authentication failed');
         setWsConnected(false);
+        connectionState = ConnectionState.DISCONNECTED;
         cleanupWebSocket();
         // Token may be expired, clear auth
         clearAuth();
@@ -280,6 +316,8 @@ function scheduleReconnect() {
     clearTimeout(reconnectTimeout);
   }
 
+  connectionState = ConnectionState.RECONNECTING;
+
   reconnectTimeout = setTimeout(() => {
     console.log('[WebSocket] Attempting to reconnect...');
     connectWebSocket();
@@ -312,8 +350,15 @@ export function cleanupWebSocket() {
     pingInterval = null;
   }
 
+  // Clear debounce timeout
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = null;
+  }
+
   // Update connection status
   setWsConnected(false);
+  connectionState = ConnectionState.DISCONNECTED;
 
   // Reset auth flag
   authSent = false;
@@ -432,20 +477,39 @@ function resubscribeToChannels() {
 // ============================================================================
 
 if (IS_BROWSER) {
-  // Watch for authentication changes and connect/disconnect accordingly
-  // This runs in the browser when the module is first loaded
+  /**
+   * Debounced authentication check to prevent rapid successive connection attempts
+   */
+  const debouncedCheckAuth = () => {
+    // Clear any pending debounce
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    debounceTimeout = setTimeout(() => {
+      checkAuth();
+    }, DEBOUNCE_DELAY_MS);
+  };
+
+  /**
+   * Check authentication state and connect/disconnect accordingly
+   */
   const checkAuth = () => {
+    // Don't proceed if module hasn't initialized yet
+    if (!isInitialized) {
+      console.log('[WebSocket] Module not initialized yet, skipping auth check');
+      return;
+    }
+
     console.log('[WebSocket] Checking auth...', {
       isAuthenticated: isAuthenticated.value,
       hasConnection: !!wsConnection.value,
       accessToken: !!accessToken.value,
+      connectionState,
     });
     
-    if (isAuthenticated.value && !wsConnection.value) {
+    if (isAuthenticated.value && !wsConnection.value && connectionState === ConnectionState.DISCONNECTED) {
       // User is authenticated but not connected
-      const wsInitialized = sessionStorage.getItem('wsInitialized');
-      console.log('[WebSocket] wsInitialized:', wsInitialized);
-      // Always try to connect if not connected, regardless of wsInitialized flag
       console.log('[WebSocket] Auto-connecting...');
       sessionStorage.setItem('wsInitialized', 'true');
       connectWebSocket();
@@ -457,13 +521,26 @@ if (IS_BROWSER) {
     }
   };
 
-  // Check on module load
-  console.log('[WebSocket] Module loaded, checking initial auth state...');
-  checkAuth();
-
-  // Subscribe to authentication changes
-  isAuthenticated.subscribe(() => {
-    console.log('[WebSocket] Auth state changed');
+  /**
+   * Initialize WebSocket module after signals are hydrated
+   */
+  const initializeWebSocket = () => {
+    console.log('[WebSocket] Initializing module...');
+    
+    // Mark as initialized
+    isInitialized = true;
+    
+    // Check initial auth state
     checkAuth();
-  });
+
+    // Subscribe to authentication changes with debouncing
+    isAuthenticated.subscribe(() => {
+      console.log('[WebSocket] Auth state changed, debouncing check...');
+      debouncedCheckAuth();
+    });
+  };
+
+  // Delay initialization to ensure signals from localStorage are properly hydrated
+  // This prevents race conditions during initial page load
+  setTimeout(initializeWebSocket, INITIAL_LOAD_DELAY_MS);
 }
