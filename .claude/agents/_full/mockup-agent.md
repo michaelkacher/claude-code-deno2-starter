@@ -258,25 +258,28 @@ import { Card } from "../../components/Card.tsx";
 - Layout: `PageLayout`, `PageHeader`, `Grid`, `Stack`, `Divider`
 - Cards: `Card`, `CardHeader`, `CardBody`, `CardFooter`
 - Buttons: `Button`
-- Forms: `Input` (for text/email/password inputs only)
+- Forms: `Input`, `Select`
 - Badges: `Badge`
 - Avatars: `Avatar`, `AvatarGroup`
 - Modals: `Modal`, `Panel`
 - Progress: `ProgressBar`, `Spinner`, `Steps`
 
 **For form elements NOT in design system, use native HTML:**
-- ✅ Use `<select>` for dropdowns (design system doesn't have Select)
 - ✅ Use `<textarea>` for multi-line text (design system doesn't have Textarea)
-- ✅ Use `<checkbox>` and `<radio>` for those inputs
+- ✅ Use `<input type="checkbox">` and `<input type="radio">` for those inputs
 - Apply consistent Tailwind styling to match design system theme
 
-**Example native select styling:**
+**Example Select component usage:**
 ```tsx
-<select
-  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-600/50 min-h-[44px]"
->
-  <option value="1">Option 1</option>
-</select>
+import { Select } from "../../components/design-system/index.ts";
+
+<Select
+  label="Choose an option"
+  options={[
+    { value: '1', label: 'Option 1' },
+    { value: '2', label: 'Option 2' },
+  ]}
+/>
 ```
 
 **Example native textarea styling:**

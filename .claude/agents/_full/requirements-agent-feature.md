@@ -186,8 +186,8 @@ You only need to define **what's unique to this feature**.
 
 After completing requirements:
 1. The **test-writer-agent** will read this file to write tests
-2. The **test-writer-agent** will read this to create tests
-3. The **backend-agent** and **frontend-agent** will implement based on these requirements
+2. The **backend-agent** and **frontend-agent** will implement based on these requirements
+3. Move to `features/implemented/` after deployment
 
 ## Important Notes
 
