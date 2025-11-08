@@ -5,8 +5,8 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { verifyPassword } from "../../../../shared/lib/password.ts";
 import { UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     parseJsonBody,
@@ -27,8 +27,10 @@ export const handler: Handlers<unknown, AppState> = {
       const user = requireUser(ctx);
 
       // Parse and validate request body
-      const body = await parseJsonBody(req, RegenerateCodesSchema);
+      const body = await parseJsonBody(req);
+      const validatedBody = RegenerateCodesSchema.parse(body);
 
+      const authService = new AuthService();
       const userRepo = new UserRepository();
       const dbUser = await userRepo.findById(user.sub);
 
@@ -40,17 +42,18 @@ export const handler: Handlers<unknown, AppState> = {
         return errorResponse("NOT_ENABLED", "2FA is not enabled", 400);
       }
 
-      // Verify password
-      const isPasswordValid = await verifyPassword(
-        body.password,
-        dbUser.password,
+      // Verify password using AuthService
+      const isPasswordValid = await authService.verifyUserPassword(
+        user.sub,
+        validatedBody.password
       );
       if (!isPasswordValid) {
         return errorResponse("INVALID_PASSWORD", "Invalid password", 400);
       }
 
       // Verify TOTP code
-      const isCodeValid = await verifyTOTP(body.code, dbUser.twoFactorSecret);
+      const { verifyTOTP } = await import("../../../../shared/lib/2fa.ts");
+      const isCodeValid = await verifyTOTP(validatedBody.code, dbUser.twoFactorSecret);
       if (!isCodeValid) {
         return errorResponse("INVALID_CODE", "Invalid verification code", 400);
       }
@@ -70,10 +73,10 @@ export const handler: Handlers<unknown, AppState> = {
         backupCodes,
       });
     } catch (error) {
-      if (error.message === "Authentication required") {
+      if (error instanceof Error && error.message === "Authentication required") {
         return errorResponse("UNAUTHORIZED", "Authentication required", 401);
       }
-      if (error.name === "ZodError") {
+      if (error instanceof z.ZodError) {
         return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
       }
       console.error("Regenerate backup codes error:", error);

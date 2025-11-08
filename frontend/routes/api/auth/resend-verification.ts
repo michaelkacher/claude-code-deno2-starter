@@ -5,7 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     parseJsonBody,
@@ -24,42 +24,33 @@ export const handler: Handlers<unknown, AppState> = {
       const body = await parseJsonBody(req);
       const { email } = ResendVerificationSchema.parse(body);
 
-      const userRepo = new UserRepository();
-      const tokenRepo = new TokenRepository();
+      const authService = new AuthService();
 
-      // Get user by email
-      const user = await userRepo.findByEmail(email);
-      
-      // Don't reveal if email exists or not
-      if (!user) {
-        return successResponse({
-          message: "If an account exists with this email, a verification link will be sent.",
-        });
+      // Resend verification email
+      let verificationToken;
+      try {
+        verificationToken = await authService.resendVerification(email);
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message === "USER_NOT_FOUND") {
+            // Don't reveal if email exists or not
+            return successResponse({
+              message: "If an account exists with this email, a verification link will be sent.",
+            });
+          }
+          if (error.message === "EMAIL_ALREADY_VERIFIED") {
+            return errorResponse(
+              "ALREADY_VERIFIED",
+              "Email is already verified",
+              400
+            );
+          }
+        }
+        throw error;
       }
-
-      // Check if already verified
-      if (user.emailVerified) {
-        return errorResponse(
-          "ALREADY_VERIFIED",
-          "Email is already verified",
-          400
-        );
-      }
-
-      // Generate new verification token
-      const verificationToken = crypto.randomUUID();
-      const expiresAt = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 24 hours
-
-      // Store verification token
-      await tokenRepo.storeEmailVerificationToken(
-        verificationToken,
-        user.id,
-        user.email,
-        expiresAt
-      );
 
       // TODO: Send verification email
-      // await sendVerificationEmail(user.email, verificationToken);
+      // await sendVerificationEmail(email, verificationToken);
 
       console.log(`Verification token for ${email}: ${verificationToken}`);
 

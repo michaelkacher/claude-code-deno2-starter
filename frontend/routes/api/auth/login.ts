@@ -5,14 +5,12 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { createAccessToken, createRefreshToken } from "../../../../shared/lib/jwt.ts";
-import { verifyPassword } from "../../../../shared/lib/password.ts";
-import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
-    errorResponse,
-    parseJsonBody,
-    setCookie,
-    type AppState
+  errorResponse,
+  parseJsonBody,
+  setCookie,
+  type AppState
 } from "../../../lib/fresh-helpers.ts";
 
 const LoginSchema = z.object({
@@ -27,51 +25,31 @@ export const handler: Handlers<unknown, AppState> = {
       const body = await parseJsonBody(req);
       const { email, password } = LoginSchema.parse(body);
 
-      const userRepo = new UserRepository();
-      const tokenRepo = new TokenRepository();
+      const authService = new AuthService();
 
-      // Find user by email
-      const user = await userRepo.findByEmail(email);
-      if (!user) {
-        return errorResponse("INVALID_CREDENTIALS", "Invalid email or password", 401);
+      // Authenticate user
+      let loginResult;
+      try {
+        loginResult = await authService.login(email, password);
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message === "INVALID_CREDENTIALS") {
+            return errorResponse("INVALID_CREDENTIALS", "Invalid email or password", 401);
+          }
+          if (error.message === "EMAIL_NOT_VERIFIED") {
+            return errorResponse(
+              "EMAIL_NOT_VERIFIED",
+              "Please verify your email before logging in",
+              403
+            );
+          }
+        }
+        throw error;
       }
-
-      // Verify password
-      const isValid = await verifyPassword(password, user.password);
-      if (!isValid) {
-        return errorResponse("INVALID_CREDENTIALS", "Invalid email or password", 401);
-      }
-
-      // Check if email is verified
-      if (!user.emailVerified) {
-        return errorResponse(
-          "EMAIL_NOT_VERIFIED",
-          "Please verify your email before logging in",
-          403
-        );
-      }
-
-      // Generate tokens
-      const accessToken = await createAccessToken({
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        emailVerified: user.emailVerified,
-      });
-
-      const refreshTokenId = crypto.randomUUID();
-      const refreshToken = await createRefreshToken({
-        sub: user.id,
-        tokenId: refreshTokenId,
-      });
-
-      // Store refresh token
-      const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days
-      await tokenRepo.storeRefreshToken(user.id, refreshTokenId, expiresAt);
 
       // Set refresh token as httpOnly cookie
       const headers = new Headers();
-      setCookie(headers, "refresh_token", refreshToken, {
+      setCookie(headers, "refresh_token", loginResult.refreshToken, {
         httpOnly: true,
         secure: Deno.env.get("DENO_ENV") === "production",
         sameSite: "Lax",
@@ -83,14 +61,8 @@ export const handler: Handlers<unknown, AppState> = {
       return new Response(
         JSON.stringify({
           data: {
-            accessToken: accessToken,
-            user: {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-              emailVerified: user.emailVerified,
-            },
+            accessToken: loginResult.accessToken,
+            user: loginResult.user,
           },
         }),
         {
@@ -110,7 +82,7 @@ export const handler: Handlers<unknown, AppState> = {
         );
       }
       console.error("Login error:", error);
-      return errorResponse("SERVER_ERROR", "Failed to login", 500);
+      return errorResponse("SERVER_ERROR", "Failed to log in", 500);
     }
   },
 };

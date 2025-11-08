@@ -4,8 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createAccessToken, verifyToken } from "../../../../shared/lib/jwt.ts";
-import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     getCookie,
@@ -23,42 +22,29 @@ export const handler: Handlers<unknown, AppState> = {
         return errorResponse("NO_REFRESH_TOKEN", "No refresh token provided", 401);
       }
 
-      // Verify refresh token
-      let payload;
+      const authService = new AuthService();
+
+      // Refresh access token
+      let result;
       try {
-        payload = await verifyToken(refreshToken);
-      } catch {
-        return errorResponse("INVALID_TOKEN", "Invalid or expired refresh token", 401);
+        result = await authService.refreshAccessToken(refreshToken);
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message === "INVALID_TOKEN") {
+            return errorResponse("INVALID_TOKEN", "Invalid or expired refresh token", 401);
+          }
+          if (error.message === "TOKEN_REVOKED") {
+            return errorResponse("TOKEN_REVOKED", "Refresh token has been revoked", 401);
+          }
+          if (error.message === "USER_NOT_FOUND") {
+            return errorResponse("USER_NOT_FOUND", "User not found", 404);
+          }
+        }
+        throw error;
       }
-
-      const userId = payload.sub;
-      const tokenId = payload.tokenId as string;
-
-      const userRepo = new UserRepository();
-      const tokenRepo = new TokenRepository();
-
-      // Verify refresh token exists in database
-      const isValid = await tokenRepo.verifyRefreshToken(userId, tokenId);
-      if (!isValid) {
-        return errorResponse("TOKEN_REVOKED", "Refresh token has been revoked", 401);
-      }
-
-      // Get user data
-      const user = await userRepo.findById(userId);
-      if (!user) {
-        return errorResponse("USER_NOT_FOUND", "User not found", 404);
-      }
-
-      // Generate new access token
-      const accessToken = await createAccessToken({
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        emailVerified: user.emailVerified,
-      });
 
       return successResponse({
-        access_token: accessToken,
+        access_token: result.accessToken,
       });
     } catch (error) {
       console.error("Token refresh error:", error);

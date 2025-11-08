@@ -4,8 +4,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { verifyToken } from "../../../../shared/lib/jwt.ts";
-import { TokenRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     deleteCookie,
     errorResponse,
@@ -19,37 +18,19 @@ export const handler: Handlers<unknown, AppState> = {
     try {
       // Get user from auth middleware
       const user = requireUser(ctx);
-      const tokenRepo = new TokenRepository();
+      const authService = new AuthService();
 
       // Get refresh token from cookie
       const refreshToken = getCookie(req.headers, "refresh_token");
       
-      if (refreshToken) {
-        try {
-          const refreshPayload = await verifyToken(refreshToken);
-          const tokenId = refreshPayload.tokenId as string;
-          
-          // Revoke refresh token
-          await tokenRepo.revokeRefreshToken(user.sub, tokenId);
-        } catch {
-          // Refresh token invalid or expired - ignore
-        }
-      }
-
-      // Blacklist access token
+      // Get access token from header
       const authHeader = req.headers.get("Authorization");
-      if (authHeader?.startsWith("Bearer ")) {
-        const accessToken = authHeader.substring(7);
-        try {
-          const accessPayload = await verifyToken(accessToken);
-          const tokenId = accessPayload.jti as string;
-          const expiresAt = accessPayload.exp;
-          
-          await tokenRepo.blacklistToken(tokenId, user.sub, expiresAt);
-        } catch {
-          // Access token invalid - ignore
-        }
-      }
+      const accessToken = authHeader?.startsWith("Bearer ") 
+        ? authHeader.substring(7) 
+        : undefined;
+
+      // Logout and revoke tokens
+      await authService.logout(user.sub, refreshToken, accessToken);
 
       // Delete refresh token cookie
       const headers = new Headers();
@@ -70,7 +51,7 @@ export const handler: Handlers<unknown, AppState> = {
         }
       );
     } catch (error) {
-      if (error.message === "Unauthorized") {
+      if (error instanceof Error && error.message === "Unauthorized") {
         return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
       }
       console.error("Logout error:", error);

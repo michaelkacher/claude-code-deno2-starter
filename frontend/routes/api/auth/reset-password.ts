@@ -5,7 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     parseJsonBody,
@@ -25,28 +25,21 @@ export const handler: Handlers<unknown, AppState> = {
       const body = await parseJsonBody(req);
       const { token, newPassword } = ResetPasswordSchema.parse(body);
 
-      const userRepo = new UserRepository();
-      const tokenRepo = new TokenRepository();
+      const authService = new AuthService();
 
-      // Verify reset token
-      const tokenData = await tokenRepo.getPasswordResetToken(token);
-      
-      if (!tokenData) {
-        return errorResponse(
-          "INVALID_TOKEN",
-          "Invalid or expired reset token",
-          400
-        );
+      // Reset password
+      try {
+        await authService.resetPassword(token, newPassword);
+      } catch (error) {
+        if (error instanceof Error && error.message === "INVALID_TOKEN") {
+          return errorResponse(
+            "INVALID_TOKEN",
+            "Invalid or expired reset token",
+            400
+          );
+        }
+        throw error;
       }
-
-      // Update password (automatically hashed by repository)
-      await userRepo.updatePassword(tokenData.userId, newPassword);
-
-      // Delete used token
-      await tokenRepo.deletePasswordResetToken(token);
-
-      // Revoke all existing sessions for security
-      await tokenRepo.revokeAllUserRefreshTokens(tokenData.userId);
 
       return successResponse({
         message: "Password reset successful. Please log in with your new password.",

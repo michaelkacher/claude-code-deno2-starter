@@ -5,7 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     parseJsonBody,
@@ -24,41 +24,21 @@ export const handler: Handlers<unknown, AppState> = {
       const body = await parseJsonBody(req);
       const { token } = VerifyEmailSchema.parse(body);
 
-      const userRepo = new UserRepository();
-      const tokenRepo = new TokenRepository();
-
-      // Get verification token data
-      const tokenData = await tokenRepo.getEmailVerificationToken(token);
-      
-      if (!tokenData) {
-        return errorResponse(
-          "INVALID_TOKEN",
-          "Invalid or expired verification token",
-          400
-        );
-      }
-
-      // Get user
-      const user = await userRepo.findById(tokenData.userId);
-      
-      if (!user) {
-        return errorResponse("USER_NOT_FOUND", "User not found", 404);
-      }
-
-      // Check if already verified
-      if (user.emailVerified) {
-        return errorResponse(
-          "ALREADY_VERIFIED",
-          "Email is already verified",
-          400
-        );
-      }
+      const authService = new AuthService();
 
       // Verify email
-      await userRepo.verifyEmail(user.id);
-
-      // Delete used token
-      await tokenRepo.deleteEmailVerificationToken(token);
+      try {
+        await authService.verifyEmail(token);
+      } catch (error) {
+        if (error instanceof Error && error.message === "INVALID_TOKEN") {
+          return errorResponse(
+            "INVALID_TOKEN",
+            "Invalid or expired verification token",
+            400
+          );
+        }
+        throw error;
+      }
 
       return successResponse({
         message: "Email verified successfully. You can now log in.",

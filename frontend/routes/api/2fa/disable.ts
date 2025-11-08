@@ -5,8 +5,8 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { verifyPassword } from "../../../../shared/lib/password.ts";
 import { UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     parseJsonBody,
@@ -27,8 +27,10 @@ export const handler: Handlers<unknown, AppState> = {
       const user = requireUser(ctx);
 
       // Parse and validate request body
-      const body = await parseJsonBody(req, Disable2FASchema);
+      const body = await parseJsonBody(req);
+      const validatedBody = Disable2FASchema.parse(body);
 
+      const authService = new AuthService();
       const userRepo = new UserRepository();
       const dbUser = await userRepo.findById(user.sub);
 
@@ -40,10 +42,10 @@ export const handler: Handlers<unknown, AppState> = {
         return errorResponse("NOT_ENABLED", "2FA is not enabled", 400);
       }
 
-      // Verify password
-      const isPasswordValid = await verifyPassword(
-        body.password,
-        dbUser.password,
+      // Verify password using AuthService
+      const isPasswordValid = await authService.verifyUserPassword(
+        user.sub,
+        validatedBody.password
       );
       if (!isPasswordValid) {
         return errorResponse("INVALID_PASSWORD", "Invalid password", 400);
@@ -51,11 +53,12 @@ export const handler: Handlers<unknown, AppState> = {
 
       // Verify 2FA code
       let isCodeValid = false;
-      if (body.code.length === 6 && dbUser.twoFactorSecret) {
-        isCodeValid = await verifyTOTP(body.code, dbUser.twoFactorSecret);
-      } else if (body.code.length === 8) {
+      if (validatedBody.code.length === 6 && dbUser.twoFactorSecret) {
+        const { verifyTOTP } = await import("../../../../shared/lib/2fa.ts");
+        isCodeValid = await verifyTOTP(validatedBody.code, dbUser.twoFactorSecret);
+      } else if (validatedBody.code.length === 8) {
         const backupCodes = dbUser.twoFactorBackupCodes || [];
-        isCodeValid = backupCodes.includes(body.code);
+        isCodeValid = backupCodes.includes(validatedBody.code);
       }
 
       if (!isCodeValid) {
@@ -73,10 +76,10 @@ export const handler: Handlers<unknown, AppState> = {
         message: "Two-factor authentication disabled successfully",
       });
     } catch (error) {
-      if (error.message === "Authentication required") {
+      if (error instanceof Error && error.message === "Authentication required") {
         return errorResponse("UNAUTHORIZED", "Authentication required", 401);
       }
-      if (error.name === "ZodError") {
+      if (error instanceof z.ZodError) {
         return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
       }
       console.error("2FA disable error:", error);

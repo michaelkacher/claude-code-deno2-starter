@@ -5,7 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     parseJsonBody,
@@ -26,48 +26,26 @@ export const handler: Handlers<unknown, AppState> = {
       const body = await parseJsonBody(req);
       const { email, password, name } = SignupSchema.parse(body);
 
-      const userRepo = new UserRepository();
-      const tokenRepo = new TokenRepository();
+      const authService = new AuthService();
 
-      // Check if email already exists
-      const existingUser = await userRepo.findByEmail(email);
-      if (existingUser) {
-        return errorResponse("EMAIL_EXISTS", "Email already registered", 409);
+      // Create user account
+      let signupResult;
+      try {
+        signupResult = await authService.signup(email, password, name);
+      } catch (error) {
+        if (error instanceof Error && error.message === "EMAIL_EXISTS") {
+          return errorResponse("EMAIL_EXISTS", "Email already registered", 409);
+        }
+        throw error;
       }
 
-      // Create user (password is automatically hashed by repository)
-      const user = await userRepo.create({
-        email,
-        password,
-        name,
-        role: "user",
-        emailVerified: false,
-        twoFactorEnabled: false,
-      });
-
-      // Generate email verification token
-      const verificationToken = crypto.randomUUID();
-      const expiresAt = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 24 hours
-
-      await tokenRepo.storeEmailVerificationToken(
-        verificationToken,
-        user.id,
-        user.email,
-        expiresAt
-      );
-
       // TODO: Send verification email
-      // await sendVerificationEmail(user.email, verificationToken);
+      // await sendVerificationEmail(signupResult.user.email, signupResult.verificationToken);
 
       // Return success (without sensitive data)
       return successResponse(
         {
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            emailVerified: user.emailVerified,
-          },
+          user: signupResult.user,
           message: "Account created successfully. Please check your email to verify your account.",
         },
         201

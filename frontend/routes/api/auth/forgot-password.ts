@@ -5,7 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { TokenRepository, UserRepository } from "../../../../shared/repositories/index.ts";
+import { AuthService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     parseJsonBody,
@@ -24,36 +24,21 @@ export const handler: Handlers<unknown, AppState> = {
       const body = await parseJsonBody(req);
       const { email } = ForgotPasswordSchema.parse(body);
 
-      const userRepo = new UserRepository();
-      const tokenRepo = new TokenRepository();
+      const authService = new AuthService();
 
-      // Check if user exists
-      const user = await userRepo.findByEmail(email);
-      
-      // Always return success (don't reveal if email exists)
-      if (!user) {
-        return successResponse({
-          message: "If an account exists with this email, a password reset link will be sent.",
-        });
-      }
-
-      // Generate password reset token
-      const resetToken = crypto.randomUUID();
-      const expiresAt = Math.floor(Date.now() / 1000) + (60 * 60); // 1 hour
-
-      // Store reset token
-      await tokenRepo.storePasswordResetToken(
-        resetToken,
-        user.id,
-        user.email,
-        expiresAt
-      );
+      // Request password reset
+      const resetToken = await authService.requestPasswordReset(email);
 
       // TODO: Send password reset email
-      // await sendPasswordResetEmail(user.email, resetToken);
+      // if (resetToken) {
+      //   await sendPasswordResetEmail(email, resetToken);
+      // }
 
-      console.log(`Password reset token for ${email}: ${resetToken}`);
+      if (resetToken) {
+        console.log(`Password reset token for ${email}: ${resetToken}`);
+      }
 
+      // Always return success (don't reveal if email exists)
       return successResponse({
         message: "If an account exists with this email, a password reset link will be sent.",
       });
