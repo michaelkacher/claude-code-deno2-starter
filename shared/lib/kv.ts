@@ -91,7 +91,7 @@ class KvConnectionManager {
       clearInterval(this.healthCheckInterval);
     }
 
-    // Check connection health every minute
+    // Check connection health every 10 minutes
     this.healthCheckInterval = setInterval(async () => {
       try {
         // Simple health check - try to get a key
@@ -99,16 +99,16 @@ class KvConnectionManager {
         logger.debug('Health check passed');
       } catch (error) {
         logger.error('Health check failed', error);
-        
+
         // Clear instance to force reconnection on next request
         this.instance = null;
-        
+
         if (this.healthCheckInterval !== null) {
           clearInterval(this.healthCheckInterval);
           this.healthCheckInterval = null;
         }
       }
-    }, 60000); // Check every minute
+    }, 10 * 60 * 1000); // Check every 10 minutes
   }
 
   /**

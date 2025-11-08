@@ -8,6 +8,7 @@
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useEffect, useRef } from 'preact/hooks';
 import { useSignal } from '@preact/signals';
+import { TokenStorage } from '../lib/storage.ts';
 
 interface Model {
   name: string;
@@ -79,7 +80,7 @@ export default function AdminDataBrowser() {
 
   const fetchModels = async () => {
     try {
-      const accessToken = localStorage.getItem('access_token');
+      const accessToken = TokenStorage.getAccessToken();
 
       const response = await fetch(`/api/admin/data/models`, {
         headers: {
@@ -105,7 +106,7 @@ export default function AdminDataBrowser() {
     error.value = '';
 
     try {
-      const accessToken = localStorage.getItem('access_token');
+      const accessToken = TokenStorage.getAccessToken();
 
       const params = new URLSearchParams({
         page: currentPage.value.toString(),

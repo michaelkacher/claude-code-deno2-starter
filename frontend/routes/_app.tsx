@@ -38,6 +38,7 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
         <link rel="stylesheet" href="/styles.css" />
         <ThemeProvider />
         {/* Prevent FOUC (Flash of Unstyled Content) by setting dark mode class early */}
+        {/* Note: Uses localStorage directly instead of ThemeStorage because this runs before JS modules load */}
         <script dangerouslySetInnerHTML={{
           __html: `
             (function() {

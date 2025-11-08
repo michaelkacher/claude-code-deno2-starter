@@ -6,6 +6,7 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { TokenStorage } from '../../lib/storage.ts';
 
 interface CreateJobModalProps {
   onClose: () => void;
@@ -98,7 +99,7 @@ export default function CreateJobModal({ onClose, onJobCreated }: CreateJobModal
       }
 
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const response = await fetch(`${apiUrl}/api/jobs`, {
         method: 'POST',
         headers: {

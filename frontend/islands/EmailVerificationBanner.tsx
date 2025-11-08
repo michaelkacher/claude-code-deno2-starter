@@ -8,6 +8,7 @@
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useEffect } from 'preact/hooks';
 import { useSignal } from '@preact/signals';
+import { TokenStorage } from '../lib/storage.ts';
 
 export default function EmailVerificationBanner() {
   const isVisible = useSignal(false);
@@ -19,10 +20,10 @@ export default function EmailVerificationBanner() {
     if (!IS_BROWSER) return;
 
     // Check if user is logged in and email is not verified
-    const emailVerified = localStorage.getItem('email_verified');
-    const email = localStorage.getItem('user_email');
+    const emailVerified = TokenStorage.isEmailVerified();
+    const email = TokenStorage.getUserEmail();
 
-    if (email && emailVerified === 'false') {
+    if (email && !emailVerified) {
       isVisible.value = true;
       userEmail.value = email;
     }

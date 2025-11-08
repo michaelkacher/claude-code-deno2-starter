@@ -9,11 +9,55 @@ import { Handlers } from "$fresh/server.ts";
 export const handler: Handlers = {
   GET(_req) {
     const script = `
+// BroadcastChannel for cross-tab communication
+let tokenChannel = null;
+let refreshInProgress = false;
+
+// Initialize BroadcastChannel if supported
+if (typeof BroadcastChannel !== 'undefined') {
+  tokenChannel = new BroadcastChannel('token_refresh');
+
+  // Listen for token refresh events from other tabs
+  tokenChannel.addEventListener('message', (event) => {
+    if (event.data.type === 'TOKEN_REFRESHED') {
+      // Another tab refreshed the token, update our storage
+      const { accessToken } = event.data;
+      localStorage.setItem('access_token', accessToken);
+
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      document.cookie = \`auth_token=\${accessToken}; expires=\${expiresAt.toUTCString()}; path=/; SameSite=Strict\`;
+
+      console.debug('Token updated from another tab');
+    } else if (event.data.type === 'REFRESH_STARTED') {
+      // Another tab started refreshing
+      refreshInProgress = true;
+    } else if (event.data.type === 'REFRESH_COMPLETED') {
+      // Another tab completed refresh
+      refreshInProgress = false;
+    }
+  });
+}
+
 /**
  * Refresh the access token using the refresh token
+ * Uses BroadcastChannel to coordinate across tabs
  */
 export async function refreshAccessToken() {
+  // If another tab is already refreshing, wait a bit and check again
+  if (refreshInProgress) {
+    console.debug('Token refresh already in progress in another tab, waiting...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    // After waiting, the token should be updated by the other tab
+    return true;
+  }
+
   try {
+    // Notify other tabs that we're starting a refresh
+    refreshInProgress = true;
+    if (tokenChannel) {
+      tokenChannel.postMessage({ type: 'REFRESH_STARTED' });
+    }
+
     const response = await fetch('/api/auth/refresh', {
       method: 'POST',
       credentials: 'include', // Include httpOnly refresh token cookie
@@ -27,22 +71,46 @@ export async function refreshAccessToken() {
         document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         window.location.href = '/login?reason=session_expired';
       }
+
+      refreshInProgress = false;
+      if (tokenChannel) {
+        tokenChannel.postMessage({ type: 'REFRESH_COMPLETED' });
+      }
       return false;
     }
 
     const data = await response.json();
-    
+    const newAccessToken = data.accessToken;
+
     // Store the new access token
-    localStorage.setItem('access_token', data.accessToken);
-    
+    localStorage.setItem('access_token', newAccessToken);
+
     // Update the cookie (for middleware)
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    document.cookie = \`auth_token=\${data.accessToken}; expires=\${expiresAt.toUTCString()}; path=/; SameSite=Strict\`;
-    
+    document.cookie = \`auth_token=\${newAccessToken}; expires=\${expiresAt.toUTCString()}; path=/; SameSite=Strict\`;
+
     console.log('Access token refreshed successfully');
+
+    // Notify other tabs about the new token
+    if (tokenChannel) {
+      tokenChannel.postMessage({
+        type: 'TOKEN_REFRESHED',
+        accessToken: newAccessToken
+      });
+    }
+
+    refreshInProgress = false;
+    if (tokenChannel) {
+      tokenChannel.postMessage({ type: 'REFRESH_COMPLETED' });
+    }
+
     return true;
   } catch (error) {
     console.error('Token refresh error:', error);
+    refreshInProgress = false;
+    if (tokenChannel) {
+      tokenChannel.postMessage({ type: 'REFRESH_COMPLETED' });
+    }
     return false;
   }
 }

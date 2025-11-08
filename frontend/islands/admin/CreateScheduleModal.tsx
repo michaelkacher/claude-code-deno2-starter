@@ -6,6 +6,7 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { TokenStorage } from '../../lib/storage.ts';
 
 interface CreateScheduleModalProps {
   onClose: () => void;
@@ -183,7 +184,7 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
       }
 
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const response = await fetch(`${apiUrl}/api/jobs/schedules`, {
         method: 'POST',
         headers: {

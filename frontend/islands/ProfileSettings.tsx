@@ -7,6 +7,7 @@
 import { IS_BROWSER } from "$fresh/runtime.ts";
 import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import { TokenStorage } from "../lib/storage.ts";
 
 interface User {
   id: string;
@@ -28,7 +29,7 @@ export default function ProfileSettings() {
 
     async function fetchProfile() {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = TokenStorage.getAccessToken();
         if (!token) {
           window.location.href = "/login?redirect=/profile";
           return;
@@ -42,7 +43,7 @@ export default function ProfileSettings() {
 
         if (!response.ok) {
           if (response.status === 401) {
-            localStorage.removeItem("access_token");
+            TokenStorage.removeAccessToken();
             window.location.href = "/login?redirect=/profile";
             return;
           }

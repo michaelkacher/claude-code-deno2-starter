@@ -7,6 +7,7 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { TokenStorage } from '../lib/storage.ts';
 
 interface TwoFactorSetupProps {
   onComplete?: () => void;
@@ -31,7 +32,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
       if (!IS_BROWSER) return;
 
       const apiUrl = window.location.origin;
-      const accessToken = localStorage.getItem('access_token');
+      const accessToken = TokenStorage.getAccessToken();
       
       const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
         credentials: 'include',
@@ -76,7 +77,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
       if (!IS_BROWSER) return;
 
       const apiUrl = window.location.origin;
-      const accessToken = localStorage.getItem('access_token');
+      const accessToken = TokenStorage.getAccessToken();
       
       const csrfResponse = await fetch(`${apiUrl}/api/auth/csrf-token`, {
         credentials: 'include',

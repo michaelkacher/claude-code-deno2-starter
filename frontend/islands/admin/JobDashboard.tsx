@@ -9,6 +9,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import CreateJobModal from './CreateJobModal.tsx';
 import CreateScheduleModal from './CreateScheduleModal.tsx';
+import { TokenStorage } from '../../lib/storage.ts';
 
 interface Job {
   id: string;
@@ -73,7 +74,7 @@ export default function JobDashboard() {
 
       const data = await response.json();
       if (data.data?.accessToken && IS_BROWSER) {
-        localStorage.setItem('access_token', data.data.accessToken);
+        TokenStorage.setAccessToken(data.data.accessToken);
         return true;
       }
 
@@ -97,7 +98,7 @@ export default function JobDashboard() {
     } else {
       // Refresh failed, redirect to login
       if (IS_BROWSER) {
-        localStorage.removeItem('access_token');
+        TokenStorage.removeAccessToken();
         window.location.href = '/login?redirect=/admin/jobs';
       }
     }
@@ -110,7 +111,7 @@ export default function JobDashboard() {
       error.value = null;
 
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const statusParam = statusFilter.value !== 'all' ? `?status=${statusFilter.value}` : '';
       const response = await fetch(`${apiUrl}/api/jobs${statusParam}`, {
         headers: {
@@ -141,7 +142,7 @@ export default function JobDashboard() {
   const fetchStats = async () => {
     try {
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const response = await fetch(`${apiUrl}/api/jobs/stats`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -166,7 +167,7 @@ export default function JobDashboard() {
   const fetchSchedules = async () => {
     try {
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const response = await fetch(`${apiUrl}/api/jobs/schedules`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -192,7 +193,7 @@ export default function JobDashboard() {
   const retryJob = async (jobId: string) => {
     try {
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const response = await fetch(`${apiUrl}/api/jobs/${jobId}/retry`, {
         method: 'POST',
         headers: {
@@ -215,7 +216,7 @@ export default function JobDashboard() {
 
     try {
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const response = await fetch(`${apiUrl}/api/jobs/${jobId}`, {
         method: 'DELETE',
         headers: {
@@ -236,7 +237,7 @@ export default function JobDashboard() {
   const triggerSchedule = async (name: string) => {
     try {
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const response = await fetch(`${apiUrl}/api/jobs/schedules/${name}/trigger`, {
         method: 'POST',
         headers: {
@@ -257,7 +258,7 @@ export default function JobDashboard() {
   const toggleSchedule = async (name: string, enabled: boolean) => {
     try {
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const endpoint = enabled ? 'disable' : 'enable';
       const response = await fetch(`${apiUrl}/api/jobs/schedules/${name}/${endpoint}`, {
         method: 'POST',
@@ -280,7 +281,7 @@ export default function JobDashboard() {
 
     try {
       const apiUrl = getApiUrl();
-      const accessToken = IS_BROWSER ? localStorage.getItem('access_token') : null;
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
       const response = await fetch(`${apiUrl}/api/jobs/cleanup`, {
         method: 'POST',
         headers: {
@@ -350,7 +351,7 @@ export default function JobDashboard() {
           case 'auth_required':
             // Server requesting authentication
             console.log('[JobDashboard] Auth required, sending token');
-            const token = localStorage.getItem('access_token');
+            const token = TokenStorage.getAccessToken();
             if (token) {
               ws.send(JSON.stringify({ type: 'auth', token }));
             } else {

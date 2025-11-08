@@ -9,6 +9,7 @@ import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal, useComputed } from '@preact/signals';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
 import { setUser, setAccessToken } from '../lib/store.ts';
+import { TokenStorage } from '../lib/storage.ts';
 
 interface SignupFormProps {
   redirectTo?: string;
@@ -101,10 +102,12 @@ export default function SignupForm({ redirectTo = '/' }: SignupFormProps) {
 
       // Store access token in localStorage (refresh token is in httpOnly cookie)
       if (IS_BROWSER) {
-        localStorage.setItem('access_token', data.data.accessToken);
-        localStorage.setItem('user_email', data.data.user.email);
-        localStorage.setItem('user_role', data.data.user.role);
-        localStorage.setItem('email_verified', data.data.user.emailVerified ? 'true' : 'false');
+        TokenStorage.setUserSession({
+          accessToken: data.data.accessToken,
+          email: data.data.user.email,
+          role: data.data.user.role,
+          emailVerified: data.data.user.emailVerified,
+        });
 
         // Update global state store
         setUser({

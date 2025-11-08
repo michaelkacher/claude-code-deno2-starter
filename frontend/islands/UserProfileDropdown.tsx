@@ -50,7 +50,7 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
     }
 
     // If we have token in localStorage but not in store, set it
-    const storedToken = localStorage.getItem('access_token');
+    const storedToken = TokenStorage.getAccessToken();
     if (storedToken && !accessToken.value) {
       setAccessToken(storedToken);
     }
@@ -260,7 +260,7 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
   // Not logged in - show login button
   if (!displayEmail.value) {
     // On client, double-check localStorage before showing login button
-    if (IS_BROWSER && localStorage.getItem('user_email')) {
+    if (IS_BROWSER && TokenStorage.getUserEmail()) {
       // We have stored email, but state hasn't updated yet - show loading
       return (
         <div class="h-8 w-8 bg-gray-200 animate-pulse rounded-full"></div>
