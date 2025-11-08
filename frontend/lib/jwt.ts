@@ -1,83 +1,51 @@
 /**
- * JWT Token Verification Utilities for Frontend
- * 
- * Provides client-side token validation by checking:
- * - Token structure
- * - Token expiration
- * - Token signature (by calling backend)
+ * JWT Utility Functions
+ * Minimal client-side JWT helpers (no verification, just decoding and validation)
  */
 
-/**
- * Decode JWT payload without verification
- * Used for checking expiration client-side
- */
-export function decodeJwt(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return null;
-    }
-    
-    // Decode the payload (second part)
-    const payload = parts[1];
-    // Replace URL-safe characters
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-    // Add padding if needed
-    const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
-    
-    const decoded = atob(padded);
-    return JSON.parse(decoded);
-  } catch (error) {
-    console.error('Failed to decode JWT:', error);
-    return null;
-  }
+export interface JwtPayload {
+  sub: string;
+  email: string;
+  role: string;
+  emailVerified: boolean;
+  iat: number;
+  exp: number;
 }
 
 /**
- * Check if JWT token is expired
- */
-export function isTokenExpired(token: string): boolean {
-  const payload = decodeJwt(token);
-  if (!payload || typeof payload.exp !== 'number') {
-    return true;
-  }
-  
-  // exp is in seconds, Date.now() is in milliseconds
-  return payload.exp * 1000 < Date.now();
-}
-
-/**
- * Verify token with backend
- * This ensures the token is valid and hasn't been revoked
- */
-export async function verifyTokenWithBackend(token: string): Promise<boolean> {
-  try {
-    const apiUrl = typeof window !== 'undefined'
-      ? window.location.origin
-      : 'http://localhost:3000';
-    
-    const response = await fetch(`${apiUrl}/api/auth/verify`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-    
-    return response.ok;
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    return false;
-  }
-}
-
-/**
- * Validate token structure
+ * Check if a string has valid JWT structure (3 base64 parts)
  */
 export function isValidJwtStructure(token: string): boolean {
-  if (!token || typeof token !== 'string') {
-    return false;
-  }
-  
   const parts = token.split('.');
-  return parts.length === 3 && parts.every(part => part.length > 0);
+  return parts.length === 3;
+}
+
+/**
+ * Decode JWT payload without verification (client-side only)
+ */
+export function decodeJwt(token: string): JwtPayload {
+  if (!isValidJwtStructure(token)) {
+    throw new Error('Invalid JWT structure');
+  }
+
+  try {
+    const parts = token.split('.');
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch (error) {
+    throw new Error('Failed to decode JWT payload');
+  }
+}
+
+/**
+ * Check if JWT is expired based on exp claim
+ */
+export function isTokenExpired(token: string): boolean {
+  try {
+    const payload = decodeJwt(token);
+    const now = Math.floor(Date.now() / 1000);
+    return payload.exp < now;
+  } catch {
+    return true; // If we can't decode it, consider it expired
+  }
 }

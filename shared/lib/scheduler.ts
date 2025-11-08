@@ -242,6 +242,7 @@ export class JobScheduler {
     if (!this.isRunning) return;
 
     const now = new Date();
+    let nextCheckTime: Date | null = null;
 
     // Check all schedules
     for (const schedule of this.schedules.values()) {
@@ -254,10 +255,24 @@ export class JobScheduler {
           console.error(`Error running schedule ${schedule.name}:`, error);
         });
       }
+
+      // Track the earliest next run time
+      if (!nextCheckTime || (schedule.nextRun && schedule.nextRun < nextCheckTime)) {
+        nextCheckTime = schedule.nextRun;
+      }
     }
 
+    // Calculate optimal sleep time
+    // Sleep until next schedule is due, but cap at 60s to handle newly added schedules
+    const sleepMs = nextCheckTime
+      ? Math.min(nextCheckTime.getTime() - Date.now(), this.checkInterval)
+      : this.checkInterval;
+
+    // Ensure minimum 1 second sleep to prevent tight loops
+    const safeSleepMs = Math.max(sleepMs, 1000);
+
     // Schedule next check
-    this.checkTimeout = setTimeout(() => this.check(), this.checkInterval);
+    this.checkTimeout = setTimeout(() => this.check(), safeSleepMs);
   }
 
   private async runSchedule(schedule: Schedule): Promise<void> {
