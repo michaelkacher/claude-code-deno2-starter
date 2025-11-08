@@ -2,50 +2,28 @@
  * Background Jobs Admin Dashboard
  *
  * Monitor and manage background jobs and schedules
+ * Uses centralized WebSocket service for real-time updates
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { TokenStorage } from '../../lib/storage.ts';
+import {
+    jobs,
+    jobStats,
+    schedules,
+    setJobs,
+    setSchedules,
+    updateJob,
+    updateJobStats,
+    type Job
+} from '../../lib/store.ts';
+import { subscribeToChannel } from '../../lib/websocket.ts';
 import CreateJobModal from './CreateJobModal.tsx';
 import CreateScheduleModal from './CreateScheduleModal.tsx';
 
-interface Job {
-  id: string;
-  name: string;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'retrying';
-  attempts: number;
-  maxRetries: number;
-  error?: string;
-  createdAt: string;
-  startedAt?: string;
-  completedAt?: string;
-  priority: number;
-}
-
-interface Stats {
-  pending: number;
-  running: number;
-  completed: number;
-  failed: number;
-  total: number;
-}
-
-interface Schedule {
-  name: string;
-  cron: string;
-  enabled: boolean;
-  timezone: string;
-  nextRun?: string;
-  lastRun?: string;
-  runCount: number;
-}
-
 export default function JobDashboard() {
-  const jobs = useSignal<Job[]>([]);
-  const stats = useSignal<Stats | null>(null);
-  const schedules = useSignal<Schedule[]>([]);
   const selectedTab = useSignal<'jobs' | 'schedules'>('jobs');
   const statusFilter = useSignal<string>('all');
   const loading = useSignal(false);
@@ -129,7 +107,7 @@ export default function JobDashboard() {
 
       const data = await response.json();
       console.log('[JobDashboard] Fetched jobs response:', data);
-      jobs.value = data.data?.jobs || [];
+      setJobs(data.data?.jobs || []);
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch jobs';
       console.error('Failed to fetch jobs:', err);
@@ -157,7 +135,7 @@ export default function JobDashboard() {
       if (!response.ok) throw new Error('Failed to fetch stats');
 
       const data = await response.json();
-      stats.value = data.data;
+      updateJobStats(data.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
@@ -183,7 +161,7 @@ export default function JobDashboard() {
 
       const data = await response.json();
       console.log('[JobDashboard] Fetched schedules response:', data);
-      schedules.value = data.data?.schedules || [];
+      setSchedules(data.data?.schedules || []);
     } catch (err) {
       console.error('Failed to fetch schedules:', err);
     }
@@ -302,7 +280,7 @@ export default function JobDashboard() {
     }
   };
 
-  // WebSocket connection for real-time updates
+  // Subscribe to real-time job updates via WebSocket
   useEffect(() => {
     if (!IS_BROWSER) return;
 
@@ -311,151 +289,38 @@ export default function JobDashboard() {
     fetchStats();
     fetchSchedules();
 
-    let ws: WebSocket | null = null;
-    let reconnectTimeout: number | null = null;
-    let isCleaningUp = false;
+    // Subscribe to job updates channel
+    console.log('[JobDashboard] Subscribing to jobs channel');
+    const unsubscribe = subscribeToChannel('jobs', (message) => {
+      console.log('[JobDashboard] Received message:', message.type);
 
-    const connectWebSocket = () => {
-      if (isCleaningUp) return;
-      
-      if (ws) {
-        try {
-          const readyState = ws.readyState;
-          if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) {
-            ws.close();
+      switch (message.type) {
+        case 'jobs_subscribed':
+          console.log('[JobDashboard] Successfully subscribed to jobs');
+          break;
+
+        case 'job_update':
+          // Update individual job
+          if (message.job) {
+            console.log('[JobDashboard] Job update:', message.job.id);
+            updateJob(message.job);
           }
-        } catch (error) {
-          console.debug('Error closing existing WebSocket during cleanup (non-critical):', error);
-        }
-        ws = null;
+          break;
+
+        case 'job_stats_update':
+          // Update stats
+          if (message.stats) {
+            console.log('[JobDashboard] Stats update');
+            updateJobStats(message.stats);
+          }
+          break;
       }
-
-      
-    // Set up WebSocket connection
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host}/api/notifications/ws`;
-    
-    console.log('[JobDashboard] Connecting to WebSocket:', wsUrl);
-    ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log('[JobDashboard] WebSocket connected, waiting for auth prompt');
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('[JobDashboard] WebSocket message:', data.type);
-
-        switch (data.type) {
-          case 'auth_required':
-            // Server requesting authentication
-            console.log('[JobDashboard] Auth required, sending token');
-            const token = TokenStorage.getAccessToken();
-            if (token) {
-              ws.send(JSON.stringify({ type: 'auth', token }));
-            } else {
-              console.error('[JobDashboard] No token available');
-              ws.close();
-            }
-            break;
-
-          case 'connected':
-            // Successfully authenticated - subscribe to job updates
-            console.log('[JobDashboard] Authenticated, subscribing to job updates');
-            ws.send(JSON.stringify({ type: 'subscribe_jobs' }));
-            break;
-
-          case 'job_update':
-            // Update individual job in the list
-            console.log('[JobDashboard] Job update received:', data.job.id);
-            const jobIndex = jobs.value.findIndex(j => j.id === data.job.id);
-            if (jobIndex !== -1) {
-              // Update existing job
-              jobs.value = [
-                ...jobs.value.slice(0, jobIndex),
-                data.job,
-                ...jobs.value.slice(jobIndex + 1),
-              ];
-            } else {
-              // New job - refresh the list
-              fetchJobs();
-            }
-            // Refresh stats when jobs update
-            fetchStats();
-            break;
-
-          case 'job_stats_update':
-            // Update stats in real-time
-            stats.value = data.stats;
-            break;
-
-          case 'ping':
-            // Server heartbeat - respond with pong
-            ws.send(JSON.stringify({ type: 'pong' }));
-            break;
-
-          case 'pong':
-            // Heartbeat response (we don't send pings, only respond to them)
-            break;
-
-          case 'auth_failed':
-            console.error('[JobDashboard] WebSocket auth failed');
-            ws.close();
-            break;
-        }
-      } catch (err) {
-        console.error('[JobDashboard] Error handling WebSocket message:', err);
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('[JobDashboard] WebSocket error:', error);
-    };
-
-    ws.onclose = () => {
-      console.log('[JobDashboard] WebSocket disconnected', {
-        code: event.code,
-        reason: event.reason,
-        wasClean: event.wasClean
-      });
-
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-        reconnectTimeout = null;
-      }
-
-      if (!isCleaningUp) {
-        reconnectTimeout = setTimeout(() => {
-          connectWebSocket();
-        }, 5000);  
-      }
-    };
-    };
-
-    connectWebSocket();
+    });
 
     // Cleanup on unmount
     return () => {
-      isCleaningUp = true;
-
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-        reconnectTimeout = null;
-      }
-
-      try {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'unsubscribe_jobs' }));
-        }
-
-        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-          ws.close();
-        }
-        
-      } catch (err) {
-        console.error('[JobDashboard] Error closing WebSocket:', err);
-      }
+      console.log('[JobDashboard] Unsubscribing from jobs channel');
+      unsubscribe();
     };
   }, []);
 
@@ -514,26 +379,26 @@ export default function JobDashboard() {
       </div>
 
       {/* Stats Cards */}
-      {stats.value && (
+      {jobStats.value && (
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-value">{stats.value.pending}</div>
+            <div class="stat-value">{jobStats.value.pending}</div>
             <div class="stat-label">Pending</div>
           </div>
           <div class="stat-card stat-running">
-            <div class="stat-value">{stats.value.running}</div>
+            <div class="stat-value">{jobStats.value.running}</div>
             <div class="stat-label">Running</div>
           </div>
           <div class="stat-card stat-completed">
-            <div class="stat-value">{stats.value.completed}</div>
+            <div class="stat-value">{jobStats.value.completed}</div>
             <div class="stat-label">Completed</div>
           </div>
           <div class="stat-card stat-failed">
-            <div class="stat-value">{stats.value.failed}</div>
+            <div class="stat-value">{jobStats.value.failed}</div>
             <div class="stat-label">Failed</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">{stats.value.total}</div>
+            <div class="stat-value">{jobStats.value.total}</div>
             <div class="stat-label">Total</div>
           </div>
         </div>

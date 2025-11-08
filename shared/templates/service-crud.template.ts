@@ -1,52 +1,41 @@
 /**
- * CRUD Service Template (Deno KV)
+ * CRUD Service Template (Repository Pattern + WebSocket)
  *
- * Use this template for services with standard CRUD operations.
- * Complete implementation with Deno KV, secondary indexes, and pagination.
+ * Modern service template following the app's architecture:
+ * - Static methods wrapping repository calls
+ * - WebSocket broadcasting for real-time updates
+ * - Proper separation: Service → Repository → Deno KV
+ * - Integration with channel-based WebSocket system
  *
  * Token savings: ~600-800 tokens vs writing from scratch
  *
  * Instructions:
- * 1. Replace [Resource] with your resource name (e.g., User, Task, Workout)
- * 2. Replace [resource] with lowercase version (e.g., user, task, workout)
- * 3. Replace [resources] with plural (e.g., users, tasks, workouts)
- * 4. Update type imports
- * 5. Customize validation logic
- * 6. Add/remove secondary indexes as needed
- * 7. Delete methods that don't apply
+ * 1. Replace [Resource] with your resource name (e.g., Post, Task, Product)
+ * 2. Replace [resource] with lowercase version (e.g., post, task, product)
+ * 3. Replace [resources] with plural (e.g., posts, tasks, products)
+ * 4. Update type imports from your feature's data models
+ * 5. Customize validation and business logic
+ * 6. Add/remove WebSocket broadcasts as needed
+ * 7. Update broadcast channel name if using custom channels
  */
 
-import { ValidationError, NotFoundError, ConflictError } from '../lib/errors.ts';
-
-// TODO: Import types from feature data models or shared/types
-// import type { [Resource], Create[Resource], Update[Resource] } from '../types/index.ts';
-
-// TODO: Define types if not imported
-type [Resource] = {
-  id: string;
-  // Add resource fields
-  createdAt: string;
-  updatedAt: string;
-};
-
-type Create[Resource] = Omit<[Resource], 'id' | 'createdAt' | 'updatedAt'>;
-type Update[Resource] = Partial<Create[Resource]>;
-
-interface PaginationOptions {
-  limit?: number;
-  cursor?: string;
-}
-
-interface PaginatedResult<T> {
-  data: T[];
-  cursor: string | null;
-}
+import { [Resource]Repository } from '../repositories/index.ts';
+import type {
+  Create[Resource]Request,
+  [Resource]Data,
+} from '../types/[resources].ts';
 
 /**
- * [Resource] Service - CRUD operations with Deno KV
+ * [Resource] Service
+ * Thin wrapper around [Resource]Repository with WebSocket broadcasting
+ * 
+ * Architecture:
+ * - Service methods are static (stateless)
+ * - Repository handles all KV operations
+ * - WebSocket broadcasts notify connected clients of changes
  */
 export class [Resource]Service {
-  constructor(private kv: Deno.Kv) {}
+  private static repo = new [Resource]Repository();
 
   // ==========================================================================
   // CREATE
@@ -54,39 +43,42 @@ export class [Resource]Service {
 
   /**
    * Create a new [resource]
+   * Broadcasts to WebSocket clients for real-time updates
    */
-  async create(input: Create[Resource]): Promise<[Resource]> {
-    // Validate input
-    this.validateCreate(input);
+  static async create(
+    data: Create[Resource]Request,
+  ): Promise<[Resource]Data> {
+    // Validate input (optional - can also be done in repository)
+    this.validateCreate(data);
 
-    // TODO: Check for duplicates using secondary index (if applicable)
-    // Example: check unique email
-    // const existingIdEntry = await this.kv.get<string>([
-    //   '[resources]_by_email',
-    //   input.email,
-    // ]);
-    // if (existingIdEntry.value) {
-    //   throw new ConflictError('[Resource] with this email already exists');
-    // }
+    // Create via repository
+    const [resource] = await this.repo.create(
+      // TODO: Add repository method parameters
+      // Example: data.userId, data.title, data.content
+    );
 
-    // Create [resource]
-    const [resource]: [Resource] = {
-      id: crypto.randomUUID(),
-      ...input,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Broadcast to WebSocket clients for real-time updates
+    try {
+      // Option A: Broadcast to specific user
+      const { notifyUser } = await import('../lib/notification-websocket.ts');
+      notifyUser(data.userId, [resource]);
 
-    // Save to KV with atomic operation (includes secondary indexes)
-    const result = await this.kv
-      .atomic()
-      .set(['[resources]', [resource].id], [resource])
-      // TODO: Add secondary indexes
-      // .set(['[resources]_by_field', input.field], [resource].id)
-      .commit();
+      // Option B: Broadcast to custom channel (for features like jobs, analytics)
+      // const { sendToUser } = await import('../lib/notification-websocket.ts');
+      // sendToUser(data.userId, {
+      //   type: '[resource]_created',
+      //   [resource]: [resource],
+      // });
 
-    if (!result.ok) {
-      throw new Error('Failed to create [resource]');
+      // Option C: Broadcast to all connected clients (admin features)
+      // const { broadcast } = await import('../lib/notification-websocket.ts');
+      // broadcast({
+      //   type: '[resource]_created',
+      //   [resource]: [resource],
+      // });
+    } catch (wsError) {
+      // WebSocket broadcast is not critical, just log if it fails
+      console.debug('WebSocket broadcast failed (non-critical):', wsError);
     }
 
     return [resource];
@@ -95,14 +87,14 @@ export class [Resource]Service {
   /**
    * Validate create input
    */
-  private validateCreate(input: Create[Resource]): void {
+  private static validateCreate(data: Create[Resource]Request): void {
     // TODO: Add custom validation logic
     // Examples:
-    // if (!input.name || input.name.length === 0) {
-    //   throw new ValidationError('Name is required');
+    // if (!data.title || data.title.trim().length === 0) {
+    //   throw new Error('Title is required');
     // }
-    // if (input.name.length > 100) {
-    //   throw new ValidationError('Name must be 100 characters or less');
+    // if (data.title.length > 200) {
+    //   throw new Error('Title must be 200 characters or less');
     // }
   }
 
@@ -111,83 +103,34 @@ export class [Resource]Service {
   // ==========================================================================
 
   /**
-   * Find [resource] by ID
+   * Get [resource] by ID
    */
-  async findById(id: string): Promise<[Resource] | null> {
-    const entry = await this.kv.get<[Resource]>(['[resources]', id]);
-    return entry.value;
+  static async getById(
+    userId: string,
+    [resource]Id: string,
+  ): Promise<[Resource]Data | null> {
+    return await this.repo.findById(userId, [resource]Id);
   }
 
   /**
-   * Get [resource] by ID (throws if not found)
+   * Get all [resources] for a user
    */
-  async getById(id: string): Promise<[Resource]> {
-    const [resource] = await this.findById(id);
-    if (![resource]) {
-      throw new NotFoundError('[Resource] not found');
-    }
-    return [resource];
-  }
-
-  /**
-   * Find [resource] by secondary index (e.g., email, username)
-   * TODO: Customize field name and update method name
-   */
-  async findByField(field: string): Promise<[Resource] | null> {
-    // Get ID from secondary index
-    const idEntry = await this.kv.get<string>(['[resources]_by_field', field]);
-    if (!idEntry.value) return null;
-
-    // Get [resource] by ID
-    const [resource]Entry = await this.kv.get<[Resource]>(['[resources]', idEntry.value]);
-    return [resource]Entry.value;
-  }
-
-  /**
-   * List all [resources] with pagination
-   */
-  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<[Resource]>> {
-    const limit = options.limit || 10;
-    const [resources]: [Resource][] = [];
-
-    const entries = this.kv.list<[Resource]>({
-      prefix: ['[resources]'],
-      limit: limit + 1, // Request 1 extra to detect next page
-      cursor: options.cursor,
+  static async getUserResources(
+    userId: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<[Resource]Data[]> {
+    const result = await this.repo.listUser[Resource]s(userId, {
+      limit: options.limit || 50,
+      cursor: options.offset ? String(options.offset) : undefined,
     });
-
-    let nextCursor: string | null = null;
-    let count = 0;
-
-    for await (const entry of entries) {
-      if (count < limit) {
-        [resources].push(entry.value);
-        count++;
-      } else {
-        nextCursor = entry.cursor;
-        break;
-      }
-    }
-
-    return {
-      data: [resources],
-      cursor: nextCursor,
-    };
+    return result.items;
   }
 
   /**
-   * Count total [resources]
-   * Note: This can be expensive for large datasets
+   * Get count of [resources] for a user (optional)
    */
-  async count(): Promise<number> {
-    let count = 0;
-    const entries = this.kv.list({ prefix: ['[resources]'] });
-
-    for await (const _ of entries) {
-      count++;
-    }
-
-    return count;
+  static async getCount(userId: string): Promise<number> {
+    return await this.repo.getCount(userId);
   }
 
   // ==========================================================================
@@ -196,65 +139,29 @@ export class [Resource]Service {
 
   /**
    * Update [resource]
+   * Broadcasts to WebSocket clients for real-time updates
    */
-  async update(id: string, updates: Update[Resource]): Promise<[Resource] | null> {
-    // Get existing [resource]
-    const existing = await this.findById(id);
-    if (!existing) return null;
+  static async update(
+    userId: string,
+    [resource]Id: string,
+    updates: Partial<[Resource]Data>,
+  ): Promise<[Resource]Data | null> {
+    const [resource] = await this.repo.update(userId, [resource]Id, updates);
 
-    // Validate updates
-    this.validateUpdate(updates);
-
-    // TODO: If updating unique field, check for conflicts
-    // if (updates.email && updates.email !== existing.email) {
-    //   const existingIdEntry = await this.kv.get<string>([
-    //     '[resources]_by_email',
-    //     updates.email,
-    //   ]);
-    //   if (existingIdEntry.value && existingIdEntry.value !== id) {
-    //     throw new ConflictError('[Resource] with this email already exists');
-    //   }
-    // }
-
-    // Create updated [resource]
-    const updated: [Resource] = {
-      ...existing,
-      ...updates,
-      id, // Ensure ID doesn't change
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Update in KV (atomic if updating indexes)
-    const operation = this.kv.atomic().set(['[resources]', id], updated);
-
-    // TODO: Update secondary indexes if unique field changed
-    // if (updates.field && updates.field !== existing.field) {
-    //   operation
-    //     .delete(['[resources]_by_field', existing.field])
-    //     .set(['[resources]_by_field', updates.field], id);
-    // }
-
-    const result = await operation.commit();
-
-    if (!result.ok) {
-      throw new Error('Failed to update [resource]');
+    // Broadcast update to WebSocket clients
+    if ([resource]) {
+      try {
+        const { sendToUser } = await import('../lib/notification-websocket.ts');
+        sendToUser(userId, {
+          type: '[resource]_update',
+          [resource]: [resource],
+        });
+      } catch (wsError) {
+        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+      }
     }
 
-    return updated;
-  }
-
-  /**
-   * Validate update input
-   */
-  private validateUpdate(updates: Update[Resource]): void {
-    // TODO: Add custom validation logic
-    // Examples:
-    // if (updates.name !== undefined && updates.name.length === 0) {
-    //   throw new ValidationError('Name cannot be empty');
-    // }
-    // if (updates.name && updates.name.length > 100) {
-    //   throw new ValidationError('Name must be 100 characters or less');
-    // }
+    return [resource];
   }
 
   // ==========================================================================
@@ -263,31 +170,44 @@ export class [Resource]Service {
 
   /**
    * Delete [resource]
+   * Broadcasts to WebSocket clients for real-time updates
    */
-  async delete(id: string): Promise<boolean> {
-    // Get [resource] to access indexed fields
-    const [resource] = await this.findById(id);
-    if (![resource]) return false;
+  static async delete(
+    userId: string,
+    [resource]Id: string,
+  ): Promise<boolean> {
+    const deleted = await this.repo.delete[Resource](userId, [resource]Id);
 
-    // Delete from KV with atomic operation (includes secondary indexes)
-    const operation = this.kv
-      .atomic()
-      .delete(['[resources]', id]);
+    // Broadcast deletion to WebSocket clients
+    if (deleted) {
+      try {
+        const { sendToUser } = await import('../lib/notification-websocket.ts');
+        sendToUser(userId, {
+          type: '[resource]_deleted',
+          [resource]Id: [resource]Id,
+        });
+      } catch (wsError) {
+        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+      }
+    }
 
-    // TODO: Delete secondary indexes
-    // operation.delete(['[resources]_by_field', [resource].field]);
-
-    const result = await operation.commit();
-    return result.ok;
+    return deleted;
   }
 
   /**
-   * Soft delete [resource] (marks as deleted instead of removing)
-   * TODO: Uncomment if soft delete is needed
+   * Delete all [resources] for a user (useful for cleanup/testing)
    */
-  // async softDelete(id: string): Promise<[Resource] | null> {
-  //   return this.update(id, { status: 'deleted' } as Update[Resource]);
-  // }
+  static async deleteAllForUser(userId: string): Promise<number> {
+    let count = 0;
+    const result = await this.repo.listUser[Resource]s(userId, { limit: 1000 });
+    
+    for (const [resource] of result.items) {
+      const deleted = await this.delete(userId, [resource].id);
+      if (deleted) count++;
+    }
+
+    return count;
+  }
 
   // ==========================================================================
   // CUSTOM BUSINESS LOGIC (Add below)
@@ -295,11 +215,56 @@ export class [Resource]Service {
 
   /**
    * TODO: Add custom business logic methods
+   * 
    * Examples:
-   * - Complex queries
-   * - Calculations
-   * - Status transitions
-   * - Relationships
-   * - Aggregations
+   * - Complex queries with filters
+   * - Status transitions (e.g., publish, archive)
+   * - Calculations or aggregations
+   * - Relationships between resources
+   * - Batch operations
+   * 
+   * Pattern:
+   * 1. Call repository method(s)
+   * 2. Apply business logic
+   * 3. Broadcast via WebSocket if needed
+   * 4. Return result
    */
+
+  /**
+   * Example: Publish a [resource]
+   */
+  // static async publish(
+  //   userId: string,
+  //   [resource]Id: string,
+  // ): Promise<[Resource]Data | null> {
+  //   // Get existing [resource]
+  //   const [resource] = await this.getById(userId, [resource]Id);
+  //   if (![resource]) return null;
+  //
+  //   // Business logic: check if publishable
+  //   if ([resource].status !== 'draft') {
+  //     throw new Error('[Resource] is not in draft status');
+  //   }
+  //
+  //   // Update status via repository
+  //   const published = await this.repo.update(userId, [resource]Id, {
+  //     status: 'published',
+  //     publishedAt: new Date().toISOString(),
+  //   });
+  //
+  //   // Broadcast publication event
+  //   if (published) {
+  //     try {
+  //       const { sendToUser } = await import('../lib/notification-websocket.ts');
+  //       sendToUser(userId, {
+  //         type: '[resource]_published',
+  //         [resource]: published,
+  //       });
+  //     } catch (wsError) {
+  //       console.debug('WebSocket broadcast failed (non-critical):', wsError);
+  //     }
+  //   }
+  //
+  //   return published;
+  // }
 }

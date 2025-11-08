@@ -6,10 +6,139 @@ This file contains standard backend implementation patterns for **Fresh 1.7.3 + 
 
 | Pattern | Use When | Token Savings | Implementation |
 |---------|----------|---------------|----------------|
-| `REPOSITORY_CRUD` | Simple CRUD operations | ~600-800 | Repository pattern with Deno KV |
+| `SERVICE_CRUD` | Business logic layer | ~600-800 | Static methods wrapping repositories |
+| `REPOSITORY_CRUD` | Data access layer | ~600-800 | Repository pattern with Deno KV |
+| `WEBSOCKET_BROADCAST` | Real-time updates | ~200-300 | Channel-based WebSocket notifications |
 | `FRESH_HANDLERS` | Standard REST endpoints | ~400-600 | Fresh API route handlers |
-| `CUSTOM_REPOSITORY` | Complex business logic | ~200-300 | Extended repository methods |
 | `ZOD_VALIDATION` | Input validation | ~100-150 | Zod schemas in route handlers |
+
+## Service Patterns
+
+### Pattern: `SERVICE_CRUD` (Static Methods + WebSocket)
+
+Complete CRUD service with static methods, repository delegation, and WebSocket broadcasting.
+
+**Operations covered**:
+- ✅ Create with WebSocket broadcast
+- ✅ Read by ID
+- ✅ List with pagination
+- ✅ Update with WebSocket broadcast
+- ✅ Delete with WebSocket broadcast
+- ✅ Custom business logic methods
+
+**Service structure (`shared/services/resource.ts`)**:
+```typescript
+import { ResourceRepository } from '../repositories/resource-repository.ts';
+import { notifyUser, sendToUser, broadcast } from '../lib/notification-websocket.ts';
+import type { CreateResourceRequest, ResourceData } from '../types/resources.ts';
+
+/**
+ * Resource Service
+ * Thin wrapper around ResourceRepository with WebSocket broadcasting
+ */
+export class ResourceService {
+  private static repo = new ResourceRepository();
+
+  /**
+   * Create a new resource
+   */
+  static async create(userId: string, data: CreateResourceRequest): Promise<ResourceData> {
+    // Create via repository
+    const resource = await this.repo.create(userId, data);
+
+    // Broadcast to user's WebSocket connection
+    await notifyUser(userId, {
+      type: 'resource_created',
+      data: resource
+    });
+
+    return resource;
+  }
+
+  /**
+   * Get resource by ID
+   */
+  static async getById(userId: string, resourceId: string): Promise<ResourceData | null> {
+    return await this.repo.findById(userId, resourceId);
+  }
+
+  /**
+   * List resources with pagination
+   */
+  static async list(userId: string, options?: { page?: number; limit?: number }) {
+    return await this.repo.list(userId, options);
+  }
+
+  /**
+   * Update resource
+   */
+  static async update(
+    userId: string,
+    resourceId: string,
+    updates: Partial<ResourceData>
+  ): Promise<ResourceData | null> {
+    const updated = await this.repo.update(userId, resourceId, updates);
+    if (!updated) return null;
+
+    // Broadcast update to user's channel
+    await sendToUser(userId, 'resources', {
+      type: 'resource_updated',
+      data: updated
+    });
+
+    return updated;
+  }
+
+  /**
+   * Delete resource
+   */
+  static async delete(userId: string, resourceId: string): Promise<boolean> {
+    const deleted = await this.repo.delete(userId, resourceId);
+    if (!deleted) return false;
+
+    // Broadcast deletion
+    await sendToUser(userId, 'resources', {
+      type: 'resource_deleted',
+      data: { id: resourceId }
+    });
+
+    return true;
+  }
+
+  /**
+   * Example business logic method
+   */
+  static async publish(userId: string, resourceId: string): Promise<ResourceData | null> {
+    const resource = await this.repo.findById(userId, resourceId);
+    if (!resource) return null;
+
+    // Business logic
+    if (resource.status !== 'draft') {
+      throw new Error('Only draft resources can be published');
+    }
+
+    // Update via repository
+    const published = await this.repo.update(userId, resourceId, {
+      status: 'published',
+      publishedAt: new Date().toISOString()
+    });
+
+    // Broadcast
+    if (published) {
+      await sendToUser(userId, 'resources', {
+        type: 'resource_published',
+        data: published
+      });
+    }
+
+    return published;
+  }
+}
+```
+
+**Token savings**: ~600-800 tokens vs writing from scratch
+
+---
 
 ## Repository Patterns
 
@@ -185,6 +314,89 @@ async list(options: { page?: number; limit?: number } = {}) {
 
 ---
 
+### Pattern: `WEBSOCKET_BROADCAST`
+
+WebSocket broadcasting patterns for real-time updates.
+
+**Available broadcast functions (`shared/lib/notification-websocket.ts`):**
+
+```typescript
+import { notifyUser, sendToUser, broadcast } from '../lib/notification-websocket.ts';
+
+// 1. Notify specific user (notifications channel)
+await notifyUser(userId, {
+  type: 'notification_created',
+  data: notification
+});
+
+// 2. Send to user's custom channel
+await sendToUser(userId, 'resources', {
+  type: 'resource_updated',
+  data: resource
+});
+
+// 3. Broadcast to all connected clients
+await broadcast({
+  type: 'system_announcement',
+  data: { message: 'Maintenance in 5 minutes' }
+});
+```
+
+**Usage in services:**
+```typescript
+export class ResourceService {
+  static async create(userId: string, data: CreateResourceRequest) {
+    const resource = await this.repo.create(userId, data);
+    
+    // Broadcast to user's WebSocket connection
+    await notifyUser(userId, {
+      type: 'resource_created',
+      data: resource
+    });
+    
+    return resource;
+  }
+
+  static async delete(userId: string, resourceId: string) {
+    const deleted = await this.repo.delete(userId, resourceId);
+    
+    // Broadcast deletion
+    await sendToUser(userId, 'resources', {
+      type: 'resource_deleted',
+      data: { id: resourceId }
+    });
+    
+    return deleted;
+  }
+}
+```
+
+**Channel subscription on frontend (`frontend/lib/websocket.ts`):**
+```typescript
+import { subscribeToChannel } from '../lib/websocket.ts';
+
+// In component useEffect
+const unsubscribe = subscribeToChannel('resources', (message) => {
+  switch (message.type) {
+    case 'resource_created':
+      // Add to list
+      break;
+    case 'resource_updated':
+      // Update in list
+      break;
+    case 'resource_deleted':
+      // Remove from list
+      break;
+  }
+});
+
+return () => unsubscribe();
+```
+
+**Token savings**: ~200-300 tokens vs implementing from scratch
+
+---
+
 ## Fresh API Route Patterns
 
 ### Pattern: `FRESH_HANDLERS`
@@ -198,23 +410,33 @@ Standard RESTful handlers for a resource using Fresh.
 - `PATCH /api/resources/:id` - Update
 - `DELETE /api/resources/:id` - Delete
 
+### Pattern: `FRESH_HANDLERS`
+
+Standard RESTful handlers for a resource using Fresh with Service layer.
+
+**Endpoints**:
+- `POST /api/resources` - Create
+- `GET /api/resources` - List (with pagination)
+- `GET /api/resources/:id` - Get by ID
+- `PATCH /api/resources/:id` - Update
+- `DELETE /api/resources/:id` - Delete
+
 **Handler structure (`frontend/routes/api/resources/index.ts`)**:
 ```typescript
 import { Handlers } from "$fresh/server.ts";
-import { ResourceRepository } from "../../../../shared/repositories/resource-repository.ts";
+import { ResourceService } from "../../../../shared/services/resource.ts";
 import { successResponse, errorResponse, requireAuth, type AppState } from "../../../lib/fresh-helpers.ts";
-import { CreateResourceSchema } from "../../../../shared/types/resource.ts";
+import { CreateResourceSchema } from "../../../../shared/types/resources.ts";
 import { z } from "zod";
 
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
     const user = requireAuth(ctx);
-    const repo = new ResourceRepository();
     
     try {
       const body = await req.json();
       const validatedData = CreateResourceSchema.parse(body);
-      const resource = await repo.create(validatedData);
+      const resource = await ResourceService.create(user.sub, validatedData);
       return successResponse({ data: resource }, { status: 201 });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -230,8 +452,7 @@ export const handler: Handlers<unknown, AppState> = {
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '50');
     
-    const repo = new ResourceRepository();
-    const resources = await repo.list({ page, limit });
+    const resources = await ResourceService.list(user.sub, { page, limit });
     return successResponse({ data: resources });
   }
 };
@@ -240,9 +461,9 @@ export const handler: Handlers<unknown, AppState> = {
 **Handler for single resource (`frontend/routes/api/resources/[id].ts`)**:
 ```typescript
 import { Handlers } from "$fresh/server.ts";
-import { ResourceRepository } from "../../../../shared/repositories/resource-repository.ts";
+import { ResourceService } from "../../../../shared/services/resource.ts";
 import { successResponse, errorResponse, requireAuth, type AppState } from "../../../lib/fresh-helpers.ts";
-import { UpdateResourceSchema } from "../../../../shared/types/resource.ts";
+import { UpdateResourceSchema } from "../../../../shared/types/resources.ts";
 import { z } from "zod";
 
 export const handler: Handlers<unknown, AppState> = {
@@ -250,9 +471,7 @@ export const handler: Handlers<unknown, AppState> = {
     const user = requireAuth(ctx);
     const id = ctx.params.id;
     
-    const repo = new ResourceRepository();
-    const resource = await repo.findById(id);
-    
+    const resource = await ResourceService.getById(user.sub, id);
     if (!resource) {
       return errorResponse('Resource not found', { status: 404, code: 'NOT_FOUND' });
     }
@@ -268,9 +487,7 @@ export const handler: Handlers<unknown, AppState> = {
       const body = await req.json();
       const validatedData = UpdateResourceSchema.parse(body);
       
-      const repo = new ResourceRepository();
-      const updated = await repo.update(id, validatedData);
-      
+      const updated = await ResourceService.update(user.sub, id, validatedData);
       if (!updated) {
         return errorResponse('Resource not found', { status: 404, code: 'NOT_FOUND' });
       }
@@ -288,9 +505,7 @@ export const handler: Handlers<unknown, AppState> = {
     const user = requireAuth(ctx);
     const id = ctx.params.id;
     
-    const repo = new ResourceRepository();
-    const deleted = await repo.delete(id);
-    
+    const deleted = await ResourceService.delete(user.sub, id);
     if (!deleted) {
       return errorResponse('Resource not found', { status: 404, code: 'NOT_FOUND' });
     }
@@ -530,12 +745,14 @@ Standard key structure for different operations.
 
 | Pattern | Saves per Usage | How |
 |---------|-----------------|-----|
+| SERVICE_CRUD | ~600-800 tokens | Complete service vs from scratch |
 | REPOSITORY_CRUD | ~600-800 tokens | Complete repository vs from scratch |
+| WEBSOCKET_BROADCAST | ~200-300 tokens | Broadcasting vs custom implementation |
 | FRESH_HANDLERS | ~400-600 tokens | Complete handlers vs individual |
 | Zod validation | ~100-150 tokens | Schema reuse |
 | Fresh helpers | ~200 tokens | Import vs define |
 | KV key patterns | ~50 tokens/op | Reference vs design |
-| **Total per feature** | **~1400-1900 tokens** | **Per CRUD feature** |
+| **Total per feature** | **~2150-3400 tokens** | **Per CRUD feature with real-time** |
 
 ---
 
@@ -543,26 +760,33 @@ Standard key structure for different operations.
 
 When implementing a feature:
 
-1. **Create Repository** → Extend `BaseRepository` with CRUD methods
-2. **Define Schemas** → Create Zod schemas in `shared/types/`
-3. **Create Route Files** → Use Fresh file-based routing
-4. **Implement Handlers** → Use `Handlers` with repository + helpers
-5. **Add Validation** → Parse with Zod schemas, handle errors
+1. **Create Service** → Static methods wrapping repository with WebSocket broadcasts
+2. **Create Repository** → Extend `BaseRepository` with CRUD methods
+3. **Define Schemas** → Create Zod schemas in `shared/types/`
+4. **Create Route Files** → Use Fresh file-based routing
+5. **Implement Handlers** → Use `Handlers` with service + helpers
+6. **Add Validation** → Parse with Zod schemas, handle errors
+7. **WebSocket Integration** → Use channel subscriptions on frontend
 
-This approach saves 50-60% tokens in backend implementation.
+This approach saves 50-65% tokens in backend implementation.
 
 ---
 
 ## Best Practices
 
-1. ✅ **Use repository pattern** - Import from `shared/repositories/`, never direct KV
-2. ✅ **Use Fresh helpers** - `successResponse()`, `errorResponse()`, `requireAuth()`
-3. ✅ **Validate with Zod** - Define schemas in `shared/types/`, parse in handlers
-4. ✅ **File-based routing** - Leverage Fresh's routing: `index.ts`, `[id].ts`
-5. ✅ **Middleware layering** - Use `_middleware.ts` for shared logic
-6. ❌ **Don't access KV directly** - Always use repository pattern
-7. ❌ **Don't skip validation** - Use Zod schemas for all input
-8. ❌ **Don't skip error handling** - Use try/catch with helpers
+1. ✅ **Use service layer** - Import from `shared/services/`, call static methods
+2. ✅ **Services wrap repositories** - Thin wrapper with WebSocket broadcasts
+3. ✅ **Use repository pattern** - Import from `shared/repositories/`, never direct KV
+4. ✅ **Use Fresh helpers** - `successResponse()`, `errorResponse()`, `requireAuth()`
+5. ✅ **Validate with Zod** - Define schemas in `shared/types/`, parse in handlers
+6. ✅ **File-based routing** - Leverage Fresh's routing: `index.ts`, `[id].ts`
+7. ✅ **Middleware layering** - Use `_middleware.ts` for shared logic
+8. ✅ **WebSocket broadcasts** - Use `notifyUser()`, `sendToUser()`, `broadcast()`
+9. ❌ **Don't access repositories directly in routes** - Use service layer
+10. ❌ **Don't access KV directly** - Always use repository pattern
+11. ❌ **Don't skip validation** - Use Zod schemas for all input
+12. ❌ **Don't skip error handling** - Use try/catch with helpers
+13. ❌ **Don't use instance methods in services** - Use static methods
 
 ---
 

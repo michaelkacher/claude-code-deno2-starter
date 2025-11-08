@@ -1,7 +1,12 @@
 /**
  * Centralized WebSocket Service
  *
- * Manages a single WebSocket connection for real-time notifications.
+ * Manages a single WebSocket connection for real-time updates.
+ * Supports channel-based subscriptions for different features:
+ * - Notifications (automatic)
+ * - Job updates (admin dashboard)
+ * - Future: analytics, chat, collaboration, etc.
+ * 
  * Uses global signals from store.ts for state management.
  */
 
@@ -19,6 +24,13 @@ import {
 } from './store.ts';
 
 // ============================================================================
+// Types
+// ============================================================================
+
+type ChannelHandler = (message: any) => void;
+type ChannelName = 'jobs' | 'analytics' | 'chat' | string;
+
+// ============================================================================
 // Constants
 // ============================================================================
 
@@ -32,6 +44,10 @@ const PING_INTERVAL_MS = 30000;
 let reconnectTimeout: number | null = null;
 let pingInterval: number | null = null;
 let authSent = false;
+
+// Channel subscription management
+const channelHandlers = new Map<ChannelName, Set<ChannelHandler>>();
+const subscribedChannels = new Set<ChannelName>();
 
 // ============================================================================
 // WebSocket Connection Management
@@ -151,6 +167,9 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
           reconnectTimeout = null;
         }
 
+        // Resubscribe to all active channels
+        resubscribeToChannels();
+
         // Start ping interval for keepalive
         if (pingInterval) {
           clearInterval(pingInterval);
@@ -231,6 +250,20 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
         // Heartbeat response received
         break;
 
+      // Job-related messages (dispatched to channel subscribers)
+      case 'jobs_subscribed':
+        console.log('[WebSocket] Subscribed to jobs channel');
+        dispatchToChannel('jobs', data);
+        break;
+
+      case 'job_update':
+        dispatchToChannel('jobs', data);
+        break;
+
+      case 'job_stats_update':
+        dispatchToChannel('jobs', data);
+        break;
+
       default:
         console.log('[WebSocket] Unknown message type:', data.type);
     }
@@ -292,6 +325,106 @@ export function cleanupWebSocket() {
 export function disconnectWebSocket() {
   console.log('[WebSocket] Disconnecting...');
   cleanupWebSocket();
+}
+
+// ============================================================================
+// Channel Subscription System
+// ============================================================================
+
+/**
+ * Subscribe to a specific channel for real-time updates
+ * 
+ * @param channel - Channel name (e.g., 'jobs', 'analytics', 'chat')
+ * @param handler - Callback function to handle messages for this channel
+ * @returns Unsubscribe function
+ * 
+ * @example
+ * ```typescript
+ * const unsubscribe = subscribeToChannel('jobs', (message) => {
+ *   if (message.type === 'job_update') {
+ *     console.log('Job updated:', message.job);
+ *   }
+ * });
+ * 
+ * // Later, cleanup:
+ * unsubscribe();
+ * ```
+ */
+export function subscribeToChannel(channel: ChannelName, handler: ChannelHandler): () => void {
+  if (!IS_BROWSER) {
+    return () => {}; // No-op for SSR
+  }
+
+  console.log('[WebSocket] Subscribing to channel:', channel);
+
+  // Add handler to channel's handler set
+  if (!channelHandlers.has(channel)) {
+    channelHandlers.set(channel, new Set());
+  }
+  channelHandlers.get(channel)!.add(handler);
+
+  // If this is the first subscriber to this channel, tell the server
+  if (!subscribedChannels.has(channel)) {
+    subscribedChannels.add(channel);
+    
+    // Send subscription message if connected
+    const ws = wsConnection.value;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      console.log('[WebSocket] Sending subscribe message for:', channel);
+      ws.send(JSON.stringify({ type: `subscribe_${channel}` }));
+    }
+  }
+
+  // Return unsubscribe function
+  return () => {
+    console.log('[WebSocket] Unsubscribing from channel:', channel);
+    
+    const handlers = channelHandlers.get(channel);
+    if (handlers) {
+      handlers.delete(handler);
+      
+      // If no more handlers for this channel, unsubscribe from server
+      if (handlers.size === 0) {
+        channelHandlers.delete(channel);
+        subscribedChannels.delete(channel);
+        
+        const ws = wsConnection.value;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          console.log('[WebSocket] Sending unsubscribe message for:', channel);
+          ws.send(JSON.stringify({ type: `unsubscribe_${channel}` }));
+        }
+      }
+    }
+  };
+}
+
+/**
+ * Dispatch a message to all handlers subscribed to a channel
+ */
+function dispatchToChannel(channel: ChannelName, message: any) {
+  const handlers = channelHandlers.get(channel);
+  if (handlers) {
+    handlers.forEach(handler => {
+      try {
+        handler(message);
+      } catch (error) {
+        console.error(`[WebSocket] Error in ${channel} channel handler:`, error);
+      }
+    });
+  }
+}
+
+/**
+ * Resubscribe to all active channels (called after reconnection)
+ */
+function resubscribeToChannels() {
+  const ws = wsConnection.value;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+  subscribedChannels.forEach(channel => {
+    console.log('[WebSocket] Resubscribing to channel:', channel);
+    ws.send(JSON.stringify({ type: `subscribe_${channel}` }));
+  });
 }
 
 // ============================================================================

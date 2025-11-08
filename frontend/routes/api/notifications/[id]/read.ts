@@ -24,21 +24,13 @@ export const handler: Handlers<unknown, AppState> = {
       const notificationRepo = new NotificationRepository();
 
       // Get notification to verify ownership
-      const notification = await notificationRepo.getById(notificationId);
+      const notification = await notificationRepo.findById(user.sub, notificationId);
       if (!notification) {
         return errorResponse("NOT_FOUND", "Notification not found", 404);
       }
 
-      if (notification.userId !== user.sub) {
-        return errorResponse(
-          "FORBIDDEN",
-          "Cannot mark another user's notification",
-          403,
-        );
-      }
-
-      // Mark as read
-      await notificationRepo.markAsRead(notificationId);
+      // Mark as read (userId is already verified by findById)
+      await notificationRepo.markAsRead(user.sub, notificationId);
 
       return successResponse({ message: "Notification marked as read" });
     } catch (error) {

@@ -6,10 +6,10 @@
 import { Handlers } from "$fresh/server.ts";
 import { JobRepository } from "../../../../../shared/repositories/index.ts";
 import {
-    errorResponse,
-    requireAdmin,
-    successResponse,
-    type AppState,
+  errorResponse,
+  requireAdmin,
+  successResponse,
+  type AppState,
 } from "../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
@@ -24,7 +24,7 @@ export const handler: Handlers<unknown, AppState> = {
       const jobRepo = new JobRepository();
 
       // Get job to verify it exists and is failed
-      const job = await jobRepo.getById(jobId);
+      const job = await jobRepo.findById(jobId);
       if (!job) {
         return errorResponse("NOT_FOUND", "Job not found", 404);
       }

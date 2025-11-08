@@ -1,12 +1,12 @@
 # HTTP Route Patterns Reference
 
-Comprehensive patterns for creating token-efficient Fresh API routes.
+Comprehensive patterns for creating token-efficient Fresh API routes with Service layer.
 
 ## Template Selection Guide
 
 | Template | Use When | Token Savings | Complexity |
 |----------|----------|---------------|------------|
-| Repository + Handlers | Simple CRUD with repository pattern | ~600-800 | ⭐ Easiest |
+| Service + Handlers | Standard CRUD with service layer | ~600-800 | ⭐ Easiest |
 | Full validation | Standard CRUD with Zod validation | ~400-600 | ⭐⭐ Standard |
 | Custom implementation | Complex business logic, non-REST | N/A | ⭐⭐⭐ Complex |
 
@@ -26,11 +26,11 @@ DELETE /api/resources/[id].ts       → Delete resource
 
 ## Pattern: SIMPLE_CRUD
 
-Ultra-concise CRUD with repository pattern.
+Ultra-concise CRUD with service layer.
 
 **When to use:**
 - ✅ Standard CRUD operations
-- ✅ Repository handles all data access
+- ✅ Service handles business logic and WebSocket broadcasts
 - ✅ Middleware handles authentication
 - ✅ Minimal custom logic in routes
 
@@ -39,7 +39,7 @@ Ultra-concise CRUD with repository pattern.
 **Example: `frontend/routes/api/users/index.ts`**
 ```typescript
 import { Handlers } from "$fresh/server.ts";
-import { UserRepository } from "../../../../shared/repositories/index.ts";
+import { UserService } from "../../../../shared/services/user.ts";
 import { successResponse, errorResponse, requireAuth, type AppState } from "../../../lib/fresh-helpers.ts";
 import { CreateUserSchema } from "../../../../shared/types/user.ts";
 import { z } from "zod";
@@ -48,12 +48,11 @@ export const handler: Handlers<unknown, AppState> = {
   // Create new user
   async POST(req, ctx) {
     const user = requireAuth(ctx);
-    const userRepo = new UserRepository();
     
     try {
       const body = await req.json();
       const validatedData = CreateUserSchema.parse(body);
-      const newUser = await userRepo.create(validatedData);
+      const newUser = await UserService.create(user.sub, validatedData);
       return successResponse({ data: newUser }, { status: 201 });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -66,13 +65,12 @@ export const handler: Handlers<unknown, AppState> = {
   // List users
   async GET(req, ctx) {
     const user = requireAuth(ctx);
-    const userRepo = new UserRepository();
     const url = new URL(req.url);
     
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '50');
     
-    const users = await userRepo.list({ page, limit });
+    const users = await UserService.list(user.sub, { page, limit });
     return successResponse({ data: users });
   }
 };
@@ -82,7 +80,7 @@ export const handler: Handlers<unknown, AppState> = {
 
 ## Pattern: FULL_VALIDATION
 
-Explicit error handling per route.
+Explicit error handling per route with service layer.
 
 **When to use:**
 - ✅ Need custom validation logic
@@ -94,7 +92,7 @@ Explicit error handling per route.
 **Example: `frontend/routes/api/users/[id].ts`**
 ```typescript
 import { Handlers } from "$fresh/server.ts";
-import { UserRepository } from "../../../../shared/repositories/index.ts";
+import { UserService } from "../../../../shared/services/user.ts";
 import { successResponse, errorResponse, requireAuth, type AppState } from "../../../lib/fresh-helpers.ts";
 import { UpdateUserSchema } from "../../../../shared/types/user.ts";
 import { z } from "zod";
@@ -103,9 +101,8 @@ export const handler: Handlers<unknown, AppState> = {
   async GET(req, ctx) {
     const user = requireAuth(ctx);
     const userId = ctx.params.id;
-    const userRepo = new UserRepository();
     
-    const foundUser = await userRepo.findById(userId);
+    const foundUser = await UserService.getById(user.sub, userId);
     if (!foundUser) {
       return errorResponse('User not found', { status: 404, code: 'NOT_FOUND' });
     }
@@ -116,18 +113,16 @@ export const handler: Handlers<unknown, AppState> = {
   async PATCH(req, ctx) {
     const user = requireAuth(ctx);
     const userId = ctx.params.id;
-    const userRepo = new UserRepository();
     
     try {
       const body = await req.json();
       const validatedData = UpdateUserSchema.parse(body);
       
-      const existingUser = await userRepo.findById(userId);
-      if (!existingUser) {
+      const updated = await UserService.update(user.sub, userId, validatedData);
+      if (!updated) {
         return errorResponse('User not found', { status: 404, code: 'NOT_FOUND' });
       }
       
-      const updated = await userRepo.update(userId, validatedData);
       return successResponse({ data: updated });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -140,14 +135,12 @@ export const handler: Handlers<unknown, AppState> = {
   async DELETE(req, ctx) {
     const user = requireAuth(ctx);
     const userId = ctx.params.id;
-    const userRepo = new UserRepository();
     
-    const existingUser = await userRepo.findById(userId);
-    if (!existingUser) {
+    const deleted = await UserService.delete(user.sub, userId);
+    if (!deleted) {
       return errorResponse('User not found', { status: 404, code: 'NOT_FOUND' });
     }
     
-    await userRepo.delete(userId);
     return successResponse({ message: 'User deleted successfully' });
   }
 };
@@ -188,6 +181,7 @@ export async function handler(
 **Using Auth in Route:**
 ```typescript
 import { Handlers } from "$fresh/server.ts";
+import { ResourceService } from "../../../../shared/services/resource.ts";
 import { requireAuth, requireRole, type AppState } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
@@ -199,6 +193,12 @@ export const handler: Handlers<unknown, AppState> = {
     requireRole(user, ['admin']);
     
     // User is authenticated and authorized
+    const body = await req.json();
+    const resource = await ResourceService.create(user.sub, body);
+    return successResponse({ data: resource }, { status: 201 });
+  }
+};
+```
     // ...
   }
 };
@@ -432,8 +432,7 @@ export const handler: Handlers<unknown, AppState> = {
     const user = requireAuth(ctx);
     const id = ctx.params.id;
     
-    const userRepo = new UserRepository();
-    const result = await userRepo.activate(id);
+    const result = await UserService.activate(user.sub, id);
     return successResponse({ data: result });
   }
 };
@@ -447,8 +446,7 @@ export const handler: Handlers<unknown, AppState> = {
     requireRole(user, ['admin']);
     
     const { ids } = await req.json();
-    const userRepo = new UserRepository();
-    const result = await userRepo.deleteMany(ids);
+    const result = await UserService.deleteMany(user.sub, ids);
     return successResponse({ data: { deleted: result } });
   }
 };
@@ -462,8 +460,7 @@ export const handler: Handlers<unknown, AppState> = {
     const url = new URL(req.url);
     const query = url.searchParams.get('q') || '';
     
-    const userRepo = new UserRepository();
-    const results = await userRepo.search(query);
+    const results = await UserService.search(user.sub, query);
     return successResponse({ data: results });
   }
 };
@@ -527,7 +524,7 @@ export async function handler(
 
 | Pattern | Tokens Saved | Use Case |
 |---------|--------------|----------|
-| Repository + Handlers | ~600-800 | Simple CRUD |
+| Service + Handlers | ~600-800 | Simple CRUD with service layer |
 | Full validation | ~400-600 | CRUD with Zod validation |
 | Fresh helpers | ~100-200 | successResponse, errorResponse |
 | Response patterns | ~50-100 | Consistent responses |
@@ -537,34 +534,36 @@ export async function handler(
 
 ## Best Practices
 
-✅ **Use repository pattern** - Import from `shared/repositories/`, never direct KV access
+✅ **Use service layer** - Import from `shared/services/`, call static methods
+✅ **Services handle broadcasts** - WebSocket notifications automatic in service layer
 ✅ **Use Fresh helpers** - `successResponse()`, `errorResponse()`, `requireAuth()`, `requireRole()`
 ✅ **Validate with Zod** - Define schemas in `shared/types/`, parse in handlers
 ✅ **File-based routing** - Leverage Fresh's routing: `index.ts`, `[id].ts`, `[id]/activate.ts`
 ✅ **Middleware layering** - Use `_middleware.ts` for shared logic (auth, logging)
 ✅ **Consistent responses** - Always use helper functions for responses
 
-❌ **Don't access KV directly** - Always use repository pattern
+❌ **Don't access repositories directly** - Always use service layer in routes
+❌ **Don't access KV directly** - Never in routes, always use service → repository
 ❌ **Don't skip validation** - Use Zod schemas for all input
 ❌ **Don't skip authentication** - Use `requireAuth()` for protected routes
 ❌ **Don't repeat error handling** - Use try/catch with consistent error responses
 ❌ **Don't use nested routes in one file** - Use Fresh's file-based routing instead
+❌ **Don't add WebSocket broadcasts in routes** - They belong in service layer
 
 ---
 
-## Integration with Repository Layer
+## Integration with Service Layer
 
 **Routes should be thin:**
 ```typescript
-// ✅ GOOD - Route delegates to repository
+// ✅ GOOD - Route delegates to service
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
     const user = requireAuth(ctx);
     const body = await req.json();
     const validatedData = CreateUserSchema.parse(body);
     
-    const userRepo = new UserRepository();
-    const result = await userRepo.create(validatedData);
+    const result = await UserService.create(user.sub, validatedData);
     return successResponse({ data: result }, { status: 201 });
   }
 };
@@ -579,15 +578,11 @@ export const handler: Handlers<unknown, AppState> = {
     if (!body.email) throw new Error('Email required');
     if (body.email.length > 100) throw new Error('Email too long');
     
-    // Direct database access (should use repository)
-    const kv = await getKv();
-    const newUser = {
-      id: crypto.randomUUID(),
-      ...body,
-      createdAt: new Date().toISOString()
-    };
-    await kv.set(['users', newUser.id], newUser);
+    // Direct repository access (should use service)
+    const userRepo = new UserRepository();
+    const newUser = await userRepo.create(body);
     
+    // Missing WebSocket broadcast (should be in service)
     return successResponse({ data: newUser }, { status: 201 });
   }
 };

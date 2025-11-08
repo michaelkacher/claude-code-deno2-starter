@@ -24,7 +24,7 @@ export const handler: Handlers<unknown, AppState> = {
       const jobRepo = new JobRepository();
 
       // Get job to verify it exists
-      const job = await jobRepo.getById(jobId);
+      const job = await jobRepo.findById(jobId);
       if (!job) {
         return errorResponse("NOT_FOUND", "Job not found", 404);
       }

@@ -33,6 +33,37 @@ export interface Notification {
   readAt?: string;
 }
 
+export interface Job {
+  id: string;
+  name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'retrying';
+  attempts: number;
+  maxRetries: number;
+  error?: string;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  priority: number;
+}
+
+export interface JobStats {
+  pending: number;
+  running: number;
+  completed: number;
+  failed: number;
+  total: number;
+}
+
+export interface Schedule {
+  name: string;
+  cron: string;
+  enabled: boolean;
+  timezone: string;
+  nextRun?: string;
+  lastRun?: string;
+  runCount: number;
+}
+
 // ============================================================================
 // Authentication State
 // ============================================================================
@@ -188,6 +219,64 @@ export function removeNotification(notificationId: string) {
   if (notification && !notification.read) {
     setUnreadCount(Math.max(0, unreadCount.value - 1));
   }
+}
+
+// ============================================================================
+// Job State (Admin Dashboard)
+// ============================================================================
+
+/**
+ * Current jobs list
+ */
+export const jobs = signal<Job[]>([]);
+
+/**
+ * Job statistics
+ */
+export const jobStats = signal<JobStats | null>(null);
+
+/**
+ * Scheduled jobs
+ */
+export const schedules = signal<Schedule[]>([]);
+
+/**
+ * Update a single job in the list
+ */
+export function updateJob(updatedJob: Job) {
+  const index = jobs.value.findIndex(j => j.id === updatedJob.id);
+  if (index !== -1) {
+    // Update existing job
+    jobs.value = [
+      ...jobs.value.slice(0, index),
+      updatedJob,
+      ...jobs.value.slice(index + 1),
+    ];
+  } else {
+    // New job - add to the beginning
+    jobs.value = [updatedJob, ...jobs.value];
+  }
+}
+
+/**
+ * Update job statistics
+ */
+export function updateJobStats(stats: JobStats) {
+  jobStats.value = stats;
+}
+
+/**
+ * Set jobs list
+ */
+export function setJobs(newJobs: Job[]) {
+  jobs.value = newJobs;
+}
+
+/**
+ * Set schedules list
+ */
+export function setSchedules(newSchedules: Schedule[]) {
+  schedules.value = newSchedules;
 }
 
 // ============================================================================
