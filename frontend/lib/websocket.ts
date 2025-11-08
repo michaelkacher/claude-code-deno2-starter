@@ -8,14 +8,14 @@
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import {
   accessToken,
+  addNotification,
+  clearAuth,
   isAuthenticated,
-  wsConnection,
-  setWsConnected,
+  markNotificationAsRead,
   notifications,
   setUnreadCount,
-  addNotification,
-  markNotificationAsRead,
-  clearAuth,
+  setWsConnected,
+  wsConnection,
 } from './store.ts';
 
 // ============================================================================
@@ -76,6 +76,7 @@ export function connectWebSocket() {
 
     ws.onopen = () => {
       console.log('[WebSocket] Connection opened, waiting for auth prompt...');
+      console.log('[WebSocket] readyState:', ws.readyState);
     };
 
     ws.onmessage = (event) => {
@@ -84,6 +85,7 @@ export function connectWebSocket() {
 
     ws.onerror = (error) => {
       console.error('[WebSocket] Error:', error);
+      console.error('[WebSocket] readyState:', ws.readyState);
       setWsConnected(false);
 
       // Stop reconnection if no longer authenticated
@@ -123,7 +125,7 @@ export function connectWebSocket() {
 function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: string | null) {
   try {
     const data = JSON.parse(event.data);
-    console.log('[WebSocket] Message:', data.type);
+    console.log('[WebSocket] Message received:', data);
 
     switch (data.type) {
       case 'auth_required':
@@ -179,6 +181,15 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
         if (data.latestNotifications) {
           notifications.value = data.latestNotifications;
         }
+        // Handle single notification update
+        if (data.notification) {
+          const index = notifications.value.findIndex(n => n.id === data.notification.id);
+          if (index !== -1) {
+            const updated = [...notifications.value];
+            updated[index] = data.notification;
+            notifications.value = updated;
+          }
+        }
         break;
 
       case 'notification':
@@ -192,6 +203,21 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
         if (data.notificationId) {
           markNotificationAsRead(data.notificationId);
         }
+        break;
+
+      case 'notification_deleted':
+        if (data.notificationId) {
+          notifications.value = notifications.value.filter(n => n.id !== data.notificationId);
+          // Recalculate unread count
+          const unread = notifications.value.filter(n => !n.read).length;
+          setUnreadCount(unread);
+        }
+        break;
+
+      case 'notifications_cleared':
+        // All notifications marked as read
+        notifications.value = notifications.value.map(n => ({ ...n, read: true }));
+        setUnreadCount(0);
         break;
 
       case 'ping':
@@ -276,14 +302,20 @@ if (IS_BROWSER) {
   // Watch for authentication changes and connect/disconnect accordingly
   // This runs in the browser when the module is first loaded
   const checkAuth = () => {
+    console.log('[WebSocket] Checking auth...', {
+      isAuthenticated: isAuthenticated.value,
+      hasConnection: !!wsConnection.value,
+      accessToken: !!accessToken.value,
+    });
+    
     if (isAuthenticated.value && !wsConnection.value) {
       // User is authenticated but not connected
       const wsInitialized = sessionStorage.getItem('wsInitialized');
-      if (wsInitialized !== 'true') {
-        console.log('[WebSocket] Auto-connecting...');
-        sessionStorage.setItem('wsInitialized', 'true');
-        connectWebSocket();
-      }
+      console.log('[WebSocket] wsInitialized:', wsInitialized);
+      // Always try to connect if not connected, regardless of wsInitialized flag
+      console.log('[WebSocket] Auto-connecting...');
+      sessionStorage.setItem('wsInitialized', 'true');
+      connectWebSocket();
     } else if (!isAuthenticated.value && wsConnection.value) {
       // User is no longer authenticated, disconnect
       console.log('[WebSocket] Auth lost, disconnecting...');
@@ -293,10 +325,12 @@ if (IS_BROWSER) {
   };
 
   // Check on module load
+  console.log('[WebSocket] Module loaded, checking initial auth state...');
   checkAuth();
 
   // Subscribe to authentication changes
   isAuthenticated.subscribe(() => {
+    console.log('[WebSocket] Auth state changed');
     checkAuth();
   });
 }

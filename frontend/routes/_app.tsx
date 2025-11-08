@@ -38,6 +38,8 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
         <title>{siteName}</title>
         <link rel="stylesheet" href="/styles.css" />
         <ThemeProvider />
+        {/* Token refresh script - automatically refreshes access tokens */}
+        <script type="module" src="/lib/token-refresh.ts"></script>
         {/* Prevent FOUC (Flash of Unstyled Content) by setting dark mode class early */}
         {/* Note: Uses localStorage directly instead of ThemeStorage because this runs before JS modules load */}
         <script dangerouslySetInnerHTML={{

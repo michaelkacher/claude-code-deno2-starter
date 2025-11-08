@@ -80,7 +80,16 @@ export async function refreshAccessToken() {
     }
 
     const data = await response.json();
-    const newAccessToken = data.accessToken;
+    const newAccessToken = data.data?.access_token || data.accessToken;
+
+    if (!newAccessToken) {
+      console.error('No access token in refresh response:', data);
+      refreshInProgress = false;
+      if (tokenChannel) {
+        tokenChannel.postMessage({ type: 'REFRESH_COMPLETED' });
+      }
+      return false;
+    }
 
     // Store the new access token
     localStorage.setItem('access_token', newAccessToken);
@@ -165,10 +174,15 @@ export function setupAutoRefresh() {
     }
   });
 
-  // Refresh immediately on page load if we have a token
+  // Refresh immediately on page load if we have a token that's getting old
   const token = localStorage.getItem('access_token');
   if (token) {
-    refreshAccessToken();
+    const tokenAge = getTokenAge(token);
+    // Only refresh immediately if token is older than 10 minutes
+    if (tokenAge > 10 * 60 * 1000) {
+      console.debug('Token age on load:', Math.floor(tokenAge / 60000), 'minutes - refreshing');
+      refreshAccessToken();
+    }
   }
 
   // Set up periodic refresh (every 13 minutes)

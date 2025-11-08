@@ -20,13 +20,24 @@ export class NotificationService {
   static async create(
     data: CreateNotificationRequest,
   ): Promise<NotificationData> {
-    return await this.repo.create(
+    const notification = await this.repo.create(
       data.userId,
       data.type,
       data.title,
       data.message,
       data.link,
     );
+
+    // Broadcast to WebSocket clients
+    try {
+      const { notifyUser } = await import('../lib/notification-websocket.ts');
+      notifyUser(data.userId, notification);
+    } catch (wsError) {
+      // WebSocket broadcast is not critical, just log if it fails
+      console.debug('WebSocket broadcast failed (non-critical):', wsError);
+    }
+
+    return notification;
   }
 
   /**
@@ -57,14 +68,44 @@ export class NotificationService {
     userId: string,
     notificationId: string,
   ): Promise<NotificationData | null> {
-    return await this.repo.markAsRead(userId, notificationId);
+    const notification = await this.repo.markAsRead(userId, notificationId);
+
+    // Broadcast update to WebSocket clients
+    if (notification) {
+      try {
+        const { sendToUser } = await import('../lib/notification-websocket.ts');
+        sendToUser(userId, {
+          type: 'notification_update',
+          notification,
+        });
+      } catch (wsError) {
+        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+      }
+    }
+
+    return notification;
   }
 
   /**
    * Mark all notifications as read for a user
    */
   static async markAllAsRead(userId: string): Promise<number> {
-    return await this.repo.markAllAsRead(userId);
+    const count = await this.repo.markAllAsRead(userId);
+
+    // Broadcast update to WebSocket clients
+    if (count > 0) {
+      try {
+        const { sendToUser } = await import('../lib/notification-websocket.ts');
+        sendToUser(userId, {
+          type: 'notifications_cleared',
+          count,
+        });
+      } catch (wsError) {
+        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+      }
+    }
+
+    return count;
   }
 
   /**
@@ -74,7 +115,22 @@ export class NotificationService {
     userId: string,
     notificationId: string,
   ): Promise<boolean> {
-    return await this.repo.deleteNotification(userId, notificationId);
+    const deleted = await this.repo.deleteNotification(userId, notificationId);
+
+    // Broadcast update to WebSocket clients
+    if (deleted) {
+      try {
+        const { sendToUser } = await import('../lib/notification-websocket.ts');
+        sendToUser(userId, {
+          type: 'notification_deleted',
+          notificationId,
+        });
+      } catch (wsError) {
+        console.debug('WebSocket broadcast failed (non-critical):', wsError);
+      }
+    }
+
+    return deleted;
   }
 
   /**

@@ -8,8 +8,8 @@
  * - Theme (light/dark mode)
  */
 
-import { signal, computed } from '@preact/signals';
 import { IS_BROWSER } from '$fresh/runtime.ts';
+import { computed, signal } from '@preact/signals';
 
 // ============================================================================
 // Types
@@ -143,7 +143,18 @@ export function setUnreadCount(count: number) {
  * Add a new notification to the list
  */
 export function addNotification(notification: Notification) {
-  notifications.value = [notification, ...notifications.value.slice(0, 9)];
+  // Prepend the new notification
+  const currentNotifications = notifications.value;
+  const newList = [notification, ...currentNotifications];
+  
+  // Only truncate if we're in "dropdown mode" (showing <= 10 notifications)
+  // This allows the full notifications page to work properly
+  if (currentNotifications.length <= 10) {
+    notifications.value = newList.slice(0, 10);
+  } else {
+    notifications.value = newList;
+  }
+  
   if (!notification.read) {
     setUnreadCount(unreadCount.value + 1);
   }

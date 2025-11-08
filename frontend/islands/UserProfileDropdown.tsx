@@ -11,15 +11,15 @@ import { useEffect, useRef } from 'preact/hooks';
 import { isTokenExpired } from '../lib/jwt.ts';
 import { TokenStorage } from '../lib/storage.ts';
 import {
-    accessToken,
-    clearAuth,
-    isWsConnected,
-    markNotificationAsRead,
-    notifications,
-    setAccessToken,
-    setUser,
-    unreadCount,
-    user
+  accessToken,
+  clearAuth,
+  isWsConnected,
+  markNotificationAsRead,
+  notifications,
+  setAccessToken,
+  setUser,
+  unreadCount,
+  user
 } from '../lib/store.ts';
 import { cleanupWebSocket } from '../lib/websocket.ts';
 
@@ -34,7 +34,6 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
   const isNotificationsLoading = useSignal(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tokenCheckIntervalRef = useRef<number | null>(null);
-  const notificationPollIntervalRef = useRef<number | null>(null);
 
   // Initialize user from props if not already set
   useEffect(() => {
@@ -94,12 +93,6 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
       // Fetch initial notifications
       fetchNotifications();
 
-      // Set up periodic notification polling (every 10 seconds)
-      // This ensures the badge updates even when WebSocket is not connected
-      notificationPollIntervalRef.current = setInterval(() => {
-        fetchNotifications();
-      }, 10000); // Poll every 10 seconds
-
       // Set up periodic token expiry check (every 30 seconds)
       tokenCheckIntervalRef.current = setInterval(() => {
         const currentToken = accessToken.value;
@@ -119,10 +112,6 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
       if (tokenCheckIntervalRef.current) {
         clearInterval(tokenCheckIntervalRef.current);
         tokenCheckIntervalRef.current = null;
-      }
-      if (notificationPollIntervalRef.current) {
-        clearInterval(notificationPollIntervalRef.current);
-        notificationPollIntervalRef.current = null;
       }
     };
   }, []);

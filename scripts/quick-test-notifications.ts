@@ -2,63 +2,77 @@
  * Quick Test: Create Notifications for test@example.com
  * 
  * Usage: deno task test-notifications
+ * 
+ * This script calls the test API endpoint on the dev server,
+ * which ensures WebSocket broadcasts work properly.
  */
-import { NotificationService } from '../shared/services/notifications.ts';
 
-// This is the test user's ID (test@example.com)
-const userId = 'adb04da8-e1f5-482f-a118-e216e056b133';
+const DEV_SERVER_URL = 'http://localhost:3000';
+const TEST_USER_EMAIL = 'test@example.com';
+const TEST_USER_PASSWORD = 'password123';
 
-console.log('Creating test notifications for test@example.com...\n');
+console.log('🔐 Logging in as', TEST_USER_EMAIL, '...\n');
 
 try {
-  await NotificationService.create({
-    userId,
-    type: 'success',
-    title: 'Test Notification #1',
-    message: 'This is a success notification. The system is working!',
+  // Step 1: Login to get auth token
+  const loginResponse = await fetch(`${DEV_SERVER_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email: TEST_USER_EMAIL,
+      password: TEST_USER_PASSWORD,
+    }),
   });
-  console.log('✓ Created success notification');
 
-  await NotificationService.create({
-    userId,
-    type: 'info',
-    title: 'Test Notification #2',
-    message: 'This is an info notification with a link.',
-    link: '/notifications',
+  if (!loginResponse.ok) {
+    const errorData = await loginResponse.text();
+    throw new Error(`Login failed: ${loginResponse.status} - ${errorData}`);
+  }
+
+  const loginData = await loginResponse.json();
+  const accessToken = loginData.data?.accessToken;
+
+  if (!accessToken) {
+    throw new Error('No access token received from login');
+  }
+
+  console.log('✓ Logged in successfully');
+  console.log('\n🔔 Creating test notifications...\n');
+
+  // Step 2: Call the test-create endpoint
+  const createResponse = await fetch(`${DEV_SERVER_URL}/api/notifications/test-create`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
   });
-  console.log('✓ Created info notification');
 
-  await NotificationService.create({
-    userId,
-    type: 'warning',
-    title: 'Test Notification #3',
-    message: 'This is a warning notification.',
+  if (!createResponse.ok) {
+    const errorData = await createResponse.text();
+    throw new Error(`Failed to create notifications: ${createResponse.status} - ${errorData}`);
+  }
+
+  const result = await createResponse.json();
+  
+  console.log('✅ Success!', result.message);
+  console.log('\n📬 Created notifications:');
+  result.notifications?.forEach((n: any, i: number) => {
+    console.log(`  ${i + 1}. ${n.title}`);
   });
-  console.log('✓ Created warning notification');
 
-  await NotificationService.create({
-    userId,
-    type: 'error',
-    title: 'Test Notification #4',
-    message: 'This is an error notification.',
-  });
-  console.log('✓ Created error notification');
-
-  await NotificationService.create({
-    userId,
-    type: 'info',
-    title: 'Test Complete',
-    message: 'All test notifications have been created successfully!',
-  });
-  console.log('✓ Created final notification');
-
-  console.log('\n✅ Success! Created 5 test notifications.');
   console.log('\n📋 Next steps:');
-  console.log('1. Navigate to http://localhost:3000 in your browser');
-  console.log('2. Login with test@example.com / password123');
-  console.log('3. Click the profile dropdown to see your notifications');
-  console.log('4. Test that they reload properly when navigating between pages');
+  console.log('1. Check your browser - notifications should appear WITHOUT refreshing!');
+  console.log('2. Watch the browser console for WebSocket messages');
+  console.log('3. Navigate to http://localhost:3000/notifications to see all notifications');
+
 } catch (error) {
-  console.error('❌ Error creating notifications:', error);
+  console.error('\n❌ Error:', error instanceof Error ? error.message : String(error));
+  console.error('\n💡 Make sure:');
+  console.error('  - Dev server is running (deno task dev)');
+  console.error('  - test@example.com account exists with password: password123');
+  console.error('  - Server is accessible at http://localhost:3000');
   Deno.exit(1);
 }

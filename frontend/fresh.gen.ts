@@ -52,6 +52,7 @@ import * as $api_notifications_id_read from "./routes/api/notifications/[id]/rea
 import * as $api_notifications_create from "./routes/api/notifications/create.ts";
 import * as $api_notifications_index from "./routes/api/notifications/index.ts";
 import * as $api_notifications_read_all from "./routes/api/notifications/read-all.ts";
+import * as $api_notifications_test_create from "./routes/api/notifications/test-create.ts";
 import * as $api_notifications_unread_count from "./routes/api/notifications/unread-count.ts";
 import * as $api_notifications_ws from "./routes/api/notifications/ws.ts";
 import * as $design_system from "./routes/design-system.tsx";
@@ -148,6 +149,7 @@ const manifest = {
     "./routes/api/notifications/create.ts": $api_notifications_create,
     "./routes/api/notifications/index.ts": $api_notifications_index,
     "./routes/api/notifications/read-all.ts": $api_notifications_read_all,
+    "./routes/api/notifications/test-create.ts": $api_notifications_test_create,
     "./routes/api/notifications/unread-count.ts":
       $api_notifications_unread_count,
     "./routes/api/notifications/ws.ts": $api_notifications_ws,

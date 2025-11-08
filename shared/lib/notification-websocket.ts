@@ -525,7 +525,18 @@ function startHeartbeat(client: WebSocketClient) {
  */
 export function notifyUser(userId: string, notification: any) {
   const userConnections = clients.get(userId);
-  if (!userConnections) return;
+  
+  console.log('[WebSocket] notifyUser called:', {
+    userId,
+    notificationId: notification?.id,
+    hasConnections: !!userConnections,
+    connectionCount: userConnections?.size || 0,
+  });
+  
+  if (!userConnections) {
+    console.log('[WebSocket] No connections found for user:', userId);
+    return;
+  }
   
   const message = {
     type: 'new_notification',
@@ -533,12 +544,53 @@ export function notifyUser(userId: string, notification: any) {
     timestamp: new Date().toISOString(),
   };
   
+  let sentCount = 0;
   // Send to all of user's connections
   userConnections.forEach((client) => {
     if (client.socket.readyState === WebSocket.OPEN) {
       sendMessage(client.socket, message);
+      sentCount++;
     }
   });
+  
+  console.log('[WebSocket] Sent new_notification to', sentCount, 'connections');
+}
+
+/**
+ * Send a custom message to a specific user (all their connections)
+ * Use this when you need to send a message with a specific type/structure
+ */
+export function sendToUser(userId: string, message: any) {
+  const userConnections = clients.get(userId);
+  
+  console.log('[WebSocket] sendToUser called:', {
+    userId,
+    messageType: message.type,
+    hasConnections: !!userConnections,
+    connectionCount: userConnections?.size || 0,
+  });
+  
+  if (!userConnections) {
+    console.log('[WebSocket] No connections found for user:', userId);
+    return;
+  }
+  
+  // Add timestamp if not present
+  const messageWithTimestamp = {
+    ...message,
+    timestamp: message.timestamp || new Date().toISOString(),
+  };
+  
+  let sentCount = 0;
+  // Send to all of user's connections
+  userConnections.forEach((client) => {
+    if (client.socket.readyState === WebSocket.OPEN) {
+      sendMessage(client.socket, messageWithTimestamp);
+      sentCount++;
+    }
+  });
+  
+  console.log('[WebSocket] Sent message to', sentCount, 'connections');
 }
 
 /**
