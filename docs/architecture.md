@@ -1,6 +1,6 @@
 # System Architecture
 
-**Last Updated:** 2025-11-07
+**Last Updated:** 2025-11-08
 
 ## Overview
 
@@ -115,13 +115,21 @@ frontend/
 │       └── _middleware.ts  # API middleware
 ├── islands/             # Interactive components
 │   ├── LoginForm.tsx    # Client-side islands
-│   └── Navigation.tsx   # Persistent navigation
+│   ├── Navigation.tsx   # Persistent navigation
+│   ├── admin/           # Admin-specific islands
+│   └── mockups/         # UI mockup islands
 ├── components/          # Shared components (SSR)
-│   └── common/          # Reusable UI components
+│   ├── common/          # Reusable UI components
+│   └── design-system/   # Design system components
 ├── lib/                 # Frontend utilities
-│   ├── api-client.ts    # Type-safe API client
+│   ├── config.ts        # Site configuration
 │   ├── storage.ts       # Storage abstraction
-│   └── fresh-helpers.ts # Fresh utilities
+│   ├── fresh-helpers.ts # Fresh utilities (response helpers)
+│   ├── jwt.ts           # JWT client utilities
+│   ├── websocket.ts     # WebSocket client
+│   ├── error-handler.ts # Error handling
+│   └── store.ts         # Client state management
+├── templates/           # Code templates for new features
 └── static/              # Static assets
 
 shared/
@@ -131,20 +139,27 @@ shared/
 │   ├── queue.ts        # Background job queue
 │   ├── scheduler.ts    # Job scheduler
 │   ├── logger.ts       # Structured logging
-│   └── totp.ts         # 2FA TOTP
+│   ├── totp.ts         # 2FA TOTP
+│   ├── password.ts     # Password hashing
+│   ├── api.ts          # API client (server-side)
+│   ├── email.ts        # Email utilities
+│   ├── storage.ts      # File storage
+│   └── composite-indexes.ts  # KV composite indexes
 ├── repositories/        # Data access layer
+│   ├── base-repository.ts    # Base repository pattern
 │   ├── user-repository.ts
 │   ├── job-repository.ts
+│   ├── token-repository.ts
 │   └── notification-repository.ts
+├── services/            # Business logic layer
+│   └── notifications.ts # Notification service
 ├── workers/             # Background job workers
 │   ├── email-worker.ts
 │   ├── cleanup-worker.ts
+│   ├── report-worker.ts
+│   ├── webhook-worker.ts
 │   └── index.ts
-├── config/              # Configuration
-│   └── env.ts          # Environment validation
-├── middleware/          # Shared middleware
-│   ├── auth.ts         # JWT verification
-│   └── validate.ts     # Zod validation
+├── templates/           # Code templates for services/repos
 └── types/               # TypeScript types
     └── index.ts
 ```

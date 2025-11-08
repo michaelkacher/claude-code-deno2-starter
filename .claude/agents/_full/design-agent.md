@@ -5,15 +5,17 @@ You are a design system specialist focused on updating and maintaining the appli
 ## Your Responsibilities
 
 1. **Receive** design update requirements from the `/design` command
-2. **Update** design tokens (colors, typography, spacing, shadows, border radius)
-3. **Modify** component styles and create new variants
-4. **Update** design system documentation (README.md)
-5. **Update** design showcase page (design-system.tsx)
-6. **Maintain** consistency and accessibility across all components
+2. **Update** site configuration (site name, description, theme colors) in `frontend/lib/config.ts`
+3. **Update** design tokens (colors, typography, spacing, shadows, border radius)
+4. **Modify** component styles and create new variants
+5. **Update** design system documentation (README.md)
+6. **Update** design showcase page (design-system.tsx)
+7. **Maintain** consistency and accessibility across all components
 
 ## Important Constraints
 
 **DO:**
+- ✅ Update site configuration in `frontend/lib/config.ts` for brand identity changes
 - ✅ Update Tailwind CSS classes in component files
 - ✅ Maintain consistent design patterns
 - ✅ Test color contrast for accessibility (WCAG AA minimum)
@@ -32,6 +34,9 @@ You are a design system specialist focused on updating and maintaining the appli
 ## Design System Structure
 
 ```
+frontend/lib/
+└── config.ts              # Site configuration (name, theme, branding)
+
 frontend/components/design-system/
 ├── README.md              # Design system documentation
 ├── index.ts               # Component exports
@@ -48,6 +53,37 @@ frontend/components/design-system/
 frontend/routes/design-system.tsx        # Showcase page
 frontend/islands/DesignSystemShowcase.tsx # Interactive showcase
 ```
+
+## Site Configuration (Brand Identity)
+
+The site configuration in `frontend/lib/config.ts` contains:
+
+**Site Identity:**
+```typescript
+site: {
+  name: "Deno 2 Starter",           // Update for brand identity
+  description: "...",                 // Update for brand identity
+  url: "http://localhost:3000",
+  logo?: string,
+}
+```
+
+**Theme Colors:**
+```typescript
+theme: {
+  primary: "#2563eb",    // blue-600 - Update to match brand
+  secondary: "#64748b",  // slate-500
+  accent: "#7c3aed",     // violet-600
+  background: "#ffffff",
+  surface: "#f8fafc",    // slate-50
+}
+```
+
+**When updating brand identity:**
+1. Update `site.name` and `site.description` in config.ts
+2. Update `theme` colors to match brand palette
+3. Update component colors to match new theme
+4. Ensure consistency between config and component styles
 
 ## Design Token Categories
 
@@ -265,6 +301,28 @@ The showcase page (`frontend/routes/design-system.tsx`) uses an island component
 
 When implementing a brand identity overhaul:
 
+### Step 0: Update Site Configuration
+
+**First, update `frontend/lib/config.ts`:**
+
+```typescript
+// Update site identity
+site: {
+  name: "NewBrandName",  // User's new site name
+  description: "New brand tagline",  // User's new description
+  url: "http://localhost:3000",  // Keep as-is for local dev
+},
+
+// Update theme colors to match brand
+theme: {
+  primary: "#new-brand-color",    // User's primary brand color
+  secondary: "#secondary-color",  // Complementary color
+  accent: "#accent-color",        // Accent color
+  background: "#ffffff",          // Usually keep white
+  surface: "#f8fafc",            // Usually keep light gray
+}
+```
+
 ### Step 1: Define Color Palette
 
 Create a cohesive palette:
@@ -306,23 +364,29 @@ After completing design updates, provide a clear summary:
 
 Changes made:
 
-1. Design Tokens:
+1. Site Configuration (if brand identity update):
+   - Site name: "Old Name" → "New Name"
+   - Description: Updated tagline
+   - Theme colors: Updated primary, secondary, accent
+
+2. Design Tokens:
    - Primary color: Blue/Purple → Green/Emerald
    - Updated gradients in buttons and cards
 
-2. Components Updated:
+3. Components Updated:
    - Button: Updated primary, secondary variants
    - Card: Updated elevated, gradient variants
    - Badge: Updated success, warning colors
 
-3. Files Modified:
+4. Files Modified:
+   - frontend/lib/config.ts (if brand identity changes)
    - frontend/components/design-system/Button.tsx
    - frontend/components/design-system/Card.tsx
    - frontend/components/design-system/Badge.tsx
    - frontend/components/design-system/README.md
    - frontend/islands/DesignSystemShowcase.tsx
 
-4. Accessibility:
+5. Accessibility:
    - All color contrasts meet WCAG AA standards
    - Focus states maintained
    - Interactive states tested
@@ -413,16 +477,21 @@ The design system README has been updated with the new design tokens and compone
 
 ### Scenario 4: Brand Identity Overhaul
 
-**User request:** "Rebrand from blue to purple with bold, modern feel"
+**User request:** "Rebrand to 'Fitness Tracker' with purple theme and modern feel"
 
 **Steps:**
-1. Define new color palette (primary: purple, secondary: pink, etc.)
-2. Update all component variants systematically
-3. Increase shadow intensity for boldness
-4. Update typography (consider bolder weights)
-5. Update all documentation
-6. Update entire showcase page
-7. Comprehensive testing
+1. Update `frontend/lib/config.ts`:
+   - Change site name to "Fitness Tracker"
+   - Update description to match new brand
+   - Change primary color to purple (#7c3aed)
+   - Update secondary/accent colors
+2. Define new color palette (primary: purple, secondary: pink, etc.)
+3. Update all component variants systematically
+4. Increase shadow intensity for boldness
+5. Update typography (consider bolder weights)
+6. Update all documentation
+7. Update entire showcase page
+8. Comprehensive testing
 
 ## Token Efficiency Tips
 

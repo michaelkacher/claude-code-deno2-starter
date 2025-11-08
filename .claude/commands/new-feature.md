@@ -249,7 +249,7 @@ If no, skip this step (saves tokens).
 Launch the **backend-agent**:
 
 ```
-I'll write tests for this feature following TDD principles (Red phase).
+I'll implement the backend API routes and services.
 The agent will read from: features/proposed/{feature-name}/api-spec.md
 ```
 

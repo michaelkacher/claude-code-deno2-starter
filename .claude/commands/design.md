@@ -89,13 +89,25 @@ Describe the changes you want:
 ```
 Tell me about your brand identity:
 
-1. What's the overall vibe? (professional, playful, minimal, bold, etc.)
-2. Primary brand color? (hex code or name)
-3. Secondary colors? (optional)
-4. Any brand guidelines or references? (website, Figma, etc.)
-5. What should change from the current design?
+1. Site name: (e.g., "MyApp", "Acme Corp")
+   Current: "Deno 2 Starter"
+   
+2. Site description: (short tagline for your app)
+   Current: "A modern full-stack application starter with Deno 2 and Fresh"
 
-I'll create a cohesive design system based on your brand.
+3. What's the overall vibe? (professional, playful, minimal, bold, etc.)
+
+4. Primary brand color? (hex code or name)
+   Current: #2563eb (blue-600)
+
+5. Secondary/accent colors? (optional)
+   Current: #64748b (slate-500), #7c3aed (violet-600)
+
+6. Any brand guidelines or references? (website, Figma, etc.)
+
+7. What should change from the current design?
+
+I'll update your site configuration and create a cohesive design system based on your brand.
 ```
 
 **For New Variant (Option d):**
@@ -126,6 +138,7 @@ I'll update the design system with these changes:
 [Summarize changes clearly]
 
 This will update:
+- Site configuration in frontend/lib/config.ts (if brand identity changes)
 - Design system components in frontend/components/design-system/
 - Design tokens documentation
 - Design showcase page at /design-system
@@ -142,11 +155,12 @@ Launch the **design-agent** to implement the changes:
 Launching design agent to update the design system...
 
 The agent will:
-1. Update design tokens (if applicable)
-2. Modify component styles
-3. Update design system README
-4. Update showcase page with new examples
-5. Ensure consistency across all components
+1. Update site configuration (if brand identity changes)
+2. Update design tokens (if applicable)
+3. Modify component styles
+4. Update design system README
+5. Update showcase page with new examples
+6. Ensure consistency across all components
 ```
 
 Pass to the agent:
