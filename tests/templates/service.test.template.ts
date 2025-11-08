@@ -17,124 +17,120 @@
  */
 
 import { assertEquals, assertRejects } from 'jsr:@std/assert';
-import { setupTestKv } from '../helpers/kv-test.ts';
+import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { setupTestKv } from '../../helpers/kv-test.ts';
 
 // TODO: Import the service to test
-// import { FeatureService } from '../../shared/services/[feature].ts';
+// import { FeatureService } from '../../../shared/services/[feature].ts';
 
-Deno.test('[FeatureService] - business rule: [describe the rule]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new FeatureService(kv);
+describe('[FeatureService]', () => {
+  let kv: Deno.Kv;
+  let cleanup: () => Promise<void>;
 
-    // Arrange: Set up test data that exercises the business rule
-    const validInput = {
-      // TODO: Add input that should pass business validation
-    };
+  beforeEach(async () => {
+    const setup = await setupTestKv();
+    kv = setup.kv;
+    cleanup = setup.cleanup;
+  });
 
-    // Act: Execute the business logic
-    const result = await service.create(validInput);
-
-    // Assert: Verify business rule was applied correctly
-    assertEquals(result.propertyName, expectedValue);
-    // TODO: Assert on business logic outcomes, not HTTP codes
-  } finally {
+  afterEach(async () => {
     await cleanup();
-  }
-});
+  });
 
-Deno.test('[FeatureService] - business rule: rejects invalid [domain concept]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new FeatureService(kv);
+  describe('business rule: [describe the rule]', () => {
+    it('should apply business rule correctly', async () => {
+      const service = new FeatureService(kv);
 
-    // Arrange: Data that violates a business rule
-    const invalidInput = {
-      // TODO: Add input that violates business rule
-    };
+      // Arrange: Set up test data that exercises the business rule
+      const validInput = {
+        // TODO: Add input that should pass business validation
+      };
 
-    // Act & Assert: Verify business rule is enforced
-    await assertRejects(
-      () => service.create(invalidInput),
-      Error,
-      'expected business error message',
-    );
-  } finally {
-    await cleanup();
-  }
-});
+      // Act: Execute the business logic
+      const result = await service.create(validInput);
 
-Deno.test('[FeatureService] - business rule: prevents duplicate [domain concept]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new FeatureService(kv);
+      // Assert: Verify business rule was applied correctly
+      assertEquals(result.propertyName, expectedValue);
+      // TODO: Assert on business logic outcomes, not HTTP codes
+    });
 
-    // Arrange: Create first resource
-    await service.create({ uniqueField: 'value' });
+    it('should reject invalid [domain concept]', async () => {
+      const service = new FeatureService(kv);
 
-    // Act & Assert: Verify duplicate prevention (business rule)
-    await assertRejects(
-      () => service.create({ uniqueField: 'value' }),
-      Error,
-      'duplicate',
-    );
-  } finally {
-    await cleanup();
-  }
-});
+      // Arrange: Data that violates a business rule
+      const invalidInput = {
+        // TODO: Add input that violates business rule
+      };
 
-Deno.test('[FeatureService] - business logic: calculates [domain calculation]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new FeatureService(kv);
+      // Act & Assert: Verify business rule is enforced
+      await assertRejects(
+        () => service.create(invalidInput),
+        Error,
+        'expected business error message',
+      );
+    });
+  });
 
-    // Arrange: Input for calculation
-    const input = {
-      // TODO: Add data for calculation
-    };
+  describe('business rule: prevents duplicate [domain concept]', () => {
+    it('should prevent duplicates', async () => {
+      const service = new FeatureService(kv);
 
-    // Act: Execute business calculation
-    const result = await service.calculate(input);
+      // Arrange: Create first resource
+      await service.create({ uniqueField: 'value' });
 
-    // Assert: Verify calculation is correct
-    assertEquals(result, expectedCalculation);
-  } finally {
-    await cleanup();
-  }
-});
+      // Act & Assert: Verify duplicate prevention (business rule)
+      await assertRejects(
+        () => service.create({ uniqueField: 'value' }),
+        Error,
+        'duplicate',
+      );
+    });
+  });
 
-Deno.test('[FeatureService] - business logic: transforms data correctly', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new FeatureService(kv);
+  describe('business logic: calculates [domain calculation]', () => {
+    it('should calculate correctly', async () => {
+      const service = new FeatureService(kv);
 
-    // Arrange: Input data
-    const rawData = {
-      // TODO: Raw input
-    };
+      // Arrange: Input for calculation
+      const input = {
+        // TODO: Add data for calculation
+      };
 
-    // Act: Transform according to business rules
-    const transformed = await service.transform(rawData);
+      // Act: Execute business calculation
+      const result = await service.calculate(input);
 
-    // Assert: Verify business transformation
-    assertEquals(transformed.field, expectedTransformedValue);
-  } finally {
-    await cleanup();
-  }
-});
+      // Assert: Verify calculation is correct
+      assertEquals(result, expectedCalculation);
+    });
+  });
 
-Deno.test('[FeatureService] - business rule: handles edge case [specific case]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new FeatureService(kv);
+  describe('business logic: transforms data', () => {
+    it('should transform data correctly', async () => {
+      const service = new FeatureService(kv);
 
-    // TODO: Test edge cases specific to your business domain
-    // Examples:
-    // - Empty collections
-    // - Maximum/minimum values
-    // - Boundary conditions
-    // - Special states in your domain
-  } finally {
-    await cleanup();
-  }
+      // Arrange: Input data
+      const rawData = {
+        // TODO: Raw input
+      };
+
+      // Act: Transform according to business rules
+      const transformed = await service.transform(rawData);
+
+      // Assert: Verify business transformation
+      assertEquals(transformed.field, expectedTransformedValue);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle edge case [specific case]', async () => {
+      const service = new FeatureService(kv);
+
+      // TODO: Test edge cases specific to your business domain
+      // Examples:
+      // - Empty collections
+      // - Maximum/minimum values
+      // - Boundary conditions
+      // - Special states in your domain
+    });
+  });
 });

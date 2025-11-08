@@ -18,10 +18,11 @@
  */
 
 import { assertEquals, assertRejects } from 'jsr:@std/assert';
-import { setupTestKv, seedKv } from '../helpers/kv-test.ts';
+import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { setupTestKv } from '../../helpers/kv-test.ts';
 
 // TODO: Import your service
-// import { [ServiceName] } from '../../shared/services/[service].ts';
+// import { [ServiceName] } from '../../../shared/services/[service].ts';
 
 // TODO: Define test data
 const validData = {
@@ -41,272 +42,196 @@ const invalidData = {
   },
 };
 
-// ============================================================================
-// CREATE Tests
-// ============================================================================
+describe('[ServiceName]', () => {
+  let kv: Deno.Kv;
+  let cleanup: () => Promise<void>;
+  let service: [ServiceName];
 
-Deno.test('[ServiceName] - create: succeeds with valid data', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
+  beforeEach(async () => {
+    const setup = await setupTestKv();
+    kv = setup.kv;
+    cleanup = setup.cleanup;
+    service = new [ServiceName](kv);
+  });
 
-    const result = await service.create(validData);
-
-    // Standard assertions for created resource
-    assertEquals(typeof result.id, 'string');
-    assertEquals(result.name, validData.name); // TODO: Update field names
-    assertEquals(typeof result.createdAt, 'string');
-    assertEquals(typeof result.updatedAt, 'string');
-  } finally {
+  afterEach(async () => {
     await cleanup();
-  }
+  });
+
+  // ============================================================================
+  // CREATE Tests
+  // ============================================================================
+
+  describe('create', () => {
+    it('should succeed with valid data', async () => {
+      const result = await service.create(validData);
+
+      // Standard assertions for created resource
+      assertEquals(typeof result.id, 'string');
+      assertEquals(result.name, validData.name); // TODO: Update field names
+      assertEquals(typeof result.createdAt, 'string');
+      assertEquals(typeof result.updatedAt, 'string');
+    });
+
+    it('should reject missing required fields', async () => {
+      await assertRejects(
+        () => service.create(invalidData.missingRequired),
+        Error,
+        'required', // TODO: Update expected error message
+      );
+    });
+
+    it('should reject invalid format', async () => {
+      await assertRejects(
+        () => service.create(invalidData.invalidFormat),
+        Error,
+        'invalid', // TODO: Update expected error message
+      );
+    });
+
+    // TODO: If resource has unique constraint (e.g., email), keep this test
+    it('should prevent duplicates', async () => {
+      await service.create(validData);
+
+      await assertRejects(
+        () => service.create(validData), // Same data
+        Error,
+        'already exists', // TODO: Update expected error message
+      );
+    });
+  });
+
+  // ============================================================================
+  // LIST Tests
+  // ============================================================================
+
+  describe('list', () => {
+    it('should return empty array when no items', async () => {
+      const result = await service.list();
+
+      assertEquals(result, []);
+    });
+
+    it('should return all items', async () => {
+      // Create test items
+      await service.create({ ...validData, name: 'Item 1' });
+      await service.create({ ...validData, name: 'Item 2' });
+
+      const result = await service.list();
+
+      assertEquals(result.length, 2);
+    });
+
+    // TODO: If service supports pagination, keep this test
+    it('should paginate correctly', async () => {
+      // Create 15 items
+      for (let i = 0; i < 15; i++) {
+        await service.create({ ...validData, name: `Item ${i}` });
+      }
+
+      // First page
+      const page1 = await service.list({ limit: 10 });
+      assertEquals(page1.data.length, 10);
+      assertEquals(typeof page1.cursor, 'string');
+
+      // Second page
+      const page2 = await service.list({ limit: 10, cursor: page1.cursor });
+      assertEquals(page2.data.length, 5);
+      assertEquals(page2.cursor, null); // No more pages
+    });
+  });
+
+  // ============================================================================
+  // GET Tests
+  // ============================================================================
+
+  describe('get', () => {
+    it('should return item by id', async () => {
+      const created = await service.create(validData);
+      const result = await service.get(created.id);
+
+      assertEquals(result.id, created.id);
+      assertEquals(result.name, created.name);
+    });
+
+    it('should return null for non-existent id', async () => {
+      const result = await service.get('non-existent-id');
+
+      assertEquals(result, null);
+    });
+  });
+
+  // ============================================================================
+  // UPDATE Tests
+  // ============================================================================
+
+  describe('update', () => {
+    it('should modify existing item', async () => {
+      const created = await service.create(validData);
+      const updated = await service.update(created.id, { name: 'Updated Name' });
+
+      assertEquals(updated.id, created.id);
+      assertEquals(updated.name, 'Updated Name');
+      assertEquals(updated.updatedAt !== created.updatedAt, true); // Timestamp changed
+    });
+
+    it('should reject invalid data', async () => {
+      const created = await service.create(validData);
+
+      await assertRejects(
+        () => service.update(created.id, invalidData.invalidFormat),
+        Error,
+        'invalid',
+      );
+    });
+
+    it('should return null for non-existent id', async () => {
+      const result = await service.update('non-existent-id', { name: 'Test' });
+
+      assertEquals(result, null);
+    });
+  });
+
+  // ============================================================================
+  // DELETE Tests
+  // ============================================================================
+
+  describe('delete', () => {
+    it('should remove existing item', async () => {
+      const created = await service.create(validData);
+      const deleted = await service.delete(created.id);
+
+      assertEquals(deleted, true);
+
+      // Verify it's gone
+      const result = await service.get(created.id);
+      assertEquals(result, null);
+    });
+
+    it('should be idempotent (returns false for non-existent)', async () => {
+      const result = await service.delete('non-existent-id');
+
+      assertEquals(result, false);
+    });
+  });
+
+  // ============================================================================
+  // CUSTOM BUSINESS LOGIC Tests (Add below)
+  // ============================================================================
+
+  // TODO: Add tests for custom business logic specific to your service
+  // Examples:
+  // - Status transitions
+  // - Calculations
+  // - Custom validations
+  // - Relationships
+  // - Side effects
+
+  /*
+  describe('business rule: [describe rule]', () => {
+    it('should [expected behavior]', async () => {
+      // Your custom test
+    });
+  });
+  */
 });
-
-Deno.test('[ServiceName] - create: rejects missing required fields', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    await assertRejects(
-      () => service.create(invalidData.missingRequired),
-      Error,
-      'required', // TODO: Update expected error message
-    );
-  } finally {
-    await cleanup();
-  }
-});
-
-Deno.test('[ServiceName] - create: rejects invalid format', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    await assertRejects(
-      () => service.create(invalidData.invalidFormat),
-      Error,
-      'invalid', // TODO: Update expected error message
-    );
-  } finally {
-    await cleanup();
-  }
-});
-
-// TODO: If resource has unique constraint (e.g., email), keep this test
-Deno.test('[ServiceName] - create: prevents duplicates', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    await service.create(validData);
-
-    await assertRejects(
-      () => service.create(validData), // Same data
-      Error,
-      'already exists', // TODO: Update expected error message
-    );
-  } finally {
-    await cleanup();
-  }
-});
-
-// ============================================================================
-// LIST Tests
-// ============================================================================
-
-Deno.test('[ServiceName] - list: returns empty array when no items', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    const result = await service.list();
-
-    assertEquals(result, []);
-  } finally {
-    await cleanup();
-  }
-});
-
-Deno.test('[ServiceName] - list: returns all items', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    // Create test items
-    await service.create({ ...validData, name: 'Item 1' });
-    await service.create({ ...validData, name: 'Item 2' });
-
-    const result = await service.list();
-
-    assertEquals(result.length, 2);
-  } finally {
-    await cleanup();
-  }
-});
-
-// TODO: If service supports pagination, keep this test
-Deno.test('[ServiceName] - list: pagination works', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    // Create 15 items
-    for (let i = 0; i < 15; i++) {
-      await service.create({ ...validData, name: `Item ${i}` });
-    }
-
-    // First page
-    const page1 = await service.list({ limit: 10 });
-    assertEquals(page1.data.length, 10);
-    assertEquals(typeof page1.cursor, 'string');
-
-    // Second page
-    const page2 = await service.list({ limit: 10, cursor: page1.cursor });
-    assertEquals(page2.data.length, 5);
-    assertEquals(page2.cursor, null); // No more pages
-  } finally {
-    await cleanup();
-  }
-});
-
-// ============================================================================
-// GET Tests
-// ============================================================================
-
-Deno.test('[ServiceName] - get: returns item by id', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    const created = await service.create(validData);
-    const result = await service.get(created.id);
-
-    assertEquals(result.id, created.id);
-    assertEquals(result.name, created.name);
-  } finally {
-    await cleanup();
-  }
-});
-
-Deno.test('[ServiceName] - get: returns null for non-existent id', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    const result = await service.get('non-existent-id');
-
-    assertEquals(result, null);
-  } finally {
-    await cleanup();
-  }
-});
-
-// ============================================================================
-// UPDATE Tests
-// ============================================================================
-
-Deno.test('[ServiceName] - update: modifies existing item', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    const created = await service.create(validData);
-    const updated = await service.update(created.id, { name: 'Updated Name' });
-
-    assertEquals(updated.id, created.id);
-    assertEquals(updated.name, 'Updated Name');
-    assertEquals(updated.updatedAt !== created.updatedAt, true); // Timestamp changed
-  } finally {
-    await cleanup();
-  }
-});
-
-Deno.test('[ServiceName] - update: rejects invalid data', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    const created = await service.create(validData);
-
-    await assertRejects(
-      () => service.update(created.id, invalidData.invalidFormat),
-      Error,
-      'invalid',
-    );
-  } finally {
-    await cleanup();
-  }
-});
-
-Deno.test('[ServiceName] - update: returns null for non-existent id', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    const result = await service.update('non-existent-id', { name: 'Test' });
-
-    assertEquals(result, null);
-  } finally {
-    await cleanup();
-  }
-});
-
-// ============================================================================
-// DELETE Tests
-// ============================================================================
-
-Deno.test('[ServiceName] - delete: removes existing item', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    const created = await service.create(validData);
-    const deleted = await service.delete(created.id);
-
-    assertEquals(deleted, true);
-
-    // Verify it's gone
-    const result = await service.get(created.id);
-    assertEquals(result, null);
-  } finally {
-    await cleanup();
-  }
-});
-
-Deno.test('[ServiceName] - delete: is idempotent (returns false for non-existent)', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    const result = await service.delete('non-existent-id');
-
-    assertEquals(result, false);
-  } finally {
-    await cleanup();
-  }
-});
-
-// ============================================================================
-// CUSTOM BUSINESS LOGIC Tests (Add below)
-// ============================================================================
-
-// TODO: Add tests for custom business logic specific to your service
-// Examples:
-// - Status transitions
-// - Calculations
-// - Custom validations
-// - Relationships
-// - Side effects
-
-/*
-Deno.test('[ServiceName] - business rule: [describe rule]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new [ServiceName](kv);
-
-    // Your custom test
-  } finally {
-    await cleanup();
-  }
-});
-*/

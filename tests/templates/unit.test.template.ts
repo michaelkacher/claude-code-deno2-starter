@@ -4,34 +4,39 @@
  * Replace [FeatureName] and [functionName] with actual values
  */
 
-import { assertEquals, assertRejects, assertThrows } from 'jsr:@std/assert';
+import { assertEquals, assertThrows } from 'jsr:@std/assert';
+import { describe, it } from 'jsr:@std/testing/bdd';
 
 // TODO: Import the function/class to test
-// import { functionName } from '../../shared/lib/[feature].ts';
+// import { functionName } from '../../../shared/lib/[feature].ts';
 
-Deno.test('[FeatureName] - [functionName] - happy path', () => {
-  // Arrange
-  const input = {};
+describe('[FeatureName]', () => {
+  describe('[functionName]', () => {
+    it('should handle happy path', () => {
+      // Arrange
+      const input = {};
 
-  // Act
-  const result = functionName(input);
+      // Act
+      const result = functionName(input);
 
-  // Assert
-  assertEquals(result, expectedValue);
-});
+      // Assert
+      assertEquals(result, expectedValue);
+    });
 
-Deno.test('[FeatureName] - [functionName] - handles invalid input', () => {
-  // Arrange
-  const invalidInput = {};
+    it('should handle invalid input', () => {
+      // Arrange
+      const invalidInput = {};
 
-  // Act & Assert
-  assertThrows(
-    () => functionName(invalidInput),
-    Error,
-    'expected error message',
-  );
-});
+      // Act & Assert
+      assertThrows(
+        () => functionName(invalidInput),
+        Error,
+        'expected error message',
+      );
+    });
 
-Deno.test('[FeatureName] - [functionName] - handles edge case', () => {
-  // TODO: Test edge cases (null, empty, boundary values)
+    it('should handle edge case', () => {
+      // TODO: Test edge cases (null, empty, boundary values)
+    });
+  });
 });

@@ -11,6 +11,38 @@ This file contains standard test patterns to reference when writing tests. **Use
 | `UNIT_TESTS` | Pure functions | ~100-200 | `unit.test.template.ts` |
 | `INTEGRATION_TESTS` | API endpoints (minimal) | N/A | `integration-api.test.template.ts` |
 
+## Test Structure
+
+All tests use **BDD-style patterns** with `describe()` and `it()` from `jsr:@std/testing/bdd`:
+
+```typescript
+import { assertEquals } from 'jsr:@std/assert';
+import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+
+describe('ServiceName', () => {
+  let kv: Deno.Kv;
+  let cleanup: () => Promise<void>;
+  let service: ServiceName;
+
+  beforeEach(async () => {
+    const setup = await setupTestKv();
+    kv = setup.kv;
+    cleanup = setup.cleanup;
+    service = new ServiceName(kv);
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  describe('featureName', () => {
+    it('should handle happy path', async () => {
+      // Test implementation
+    });
+  });
+});
+```
+
 ## Standard Test Patterns
 
 ### Pattern: `CRUD_SERVICE_TESTS`
@@ -58,34 +90,22 @@ For testing input validation rules.
 
 **Template**:
 ```typescript
-Deno.test('[Service] - validation: required field [fieldName]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new Service(kv);
-
+describe('validation', () => {
+  it('should require field [fieldName]', async () => {
     await assertRejects(
       () => service.create({ /* missing required field */ }),
       Error,
       'required',
     );
-  } finally {
-    await cleanup();
-  }
-});
+  });
 
-Deno.test('[Service] - validation: [field] length limit', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new Service(kv);
-
+  it('should enforce [field] length limit', async () => {
     await assertRejects(
       () => service.create({ field: 'x'.repeat(101) }), // exceeds 100 char limit
       Error,
       'too long',
     );
-  } finally {
-    await cleanup();
-  }
+  });
 });
 ```
 
@@ -106,17 +126,12 @@ For testing domain-specific business logic.
 
 **Template**:
 ```typescript
-Deno.test('[Service] - business rule: [description]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new Service(kv);
-
+describe('business rule: [description]', () => {
+  it('should apply rule correctly', async () => {
     // Arrange: Setup that triggers the rule
     // Act: Execute business operation
     // Assert: Verify rule was applied
-  } finally {
-    await cleanup();
-  }
+  });
 });
 ```
 
@@ -137,29 +152,17 @@ For testing boundary conditions.
 
 **Template**:
 ```typescript
-Deno.test('[Service] - edge case: empty [collection]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new Service(kv);
-
+describe('edge cases', () => {
+  it('should handle empty [collection]', async () => {
     const result = await service.list();
     assertEquals(result, []);
-  } finally {
-    await cleanup();
-  }
-});
+  });
 
-Deno.test('[Service] - edge case: max length [field]', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new Service(kv);
-
+  it('should handle max length [field]', async () => {
     const maxLengthValue = 'x'.repeat(100); // max allowed
     const result = await service.create({ field: maxLengthValue });
     assertEquals(result.field, maxLengthValue);
-  } finally {
-    await cleanup();
-  }
+  });
 });
 ```
 
@@ -178,34 +181,22 @@ For testing Deno KV persistence and indexes.
 
 **Template**:
 ```typescript
-Deno.test('[Service] - KV: persists data correctly', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new Service(kv);
-
+describe('KV integration', () => {
+  it('should persist data correctly', async () => {
     const created = await service.create({ name: 'test' });
 
     // Verify in KV
     const stored = await kv.get(['resources', created.id]);
     assertEquals(stored.value, created);
-  } finally {
-    await cleanup();
-  }
-});
+  });
 
-Deno.test('[Service] - KV: creates secondary index', async () => {
-  const { kv, cleanup } = await setupTestKv();
-  try {
-    const service = new Service(kv);
-
+  it('should create secondary index', async () => {
     const created = await service.create({ name: 'test' });
 
     // Verify index exists
     const index = await kv.get(['resources_by_name', 'test']);
     assertEquals(index.value, created.id);
-  } finally {
-    await cleanup();
-  }
+  });
 });
 ```
 
