@@ -1,11 +1,12 @@
 /**
  * POST /api/2fa/setup
  * Generate TOTP secret and QR code for 2FA setup
+ * 
+ * REFACTORED: Uses TwoFactorService to eliminate duplicate logic
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { generateQRCodeDataURL, generateQRCodeURL, generateSecret } from "../../../../shared/lib/totp.ts";
-import { UserRepository } from "../../../../shared/repositories/index.ts";
+import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     requireUser,
@@ -14,44 +15,25 @@ import {
 } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
+  async POST(_req, ctx) {
     try {
-      // Require authentication
       const user = requireUser(ctx);
+      const twoFactorService = new TwoFactorService();
 
-      const userRepo = new UserRepository();
-      const dbUser = await userRepo.findById(user.sub);
+      const result = await twoFactorService.setup(user.sub);
 
-      if (!dbUser) {
-        return errorResponse("NOT_FOUND", "User not found", 404);
-      }
-
-      if (dbUser.twoFactorEnabled) {
-        return errorResponse(
-          "ALREADY_ENABLED",
-          "Two-factor authentication is already enabled",
-          400,
-        );
-      }
-
-      // Generate new TOTP secret
-      const secret = generateSecret();
-
-      // Store secret temporarily (not enabled yet)
-      await userRepo.update(user.sub, { twoFactorSecret: secret });
-
-      // Generate QR code
-      const issuer = "Deno Fresh App";
-      const otpURL = generateQRCodeURL(secret, dbUser.email, issuer);
-      const qrCodeURL = generateQRCodeDataURL(otpURL);
-
-      return successResponse({
-        secret,
-        qrCodeURL,
-      });
+      return successResponse(result);
     } catch (error) {
-      if (error.message === "Authentication required") {
-        return errorResponse("UNAUTHORIZED", "Authentication required", 401);
+      if (error instanceof Error) {
+        if (error.message === "Authentication required") {
+          return errorResponse("UNAUTHORIZED", "Authentication required", 401);
+        }
+        if (error.message === "Two-factor authentication is already enabled") {
+          return errorResponse("ALREADY_ENABLED", error.message, 400);
+        }
+        if (error.message === "User not found") {
+          return errorResponse("NOT_FOUND", error.message, 404);
+        }
       }
       console.error("2FA setup error:", error);
       return errorResponse("SERVER_ERROR", "Failed to setup 2FA", 500);

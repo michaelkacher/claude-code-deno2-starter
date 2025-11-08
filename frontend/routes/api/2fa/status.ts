@@ -1,9 +1,12 @@
 /**
  * GET /api/2fa/status
  * Check if user has 2FA enabled
+ * 
+ * REFACTORED: Uses TwoFactorService for consistency
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     requireUser,
@@ -12,17 +15,22 @@ import {
 } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async GET(req, ctx) {
+  async GET(_req, ctx) {
     try {
-      // Require authentication
       const user = requireUser(ctx);
+      const twoFactorService = new TwoFactorService();
 
-      return successResponse({
-        enabled: user.twoFactorEnabled || false,
-      });
+      const status = await twoFactorService.getStatus(user.sub);
+
+      return successResponse(status);
     } catch (error) {
-      if (error.message === "Authentication required") {
-        return errorResponse("UNAUTHORIZED", "Authentication required", 401);
+      if (error instanceof Error) {
+        if (error.message === "Authentication required") {
+          return errorResponse("UNAUTHORIZED", "Authentication required", 401);
+        }
+        if (error.message === "User not found") {
+          return errorResponse("NOT_FOUND", error.message, 404);
+        }
       }
       console.error("2FA status error:", error);
       return errorResponse("SERVER_ERROR", "Failed to get 2FA status", 500);

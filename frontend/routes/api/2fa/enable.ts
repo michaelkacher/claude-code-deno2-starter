@@ -1,12 +1,13 @@
 /**
  * POST /api/2fa/enable
  * Enable 2FA after verifying TOTP code
+ * 
+ * REFACTORED: Uses TwoFactorService to eliminate duplicate logic
  */
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { verifyTOTP } from "../../../../shared/lib/totp.ts";
-import { UserRepository } from "../../../../shared/repositories/index.ts";
+import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
     errorResponse,
     parseJsonBody,
@@ -22,61 +23,36 @@ const Enable2FASchema = z.object({
 export const handler: Handlers<unknown, AppState> = {
   async POST(req, ctx) {
     try {
-      // Require authentication
       const user = requireUser(ctx);
-
-      // Parse and validate request body
-      const body = await parseJsonBody(req, Enable2FASchema);
-
-      const userRepo = new UserRepository();
-      const dbUser = await userRepo.findById(user.sub);
-
-      if (!dbUser) {
-        return errorResponse("NOT_FOUND", "User not found", 404);
-      }
-
-      if (dbUser.twoFactorEnabled) {
-        return errorResponse(
-          "ALREADY_ENABLED",
-          "Two-factor authentication is already enabled",
-          400,
-        );
-      }
-
-      if (!dbUser.twoFactorSecret) {
-        return errorResponse(
-          "NO_SECRET",
-          "2FA not setup. Call /api/2fa/setup first",
-          400,
-        );
-      }
-
-      // Verify TOTP code
-      const isValid = await verifyTOTP(body.code, dbUser.twoFactorSecret);
-      if (!isValid) {
-        return errorResponse("INVALID_CODE", "Invalid verification code", 400);
-      }
-
-      // Generate backup codes
-      const backupCodes = Array.from({ length: 10 }, () =>
-        crypto.randomUUID().slice(0, 8)
-      );
-
-      // Enable 2FA
-      await userRepo.update(user.sub, {
-        twoFactorEnabled: true,
-        twoFactorBackupCodes: backupCodes,
-      });
+      const rawBody = await parseJsonBody(req);
+      const body = Enable2FASchema.parse(rawBody);
+      
+      const twoFactorService = new TwoFactorService();
+      const result = await twoFactorService.enable(user.sub, body.code);
 
       return successResponse({
         message: "Two-factor authentication enabled successfully",
-        backupCodes,
+        backupCodes: result.backupCodes,
       });
     } catch (error) {
-      if (error.message === "Authentication required") {
-        return errorResponse("UNAUTHORIZED", "Authentication required", 401);
+      if (error instanceof Error) {
+        if (error.message === "Authentication required") {
+          return errorResponse("UNAUTHORIZED", "Authentication required", 401);
+        }
+        if (error.message === "Two-factor authentication is already enabled") {
+          return errorResponse("ALREADY_ENABLED", error.message, 400);
+        }
+        if (error.message === "2FA not setup. Call setup() first") {
+          return errorResponse("NO_SECRET", error.message, 400);
+        }
+        if (error.message === "Invalid verification code") {
+          return errorResponse("INVALID_CODE", error.message, 400);
+        }
+        if (error.message === "User not found") {
+          return errorResponse("NOT_FOUND", error.message, 404);
+        }
       }
-      if (error.name === "ZodError") {
+      if (error instanceof z.ZodError) {
         return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
       }
       console.error("2FA enable error:", error);
