@@ -10,19 +10,26 @@ Perform a comprehensive code review focusing on:
 - [ ] Functions are small and focused (single responsibility)
 - [ ] Meaningful variable and function names
 - [ ] Appropriate comments for complex logic
+- [ ] Server-side code uses `shared/lib/logger.ts` (not console.log)
+- [ ] Shared business logic in `shared/` (not duplicated in routes/islands)
 
 ## Testing
-- [ ] Run all tests: `deno task test --allow-all`
+- [ ] Run all tests: `deno task test` (includes all necessary flags)
 - [ ] Check test coverage: `deno task test:coverage && deno task coverage`
 - [ ] All tests passing
-- [ ] Coverage meets targets (80%+ for unit tests)
+- [ ] Tests use BDD pattern (describe()/it() from @std/testing/bdd)
+- [ ] Tests use lifecycle hooks (beforeEach/afterEach for setup/cleanup)
+- [ ] Tests organized in tests/unit/ with subdirectories
+- [ ] Test data builders used for consistent test data
+- [ ] Coverage meets targets (80%+ for business logic)
 - [ ] Edge cases are tested
 - [ ] Error scenarios are tested
+- [ ] Only business logic is tested (not framework code)
 
 ## Security
 - [ ] No hardcoded secrets or API keys
-- [ ] Input validation on all user inputs
-- [ ] SQL injection protection (parameterized queries)
+- [ ] Input validation on all user inputs using Zod schemas
+- [ ] No SQL injection (using Deno KV, not SQL)
 - [ ] XSS protection
 - [ ] Authentication/authorization implemented correctly
 - [ ] Sensitive data is encrypted
@@ -30,10 +37,11 @@ Perform a comprehensive code review focusing on:
 ## Performance
 - [ ] Minimal client JavaScript (Fresh islands architecture)
 - [ ] Server-side rendering used where appropriate (Fresh routes)
-- [ ] Efficient database queries (no N+1 problems)
+- [ ] Efficient Deno KV queries (batched reads, proper indexing)
 - [ ] Images optimized
 - [ ] Islands are lazy-loaded when possible
-- [ ] No memory leaks
+- [ ] No memory leaks (proper KV cleanup with closeKv())
+- [ ] Background jobs use queue system (not blocking requests)
 
 ## Accessibility
 - [ ] Semantic HTML used
@@ -44,17 +52,24 @@ Perform a comprehensive code review focusing on:
 
 ## Documentation
 - [ ] README is up to date
-- [ ] API documentation is complete
+- [ ] Feature-scoped docs in `features/proposed/` or `features/implemented/`
+- [ ] API specs use templates from `features/_templates/`
 - [ ] Complex logic has comments
-- [ ] ADRs document major decisions
+- [ ] Major decisions documented in feature notes
 
 ## Architecture
-- [ ] Follows architecture decisions in `.docs/architecture.md` or `docs/architecture.md`
-- [ ] Separation of concerns maintained (Controller → Service → Repository)
-- [ ] Fresh routes used for SSR pages, islands for interactivity
+- [ ] Follows architecture in `docs/architecture.md`
+- [ ] Separation of concerns: Routes → Services → Repositories
+- [ ] Fresh routes (`frontend/routes/`) for SSR pages
+- [ ] Fresh islands (`frontend/islands/`) for client interactivity
+- [ ] API routes in `frontend/routes/api/`
+- [ ] Shared business logic in `shared/services/` and `shared/repositories/`
 - [ ] Preact Signals used for state (not React hooks)
+- [ ] Design system components used from `frontend/components/design-system/`
+- [ ] Deno KV for persistence (`shared/repositories/`)
+- [ ] Background jobs use queue/scheduler system (`shared/lib/queue.ts`, `shared/lib/scheduler.ts`)
 - [ ] No violations of established patterns
-- [ ] Dependencies are appropriate (prefer Deno/JSR over npm)
+- [ ] Dependencies prefer JSR over npm where possible
 
 After review, provide a summary of:
 1. What's working well
