@@ -3,7 +3,11 @@
 // This file is automatically updated during development when running `dev.ts`.
 
 import * as $_2fa_setup from "./routes/2fa/setup.tsx";
-import * as $_404 from "./routes/_404.tsx";
+import * as $_401 from "./routes/401.tsx";
+import * as $_403 from "./routes/403.tsx";
+import * as $_404 from "./routes/404.tsx";
+import * as $_500 from "./routes/500.tsx";
+import * as $_404_1 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
 import * as $admin_middleware from "./routes/admin/_middleware.ts";
@@ -95,7 +99,11 @@ import type { Manifest } from "$fresh/server.ts";
 const manifest = {
   routes: {
     "./routes/2fa/setup.tsx": $_2fa_setup,
-    "./routes/_404.tsx": $_404,
+    "./routes/401.tsx": $_401,
+    "./routes/403.tsx": $_403,
+    "./routes/404.tsx": $_404,
+    "./routes/500.tsx": $_500,
+    "./routes/_404.tsx": $_404_1,
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
     "./routes/admin/_middleware.ts": $admin_middleware,

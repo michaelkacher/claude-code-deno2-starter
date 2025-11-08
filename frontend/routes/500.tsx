@@ -1,34 +1,30 @@
 /**
- * Error Page
- * Displays user-friendly error messages for general errors
+ * 500 Error Page
+ * Displays when an internal server error occurs
  */
 
-import { Head } from '$fresh/runtime.ts';
-import { PageProps } from '$fresh/server.ts';
-import { siteConfig } from '../lib/config.ts';
+import { Head } from "$fresh/runtime.ts";
+import { PageProps } from "$fresh/server.ts";
+import { siteConfig } from "../lib/config.ts";
 
-export default function ErrorPage(props: PageProps) {
+export default function Error500(props: PageProps) {
   const url = new URL(props.url);
-  const message = url.searchParams.get('message') || 'An unexpected error occurred';
-  const code = url.searchParams.get('code') || 'ERROR';
-  const returnUrl = url.searchParams.get('return') || '/';
-
+  const errorMessage = url.searchParams.get('error') || null;
+  
   return (
     <>
       <Head>
-        <title>Error - {siteConfig.site.name}</title>
+        <title>500 - Server Error | {siteConfig.site.name}</title>
       </Head>
-
-      <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4 py-12">
+      
+      <div class="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center px-4 py-12">
         <div class="max-w-lg w-full">
           {/* Error Code */}
-          {code !== 'ERROR' && (
-            <div class="text-center mb-8">
-              <h1 class="text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">
-                {code}
-              </h1>
-            </div>
-          )}
+          <div class="text-center mb-8">
+            <h1 class="text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">
+              500
+            </h1>
+          </div>
 
           {/* Error Content Card */}
           <div class="bg-white rounded-2xl shadow-xl p-8 space-y-6">
@@ -51,35 +47,42 @@ export default function ErrorPage(props: PageProps) {
               </div>
             </div>
 
-            {/* Error Message */}
+            {/* Message */}
             <div class="text-center space-y-2">
-              <h2 class="text-3xl font-bold text-gray-900">
-                Something Went Wrong
-              </h2>
-              <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p class="text-sm text-red-800">{message}</p>
-              </div>
+              <h2 class="text-3xl font-bold text-gray-900">Server Error</h2>
+              <p class="text-gray-600">
+                Oops! Something went wrong on our end. We're working on fixing it.
+              </p>
             </div>
+
+            {/* Error Details (Development Only) */}
+            {errorMessage && Deno.env.get("DENO_ENV") === "development" && (
+              <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-sm font-mono text-red-800 break-all">
+                  {errorMessage}
+                </p>
+              </div>
+            )}
 
             {/* What to do */}
             <div class="bg-gray-50 rounded-lg p-4">
-              <p class="text-sm text-gray-700 font-medium mb-2">What you can try:</p>
+              <p class="text-sm text-gray-700 font-medium mb-2">What you can do:</p>
               <ul class="space-y-1 text-sm text-gray-600">
-                <li>• Refresh the page and try again</li>
-                <li>• Go back to the previous page</li>
-                <li>• Return to the home page</li>
+                <li>• Try refreshing the page</li>
+                <li>• Go back and try again</li>
+                <li>• Come back in a few minutes</li>
                 <li>• Contact support if the issue persists</li>
               </ul>
             </div>
 
             {/* Actions */}
             <div class="flex flex-col sm:flex-row gap-3">
-              <a
-                href={returnUrl}
+              <button
+                onClick={() => window.location.reload()}
                 class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
               >
-                ← Return
-              </a>
+                🔄 Refresh Page
+              </button>
               <a
                 href="/"
                 class="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg hover:from-red-700 hover:to-orange-700 transition-colors font-medium text-center shadow-md"
@@ -90,10 +93,17 @@ export default function ErrorPage(props: PageProps) {
 
             {/* Support Link */}
             <p class="text-center text-sm text-gray-500">
-              If this problem persists, please{' '}
+              Still having issues?{' '}
               <a href="/contact" class="text-red-600 hover:text-red-500 font-medium">
-                contact support
+                Contact Support
               </a>
+            </p>
+          </div>
+
+          {/* Status Message */}
+          <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+              Error ID: {crypto.randomUUID().slice(0, 8)}
             </p>
           </div>
         </div>
