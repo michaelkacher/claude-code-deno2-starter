@@ -32,13 +32,13 @@ export function PageLayout({
 
   return (
     <div
-      class={`min-h-screen bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 relative ${className}`}
+      class={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative ${className}`}
     >
       {/* Decorative background elements */}
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl" />
-        <div class="absolute top-1/2 -left-40 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl" />
-        <div class="absolute -bottom-40 right-1/3 w-96 h-96 bg-pink-400/10 rounded-full blur-3xl" />
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 dark:bg-blue-900/20 rounded-full blur-3xl" />
+        <div class="absolute top-1/2 -left-40 w-96 h-96 bg-purple-400/10 dark:bg-purple-900/20 rounded-full blur-3xl" />
+        <div class="absolute -bottom-40 right-1/3 w-96 h-96 bg-pink-400/10 dark:bg-pink-900/20 rounded-full blur-3xl" />
       </div>
 
       <div class={`${widthStyle} ${centerStyle} px-4 sm:px-6 lg:px-8 py-8 relative z-10`}>
@@ -91,11 +91,11 @@ export function PageHeader({
 
       <div class="flex items-start justify-between gap-4">
         <div class="flex-1">
-          <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+          <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             {title}
           </h1>
           {subtitle && (
-            <p class="text-lg text-gray-600">{subtitle}</p>
+            <p class="text-lg text-gray-600 dark:text-gray-400">{subtitle}</p>
           )}
         </div>
         {action && <div class="flex-shrink-0">{action}</div>}

@@ -18,20 +18,17 @@ export async function handler(
 ): Promise<Response> {
   // Get token from Authorization header
   const authHeader = req.headers.get("Authorization");
-  console.log("🔍 [API Middleware] Auth header:", authHeader ? `"${authHeader.substring(0, 30)}..."` : "null");
+  // [API Middleware] Auth header received (value not logged for security)
   
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
-    console.log("🔐 [API Middleware] Extracted token:", token ? `"${token.substring(0, 20)}..."` : "undefined/empty");
-    
+    // [API Middleware] Bearer token received (not logged)
     if (!token) {
       console.error("❌ [API Middleware] Token is empty after extraction");
     } else {
       try {
         const payload = await verifyToken(token);
-        console.log("✅ [API Middleware] Token valid, user:", payload.sub, payload.email);
-        
-        // Attach user to context state
+        // [API Middleware] Token valid, user attached to context
         ctx.state.user = {
           sub: payload.sub,
           email: payload.email,
@@ -47,7 +44,7 @@ export async function handler(
       }
     }
   } else {
-    console.log("⚠️ [API Middleware] No Bearer token in Authorization header");
+    // [API Middleware] No Bearer token in Authorization header
   }
   
   // Continue to next handler

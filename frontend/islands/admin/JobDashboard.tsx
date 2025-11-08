@@ -729,6 +729,7 @@ export default function JobDashboard() {
           gap: 12px;
         }
 
+
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -743,17 +744,27 @@ export default function JobDashboard() {
           padding: 16px;
           text-align: center;
         }
+        .dark .stat-card {
+          background: #23272f;
+          border-color: #374151;
+        }
 
         .stat-value {
           font-size: 32px;
           font-weight: bold;
           color: #111827;
         }
+        .dark .stat-value {
+          color: #f3f4f6;
+        }
 
         .stat-label {
           font-size: 14px;
           color: #6b7280;
           margin-top: 4px;
+        }
+        .dark .stat-label {
+          color: #d1d5db;
         }
 
         .stat-running .stat-value {
@@ -820,11 +831,16 @@ export default function JobDashboard() {
           margin-bottom: 16px;
         }
 
+
         .table-container {
           overflow-x: auto;
           background: white;
           border: 1px solid #e5e7eb;
           border-radius: 8px;
+        }
+        .dark .table-container {
+          background: #181a20;
+          border-color: #374151;
         }
 
         .jobs-table, .schedules-table {
@@ -842,6 +858,11 @@ export default function JobDashboard() {
           text-transform: uppercase;
           border-bottom: 1px solid #e5e7eb;
         }
+        .dark .jobs-table th, .dark .schedules-table th {
+          background: #23272f;
+          color: #d1d5db;
+          border-bottom-color: #374151;
+        }
 
         .jobs-table td, .schedules-table td {
           padding: 12px;
@@ -849,9 +870,16 @@ export default function JobDashboard() {
           font-size: 14px;
           color: #374151;
         }
+        .dark .jobs-table td, .dark .schedules-table td {
+          color: #f3f4f6;
+          border-bottom-color: #23272f;
+        }
 
         .jobs-table tbody tr:hover, .schedules-table tbody tr:hover {
           background: #f9fafb;
+        }
+        .dark .jobs-table tbody tr:hover, .dark .schedules-table tbody tr:hover {
+          background: #23272f;
         }
 
         .job-name {
