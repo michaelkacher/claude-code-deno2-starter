@@ -27,9 +27,9 @@ export const handler: Handlers<unknown, AppState> = {
         users: {
           total: stats.totalUsers,
           verified: stats.verifiedCount,
-          unverified: stats.unverifiedCount,
+          unverified: stats.totalUsers - stats.verifiedCount,
           admins: stats.adminCount,
-          with2FA: stats.twoFactorEnabledCount,
+          with2FA: stats.twoFactorCount,
         },
         timestamp: new Date().toISOString(),
       });

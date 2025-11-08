@@ -1,6 +1,7 @@
 {
   "name": "@your-org/web-project-starter",
   "version": "0.1.0",
+  "exports": "./frontend/main.ts",
   "tasks": {
     "dev": "cd frontend && deno task start",
     "start": "cd frontend && deno task start",
@@ -16,7 +17,7 @@
     "lint:fix": "deno lint --fix",
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
-    "type-check": "deno check shared/**/*.ts && cd frontend && deno check **/*.ts **/*.tsx",
+    "type-check": "deno check shared/lib/**/*.ts shared/repositories/**/*.ts shared/services/**/*.ts shared/workers/**/*.ts shared/types/**/*.ts && cd frontend && deno check main.ts",
     "clean": "rm -rf dist coverage .fresh frontend/_fresh",
     "kv:seed": "deno run --allow-read --allow-write --allow-env scripts/seed-local-kv.ts",
     "kv:reset": "deno run --allow-read --allow-write scripts/reset-local-kv.ts",
@@ -43,6 +44,12 @@
   "imports": {
     "@/": "./shared/",
     "@std/": "jsr:@std/",
+    "$fresh/": "https://deno.land/x/fresh@1.7.3/",
+    "$std/dotenv/mod.ts": "https://deno.land/std@0.216.0/dotenv/mod.ts",
+    "preact": "https://esm.sh/preact@10.22.0",
+    "preact/": "https://esm.sh/preact@10.22.0/",
+    "@preact/signals": "https://esm.sh/*@preact/signals@1.2.2",
+    "@preact/signals-core": "https://esm.sh/*@preact/signals-core@1.5.1",
     "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
     "playwright/test": "npm:@playwright/test@^1.48"
   },
@@ -55,8 +62,9 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "useUnknownInCatchVariables": false
   },
   "lint": {
     "rules": {

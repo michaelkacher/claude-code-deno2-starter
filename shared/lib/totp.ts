@@ -22,15 +22,19 @@ export function generateSecret(): string {
  * Generate HMAC-SHA1 hash
  */
 async function hmacSha1(key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
+  // Create a new buffer to ensure proper ArrayBuffer type
+  const keyBuffer = new Uint8Array(key);
+  const messageBuffer = new Uint8Array(message);
+
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
-    key.buffer,
+    keyBuffer,
     { name: 'HMAC', hash: 'SHA-1' },
     false,
     ['sign']
   );
-  
-  const signature = await crypto.subtle.sign('HMAC', cryptoKey, message.buffer);
+
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageBuffer);
   return new Uint8Array(signature);
 }
 

@@ -30,12 +30,12 @@ export async function handler(
         const payload = await verifyToken(token);
         // [API Middleware] Token valid, user attached to context
         ctx.state.user = {
-          sub: payload.sub,
-          email: payload.email,
-          role: payload.role,
-          emailVerified: payload.emailVerified,
-          iat: payload.iat,
-          exp: payload.exp,
+          sub: payload.sub as string,
+          email: payload.email as string,
+          role: payload.role as string,
+          emailVerified: payload.emailVerified as boolean,
+          iat: payload.iat as number,
+          exp: payload.exp as number,
         };
       } catch (error) {
         // Token invalid or expired - continue without user

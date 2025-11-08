@@ -107,7 +107,7 @@ export async function sendVerificationEmail(
   try {
     const resend = getResendClient();
     const emailFrom = Deno.env.get('EMAIL_FROM') || 'noreply@yourdomain.com';
-    const frontendUrl = env.FRONTEND_URL;
+    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'http://localhost:3000';
     const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
     const data: EmailVerificationData = {
@@ -128,7 +128,7 @@ export async function sendVerificationEmail(
     console.error('Failed to send verification email:', error);
     return {
       success: false,
-      error: error.message || 'Failed to send email',
+      error: error instanceof Error ? error.message : 'Failed to send email',
     };
   }
 }
@@ -144,7 +144,7 @@ export async function sendPasswordResetEmail(
   try {
     const resend = getResendClient();
     const emailFrom = Deno.env.get('EMAIL_FROM') || 'noreply@yourdomain.com';
-    const frontendUrl = env.FRONTEND_URL;
+    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'http://localhost:3000';
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     const html = `
@@ -191,7 +191,7 @@ This link will expire in 1 hour. If you didn't request a password reset, ignore 
     console.error('Failed to send password reset email:', error);
     return {
       success: false,
-      error: error.message || 'Failed to send email',
+      error: error instanceof Error ? error.message : 'Failed to send email',
     };
   }
 }

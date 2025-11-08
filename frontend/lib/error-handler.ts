@@ -71,7 +71,7 @@ export function createErrorResponse(
     error: {
       code: error,
       message: legacyMessage || 'An error occurred',
-      ...(legacyDetails && { details: legacyDetails }),
+      ...(legacyDetails ? { details: legacyDetails } : {}),
     },
     timestamp: new Date().toISOString(),
   };

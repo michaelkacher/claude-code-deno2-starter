@@ -120,7 +120,7 @@ deno task dev
 
 6. Validate quality and tests
 ```bash
-# This runs tests and validates the quality of the implemented feature
+# This runs tests, validates the quality of the implemented feature and security best practices
 /review
 ```
 
