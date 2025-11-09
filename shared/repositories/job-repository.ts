@@ -93,12 +93,12 @@ export class JobRepository extends BaseRepository<Job> {
     jobId: string,
     status: JobStatus,
     updates: {
-      error?: string;
+      error?: string | undefined;
       result?: unknown;
-      startedAt?: string;
-      completedAt?: string;
-      processingBy?: string;
-      attempts?: number;
+      startedAt?: string | undefined;
+      completedAt?: string | undefined;
+      processingBy?: string | undefined;
+      attempts?: number | undefined;
     } = {}
   ): Promise<Job | null> {
     try {
@@ -112,7 +112,12 @@ export class JobRepository extends BaseRepository<Job> {
       const updatedJob: Job = {
         ...job,
         status,
-        ...updates,
+        error: updates.error !== undefined ? updates.error : job.error,
+        result: updates.result !== undefined ? updates.result : job.result,
+        startedAt: updates.startedAt !== undefined ? updates.startedAt : job.startedAt,
+        completedAt: updates.completedAt !== undefined ? updates.completedAt : job.completedAt,
+        processingBy: updates.processingBy !== undefined ? updates.processingBy : job.processingBy,
+        attempts: updates.attempts !== undefined ? updates.attempts : job.attempts,
       };
 
       await this.set(['jobs', jobId], updatedJob);

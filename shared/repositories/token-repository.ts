@@ -13,7 +13,7 @@ export interface RefreshTokenData {
 export interface BlacklistTokenData {
   tokenId: string;
   userId: string;
-  reason?: string;
+  reason?: string | undefined;
   expiresAt: number;
   createdAt: string;
 }

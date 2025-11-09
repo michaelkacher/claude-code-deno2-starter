@@ -37,9 +37,9 @@ interface LogEntry {
   error?: {
     name: string;
     message: string;
-    stack?: string;
-  };
-  meta?: LogMeta;
+    stack?: string | undefined;
+  } | undefined;
+  meta?: LogMeta | undefined;
 }
 
 class LoggerImpl implements Logger {
@@ -186,10 +186,13 @@ export function createLogger(context: string): Logger {
  */
 let _defaultLogger: Logger | null = null;
 export const logger: Logger = new Proxy({} as Logger, {
-  get(_target, prop) {
+  get(_target, prop: string | symbol) {
     if (!_defaultLogger) {
       _defaultLogger = createLogger('App');
     }
-    return (_defaultLogger as Record<string, unknown>)[prop];
+    if (typeof prop === 'symbol') {
+      return (_defaultLogger as never)[prop];
+    }
+    return (_defaultLogger as unknown as Record<string, unknown>)[prop];
   }
 });

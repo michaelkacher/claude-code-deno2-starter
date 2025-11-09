@@ -1,7 +1,7 @@
 import { NotificationRepository } from '../repositories/index.ts';
 import type {
-  CreateNotificationRequest,
-  NotificationData,
+    CreateNotificationRequest,
+    NotificationData,
 } from '../types/notifications.ts';
 
 /**
@@ -47,10 +47,15 @@ export class NotificationService {
     userId: string,
     options: { limit?: number; offset?: number } = {},
   ): Promise<NotificationData[]> {
-    const result = await this.repo.listUserNotifications(userId, {
+    const queryOptions: { limit: number; cursor?: string | undefined } = {
       limit: options.limit || 50,
-      cursor: options.offset ? String(options.offset) : undefined,
-    });
+    };
+    
+    if (options.offset) {
+      queryOptions.cursor = String(options.offset);
+    }
+    
+    const result = await this.repo.listUserNotifications(userId, queryOptions);
     return result.items;
   }
 

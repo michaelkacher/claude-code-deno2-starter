@@ -1,6 +1,6 @@
 import { create, getNumericDate, verify } from 'https://deno.land/x/djwt@v3.0.2/mod.ts';
 
-function parseDurationToSeconds(input: string): number {
+export function parseDurationToSeconds(input: string): number {
   const match = input.match(/^(\d+)([smhdw])$/);
   if (!match) return 60 * 60 * 24 * 7; // default 7d
   const value = Number(match[1]);
@@ -21,7 +21,7 @@ function parseDurationToSeconds(input: string): number {
   }
 }
 
-async function getHmacKey(): Promise<CryptoKey> {
+export async function getHmacKey(): Promise<CryptoKey> {
   const jwtSecret = Deno.env.get('JWT_SECRET');
   if (!jwtSecret) {
     throw new Error('JWT_SECRET is not configured');

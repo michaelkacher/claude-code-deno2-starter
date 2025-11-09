@@ -72,7 +72,7 @@ class CronParser {
       throw new Error('Invalid cron expression. Format: minute hour day month dayOfWeek');
     }
 
-    const [minute, hour, day, month, dayOfWeek] = parts;
+    const [minute = '*', hour = '*', day = '*', month = '*', dayOfWeek = '*'] = parts;
 
     // Start from next minute
     const next = new Date(from);
@@ -118,6 +118,7 @@ class CronParser {
     // Range (9-17 = 9 through 17)
     if (part.includes('-')) {
       const [start, end] = part.split('-').map(Number);
+      if (start === undefined || end === undefined) return false;
       return value >= start && value <= end;
     }
 

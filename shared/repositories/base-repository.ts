@@ -16,24 +16,24 @@ export interface RepositoryOptions {
   /**
    * Optional KV instance for testing or transaction support
    */
-  kv?: Deno.Kv;
+  kv?: Deno.Kv | undefined;
 }
 
 export interface ListOptions {
   /**
    * Maximum number of items to return
    */
-  limit?: number;
+  limit?: number | undefined;
   
   /**
    * Cursor for pagination (from previous list result)
    */
-  cursor?: string;
+  cursor?: string | undefined;
   
   /**
    * Reverse the order of results
    */
-  reverse?: boolean;
+  reverse?: boolean | undefined;
 }
 
 export interface ListResult<T> {
@@ -149,10 +149,15 @@ export abstract class BaseRepository<T> {
       const kv = await this.getKv();
       const items: T[] = [];
       
-      const listOptions: Deno.KvListOptions = {
-        limit: options.limit,
-        reverse: options.reverse,
-      };
+      const listOptions: Deno.KvListOptions = {};
+      
+      if (options.limit !== undefined) {
+        listOptions.limit = options.limit;
+      }
+      
+      if (options.reverse !== undefined) {
+        listOptions.reverse = options.reverse;
+      }
       
       if (options.cursor) {
         listOptions.cursor = options.cursor;

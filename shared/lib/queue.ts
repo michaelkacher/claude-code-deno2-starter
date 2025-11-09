@@ -59,13 +59,13 @@ export interface Job<T = unknown> {
   priority: number;
   attempts: number;
   maxRetries: number;
-  error?: string;
+  error?: string | undefined;
   result?: unknown;
   createdAt: string;
-  startedAt?: string;
-  completedAt?: string;
-  scheduledFor?: string;
-  processingBy?: string;
+  startedAt?: string | undefined;
+  completedAt?: string | undefined;
+  scheduledFor?: string | undefined;
+  processingBy?: string | undefined;
 }
 
 export interface JobOptions {

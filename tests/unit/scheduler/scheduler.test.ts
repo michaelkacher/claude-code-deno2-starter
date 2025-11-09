@@ -21,9 +21,9 @@ describe('JobScheduler', () => {
 
       const schedules = scheduler.getSchedules();
       assertEquals(schedules.length, 1);
-      assertEquals(schedules[0].name, 'test-job');
-      assertEquals(schedules[0].enabled, true);
-      assertExists(schedules[0].nextRun);
+      assertEquals(schedules[0]?.name, 'test-job');
+      assertEquals(schedules[0]?.enabled, true);
+      assertExists(schedules[0]?.nextRun);
     });
   });
 

@@ -149,7 +149,7 @@ export function setupWebSocketConnection() {
           try {
             logger.debug('Verifying token');
             const payload = await verifyToken(data.token);
-            const authenticatedUserId = payload.sub as string;
+            const authenticatedUserId = payload['sub'] as string;
             userId = authenticatedUserId;
             authenticated = true;
 
@@ -428,7 +428,15 @@ function handleClientMessage(userId: string, connectionId: string, data: unknown
     return;
   }
   
-  switch (data.type) {
+  // Type guard for message data
+  if (!data || typeof data !== 'object' || !('type' in data)) {
+    logger.warn('Invalid message format', { userId, connectionId });
+    return;
+  }
+  
+  const messageData = data as { type: string; limit?: number };
+  
+  switch (messageData.type) {
     case 'ping':
       // Client sent ping, respond with pong
       sendMessage(client.socket, { type: 'pong' });
@@ -442,7 +450,7 @@ function handleClientMessage(userId: string, connectionId: string, data: unknown
     case 'fetch_notifications':
       // Client requesting fresh data
       NotificationService.getUserNotifications(userId, {
-        limit: data.limit || 10,
+        limit: messageData.limit || 10,
       }).then((notifications) => {
         // Re-check client still exists
         const currentClient = clients.get(userId)?.get(connectionId);
@@ -470,7 +478,7 @@ function handleClientMessage(userId: string, connectionId: string, data: unknown
       break;
 
     default:
-      logger.warn('Unknown message type', { userId, connectionId, type: data.type });
+      logger.warn('Unknown message type', { userId, connectionId, type: messageData.type });
   }
 }
 
@@ -528,9 +536,14 @@ function startHeartbeat(client: WebSocketClient) {
 export function notifyUser(userId: string, notification: unknown) {
   const userConnections = clients.get(userId);
   
+  // Type guard for notification
+  const notificationData = notification && typeof notification === 'object' && 'id' in notification
+    ? (notification as { id: string })
+    : null;
+  
   logger.debug('notifyUser called', {
     userId,
-    notificationId: notification?.id,
+    notificationId: notificationData?.id,
     hasConnections: !!userConnections,
     connectionCount: userConnections?.size || 0,
   });
@@ -565,9 +578,17 @@ export function notifyUser(userId: string, notification: unknown) {
 export function sendToUser(userId: string, message: unknown) {
   const userConnections = clients.get(userId);
   
+  // Type guard for message
+  if (!message || typeof message !== 'object') {
+    logger.warn('Invalid message format in sendToUser', { userId });
+    return;
+  }
+  
+  const messageData = message as Record<string, unknown>;
+  
   logger.debug('sendToUser called', {
     userId,
-    messageType: message.type,
+    messageType: messageData['type'],
     hasConnections: !!userConnections,
     connectionCount: userConnections?.size || 0,
   });
@@ -579,8 +600,8 @@ export function sendToUser(userId: string, message: unknown) {
   
   // Add timestamp if not present
   const messageWithTimestamp = {
-    ...message,
-    timestamp: message.timestamp || new Date().toISOString(),
+    ...messageData,
+    timestamp: messageData['timestamp'] || new Date().toISOString(),
   };
   
   let sentCount = 0;
@@ -592,7 +613,7 @@ export function sendToUser(userId: string, message: unknown) {
     }
   });
   
-  logger.debug('Sent message to connections', { sentCount, messageType: message.type });
+  logger.debug('Sent message to connections', { sentCount, messageType: messageData['type'] });
 }
 
 /**

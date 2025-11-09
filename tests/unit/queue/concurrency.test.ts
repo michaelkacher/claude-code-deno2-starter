@@ -83,12 +83,16 @@ describe('Queue Concurrency', {
         // (indicating concurrent processing)
         const startTimes = Array.from(processingStart.values()).sort();
         if (startTimes.length >= 5) {
-          const firstBatchWindow = startTimes[4] - startTimes[0]; // First 5 jobs
+          const time0 = startTimes[0];
+          const time4 = startTimes[4];
+          if (time0 !== undefined && time4 !== undefined) {
+            const firstBatchWindow = time4 - time0; // First 5 jobs
 
-          console.log('First 5 jobs started within:', firstBatchWindow, 'ms');
-
-          // First 5 jobs should start within 500ms if processed concurrently
-          assertEquals(firstBatchWindow < 500, true);
+            console.log('First 5 jobs started within:', firstBatchWindow, 'ms');
+            
+            // First 5 jobs should start within 500ms if processed concurrently
+            assertEquals(firstBatchWindow < 500, true);
+          }
         }
 
         // Cleanup

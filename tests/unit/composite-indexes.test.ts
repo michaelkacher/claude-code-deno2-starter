@@ -114,7 +114,7 @@ describe('CompositeIndexManager', () => {
       const users = await CompositeIndexManager.queryUsers({ role: 'user' }, kv);
 
       assertEquals(admins.length, 1);
-      assertEquals(admins[0].id, 'admin1');
+      assertEquals(admins[0]?.id, 'admin1');
       assertEquals(users.length, 2);
     });
 
@@ -167,7 +167,7 @@ describe('CompositeIndexManager', () => {
       }, kv);
 
       assertEquals(verifiedAdmins.length, 1);
-      assertEquals(verifiedAdmins[0].id, 'admin-verified');
+      assertEquals(verifiedAdmins[0]?.id, 'admin-verified');
 
       // Query unverified users
       const unverifiedUsers = await CompositeIndexManager.queryUsers({
@@ -176,7 +176,7 @@ describe('CompositeIndexManager', () => {
       }, kv);
 
       assertEquals(unverifiedUsers.length, 1);
-      assertEquals(unverifiedUsers[0].id, 'user-unverified');
+      assertEquals(unverifiedUsers[0]?.id, 'user-unverified');
     });
 
     it('should update user indexes when data changes', async () => {
@@ -202,7 +202,7 @@ describe('CompositeIndexManager', () => {
       // Query should now find user as admin
       const admins = await CompositeIndexManager.queryUsers({ role: 'admin' }, kv);
       assertEquals(admins.length, 1);
-      assertEquals(admins[0].id, '1');
+      assertEquals(admins[0]?.id, '1');
 
       // Should not find user as regular user
       const users = await CompositeIndexManager.queryUsers({ role: 'user' }, kv);
@@ -508,7 +508,7 @@ describe('CompositeIndexManager', () => {
       }, kv);
 
       assertEquals(failedEmailJobs.length, 1);
-      assertEquals(failedEmailJobs[0].id, 'job2');
+      assertEquals(failedEmailJobs[0]?.id, 'job2');
     });
 
     it('should query jobs by status only', async () => {
