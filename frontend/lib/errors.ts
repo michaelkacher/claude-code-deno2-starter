@@ -3,26 +3,32 @@
  * Provides a hierarchy of error types for better error handling and reporting
  */
 
+import {
+  ErrorCode,
+  ErrorMessages,
+  ErrorStatusCodes,
+} from '../../shared/lib/error-codes.ts';
+
 /**
  * Base application error class
  * All custom errors should extend this class
  */
 export class AppError extends Error {
-  public readonly code: string;
+  public readonly code: ErrorCode;
   public readonly statusCode: number;
   public readonly isOperational: boolean;
   public readonly timestamp: string;
-  public readonly context?: Record<string, unknown>;
+  public readonly context: Record<string, unknown> | undefined;
 
   constructor(
-    message: string,
-    code: string = 'APP_ERROR',
-    statusCode: number = 500,
+    code: ErrorCode,
+    message?: string,
     isOperational: boolean = true,
     context?: Record<string, unknown>
   ) {
-    super(message);
-    
+    // Use provided message or default from ErrorMessages
+    super(message || ErrorMessages[code]);
+
     // Maintains proper stack trace for where error was thrown (V8 only)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -30,7 +36,7 @@ export class AppError extends Error {
 
     this.name = this.constructor.name;
     this.code = code;
-    this.statusCode = statusCode;
+    this.statusCode = ErrorStatusCodes[code];
     this.isOperational = isOperational;
     this.timestamp = new Date().toISOString();
     this.context = context;
@@ -67,25 +73,25 @@ export class AppError extends Error {
  * Thrown when input validation fails
  */
 export class ValidationError extends AppError {
-  public readonly fields?: Record<string, string[]>;
+  public readonly fields: Record<string, string[]> | undefined;
 
   constructor(
-    message: string,
+    message?: string,
     fields?: Record<string, string[]>,
     context?: Record<string, unknown>
   ) {
-    super(message, 'VALIDATION_ERROR', 400, true, context);
+    super(ErrorCode.VALIDATION_ERROR, message, true, context);
     this.fields = fields;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       ...(this.fields && { fields: this.fields }),
     };
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     if (this.fields) {
       const fieldErrors = Object.entries(this.fields)
         .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
@@ -101,25 +107,26 @@ export class ValidationError extends AppError {
  * Thrown when authentication fails or is missing
  */
 export class AuthenticationError extends AppError {
-  public readonly reason?: 'missing_token' | 'invalid_token' | 'expired_token' | 'revoked_token';
+  public readonly reason: 'missing_token' | 'invalid_token' | 'expired_token' | 'revoked_token' | undefined;
 
   constructor(
-    message: string = 'Authentication required',
+    code: ErrorCode = ErrorCode.UNAUTHORIZED,
+    message?: string,
     reason?: AuthenticationError['reason'],
     context?: Record<string, unknown>
   ) {
-    super(message, 'AUTHENTICATION_ERROR', 401, true, context);
+    super(code, message, true, context);
     this.reason = reason;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       ...(this.reason && { reason: this.reason }),
     };
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     switch (this.reason) {
       case 'expired_token':
         return 'Your session has expired. Please log in again.';
@@ -140,21 +147,21 @@ export class AuthenticationError extends AppError {
  * Thrown when user lacks permission to perform an action
  */
 export class AuthorizationError extends AppError {
-  public readonly requiredRole?: string | string[];
-  public readonly userRole?: string;
+  public readonly requiredRole: string | string[] | undefined;
+  public readonly userRole: string | undefined;
 
   constructor(
-    message: string = 'You do not have permission to perform this action',
+    message?: string,
     requiredRole?: string | string[],
     userRole?: string,
     context?: Record<string, unknown>
   ) {
-    super(message, 'AUTHORIZATION_ERROR', 403, true, context);
+    super(ErrorCode.FORBIDDEN, message, true, context);
     this.requiredRole = requiredRole;
     this.userRole = userRole;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       ...(this.requiredRole && { requiredRole: this.requiredRole }),
@@ -162,7 +169,7 @@ export class AuthorizationError extends AppError {
     };
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     if (this.requiredRole) {
       const roles = Array.isArray(this.requiredRole)
         ? this.requiredRole.join(' or ')
@@ -178,21 +185,21 @@ export class AuthorizationError extends AppError {
  * Thrown when a requested resource is not found
  */
 export class NotFoundError extends AppError {
-  public readonly resourceType?: string;
-  public readonly resourceId?: string;
+  public readonly resourceType: string | undefined;
+  public readonly resourceId: string | undefined;
 
   constructor(
-    message: string = 'Resource not found',
+    message?: string,
     resourceType?: string,
     resourceId?: string,
     context?: Record<string, unknown>
   ) {
-    super(message, 'NOT_FOUND', 404, true, context);
+    super(ErrorCode.NOT_FOUND, message, true, context);
     this.resourceType = resourceType;
     this.resourceId = resourceId;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       ...(this.resourceType && { resourceType: this.resourceType }),
@@ -200,7 +207,7 @@ export class NotFoundError extends AppError {
     };
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     if (this.resourceType && this.resourceId) {
       return `${this.resourceType} with ID ${this.resourceId} not found.`;
     }
@@ -216,21 +223,21 @@ export class NotFoundError extends AppError {
  * Thrown when an operation conflicts with existing data (e.g., duplicate email)
  */
 export class ConflictError extends AppError {
-  public readonly conflictField?: string;
-  public readonly conflictValue?: string;
+  public readonly conflictField: string | undefined;
+  public readonly conflictValue: string | undefined;
 
   constructor(
-    message: string = 'Resource conflict',
+    message?: string,
     conflictField?: string,
     conflictValue?: string,
     context?: Record<string, unknown>
   ) {
-    super(message, 'CONFLICT', 409, true, context);
+    super(ErrorCode.ALREADY_EXISTS, message, true, context);
     this.conflictField = conflictField;
     this.conflictValue = conflictValue;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       ...(this.conflictField && { conflictField: this.conflictField }),
@@ -238,7 +245,7 @@ export class ConflictError extends AppError {
     };
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     if (this.conflictField) {
       return `A resource with this ${this.conflictField} already exists.`;
     }
@@ -251,21 +258,21 @@ export class ConflictError extends AppError {
  * Thrown when rate limit is exceeded
  */
 export class RateLimitError extends AppError {
-  public readonly retryAfter?: number;
-  public readonly limit?: number;
+  public readonly retryAfter: number | undefined;
+  public readonly limit: number | undefined;
 
   constructor(
-    message: string = 'Too many requests',
+    message?: string,
     retryAfter?: number,
     limit?: number,
     context?: Record<string, unknown>
   ) {
-    super(message, 'RATE_LIMIT_EXCEEDED', 429, true, context);
+    super(ErrorCode.RATE_LIMIT_EXCEEDED, message, true, context);
     this.retryAfter = retryAfter;
     this.limit = limit;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       ...(this.retryAfter && { retryAfter: this.retryAfter }),
@@ -273,7 +280,7 @@ export class RateLimitError extends AppError {
     };
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     if (this.retryAfter) {
       return `Too many requests. Please try again in ${this.retryAfter} seconds.`;
     }
@@ -286,21 +293,21 @@ export class RateLimitError extends AppError {
  * Thrown when network requests fail
  */
 export class NetworkError extends AppError {
-  public readonly url?: string;
-  public readonly method?: string;
+  public readonly url: string | undefined;
+  public readonly method: string | undefined;
 
   constructor(
-    message: string = 'Network request failed',
+    message?: string,
     url?: string,
     method?: string,
     context?: Record<string, unknown>
   ) {
-    super(message, 'NETWORK_ERROR', 503, true, context);
+    super(ErrorCode.EXTERNAL_SERVICE_ERROR, message, true, context);
     this.url = url;
     this.method = method;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       ...(this.url && { url: this.url }),
@@ -308,7 +315,7 @@ export class NetworkError extends AppError {
     };
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     return 'Unable to connect to the server. Please check your connection and try again.';
   }
 }
@@ -318,21 +325,21 @@ export class NetworkError extends AppError {
  * Thrown when a service is temporarily unavailable
  */
 export class ServiceUnavailableError extends AppError {
-  public readonly serviceName?: string;
-  public readonly retryAfter?: number;
+  public readonly serviceName: string | undefined;
+  public readonly retryAfter: number | undefined;
 
   constructor(
-    message: string = 'Service temporarily unavailable',
+    message?: string,
     serviceName?: string,
     retryAfter?: number,
     context?: Record<string, unknown>
   ) {
-    super(message, 'SERVICE_UNAVAILABLE', 503, true, context);
+    super(ErrorCode.EXTERNAL_SERVICE_ERROR, message, true, context);
     this.serviceName = serviceName;
     this.retryAfter = retryAfter;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       ...(this.serviceName && { serviceName: this.serviceName }),
@@ -340,7 +347,7 @@ export class ServiceUnavailableError extends AppError {
     };
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     if (this.serviceName) {
       return `${this.serviceName} is temporarily unavailable. Please try again later.`;
     }
@@ -354,13 +361,13 @@ export class ServiceUnavailableError extends AppError {
  */
 export class InternalServerError extends AppError {
   constructor(
-    message: string = 'An unexpected error occurred',
+    message?: string,
     context?: Record<string, unknown>
   ) {
-    super(message, 'INTERNAL_SERVER_ERROR', 500, false, context);
+    super(ErrorCode.INTERNAL_ERROR, message, false, context);
   }
 
-  toUserMessage(): string {
+  override toUserMessage(): string {
     return 'An unexpected error occurred. Our team has been notified.';
   }
 }
@@ -371,10 +378,10 @@ export class InternalServerError extends AppError {
  */
 export class BadRequestError extends AppError {
   constructor(
-    message: string = 'Bad request',
+    message?: string,
     context?: Record<string, unknown>
   ) {
-    super(message, 'BAD_REQUEST', 400, true, context);
+    super(ErrorCode.BAD_REQUEST, message, true, context);
   }
 }
 

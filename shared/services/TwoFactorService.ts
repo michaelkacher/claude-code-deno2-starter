@@ -1,6 +1,6 @@
 /**
  * Two-Factor Authentication Service
- * 
+ *
  * Centralizes 2FA operations to eliminate 150-200 duplicate lines across 5 routes.
  * Handles user lookup, password verification, TOTP validation, and backup code management.
  */
@@ -8,6 +8,12 @@
 import { generateQRCodeDataURL, generateQRCodeURL, generateSecret, verifyTOTP } from "../lib/totp.ts";
 import { UserRepository } from "../repositories/index.ts";
 import { AuthService } from "./auth.service.ts";
+import { ErrorCode } from "../lib/error-codes.ts";
+import {
+  AppError,
+  AuthenticationError,
+  NotFoundError,
+} from "../../frontend/lib/errors.ts";
 
 export interface TwoFactorSetupResult {
   secret: string;
@@ -35,11 +41,13 @@ export class TwoFactorService {
   /**
    * Get user and validate they exist
    * Eliminates duplicate user lookup + null check pattern (5 occurrences)
+   *
+   * @throws NotFoundError if user not found
    */
   private async getUser(userId: string) {
     const user = await this.userRepo.findById(userId);
     if (!user) {
-      throw new Error("User not found");
+      throw new NotFoundError(undefined, 'User', userId);
     }
     return user;
   }
@@ -96,12 +104,14 @@ export class TwoFactorService {
   /**
    * Setup 2FA - Generate secret and QR code
    * Replaces: frontend/routes/api/2fa/setup.ts (30-40 lines → service call)
+   *
+   * @throws AppError if 2FA already enabled
    */
   async setup(userId: string, issuer: string = "Deno Fresh App"): Promise<TwoFactorSetupResult> {
     const user = await this.getUser(userId);
 
     if (this.is2FAEnabled(user)) {
-      throw new Error("Two-factor authentication is already enabled");
+      throw new AppError(ErrorCode.TWO_FACTOR_ALREADY_ENABLED);
     }
 
     // Generate new TOTP secret
@@ -120,22 +130,25 @@ export class TwoFactorService {
   /**
    * Enable 2FA after verifying TOTP code
    * Replaces: frontend/routes/api/2fa/enable.ts (35-45 lines → service call)
+   *
+   * @throws AppError if 2FA already enabled or not setup
+   * @throws AuthenticationError if verification code invalid
    */
   async enable(userId: string, code: string): Promise<TwoFactorEnableResult> {
     const user = await this.getUser(userId);
 
     if (this.is2FAEnabled(user)) {
-      throw new Error("Two-factor authentication is already enabled");
+      throw new AppError(ErrorCode.TWO_FACTOR_ALREADY_ENABLED);
     }
 
     if (!user.twoFactorSecret) {
-      throw new Error("2FA not setup. Call setup() first");
+      throw new AppError(ErrorCode.TWO_FACTOR_NOT_ENABLED, '2FA not setup. Call setup() first');
     }
 
     // Verify TOTP code
     const { isValid } = await this.verifyCode(code, user.twoFactorSecret);
     if (!isValid) {
-      throw new Error("Invalid verification code");
+      throw new AuthenticationError(ErrorCode.INVALID_TWO_FACTOR_CODE);
     }
 
     // Generate backup codes
@@ -153,18 +166,21 @@ export class TwoFactorService {
   /**
    * Disable 2FA with password and code verification
    * Replaces: frontend/routes/api/2fa/disable.ts (40-50 lines → service call)
+   *
+   * @throws AppError if 2FA not enabled
+   * @throws AuthenticationError if password or code invalid
    */
   async disable(userId: string, password: string, code: string): Promise<void> {
     const user = await this.getUser(userId);
 
     if (!this.is2FAEnabled(user)) {
-      throw new Error("2FA is not enabled");
+      throw new AppError(ErrorCode.TWO_FACTOR_NOT_ENABLED);
     }
 
     // Verify password
     const isPasswordValid = await this.verifyPassword(userId, password);
     if (!isPasswordValid) {
-      throw new Error("Invalid password");
+      throw new AuthenticationError(ErrorCode.INVALID_CREDENTIALS, 'Invalid password');
     }
 
     // Verify 2FA code
@@ -174,7 +190,7 @@ export class TwoFactorService {
       user.twoFactorBackupCodes || []
     );
     if (!isValid) {
-      throw new Error("Invalid verification code");
+      throw new AuthenticationError(ErrorCode.INVALID_TWO_FACTOR_CODE);
     }
 
     // Disable 2FA
@@ -188,12 +204,14 @@ export class TwoFactorService {
   /**
    * Verify TOTP or backup code during login
    * Replaces: frontend/routes/api/2fa/verify.ts (35-45 lines → service call)
+   *
+   * @throws AppError if 2FA not enabled
    */
   async verify(userId: string, code: string): Promise<TwoFactorVerifyResult> {
     const user = await this.getUser(userId);
 
     if (!this.is2FAEnabled(user)) {
-      throw new Error("2FA is not enabled");
+      throw new AppError(ErrorCode.TWO_FACTOR_NOT_ENABLED);
     }
 
     // Verify code
@@ -225,6 +243,9 @@ export class TwoFactorService {
   /**
    * Regenerate backup codes with password + code verification
    * Replaces: frontend/routes/api/2fa/regenerate-backup-codes.ts (35-45 lines → service call)
+   *
+   * @throws AppError if 2FA not enabled
+   * @throws AuthenticationError if password or code invalid
    */
   async regenerateBackupCodes(
     userId: string,
@@ -234,19 +255,19 @@ export class TwoFactorService {
     const user = await this.getUser(userId);
 
     if (!this.is2FAEnabled(user)) {
-      throw new Error("2FA is not enabled");
+      throw new AppError(ErrorCode.TWO_FACTOR_NOT_ENABLED);
     }
 
     // Verify password
     const isPasswordValid = await this.verifyPassword(userId, password);
     if (!isPasswordValid) {
-      throw new Error("Invalid password");
+      throw new AuthenticationError(ErrorCode.INVALID_CREDENTIALS, 'Invalid password');
     }
 
     // Verify TOTP code (only TOTP, not backup codes)
     const isCodeValid = await verifyTOTP(code, user.twoFactorSecret!);
     if (!isCodeValid) {
-      throw new Error("Invalid verification code");
+      throw new AuthenticationError(ErrorCode.INVALID_TWO_FACTOR_CODE);
     }
 
     // Generate new backup codes

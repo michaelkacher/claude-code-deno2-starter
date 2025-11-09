@@ -1,6 +1,6 @@
 /**
  * Authentication Service
- * 
+ *
  * Centralized service for all authentication operations including:
  * - User login/logout
  * - Token generation and validation
@@ -8,13 +8,20 @@
  * - Session management
  * - Email verification
  * - Password reset
- * 
+ *
  * This service eliminates duplicate authentication logic across 7+ API routes.
  */
 
 import { createAccessToken, createRefreshToken, verifyToken } from "../lib/jwt.ts";
 import { verifyPassword } from "../lib/password.ts";
 import { TokenRepository, UserRepository } from "../repositories/index.ts";
+import { ErrorCode } from "../lib/error-codes.ts";
+import {
+  AppError,
+  AuthenticationError,
+  NotFoundError,
+  ConflictError,
+} from "../../frontend/lib/errors.ts";
 
 // ============================================================================
 // Types
@@ -77,25 +84,26 @@ export class AuthService {
 
   /**
    * Authenticate user with email and password
-   * 
-   * @throws Error if credentials are invalid or email not verified
+   *
+   * @throws AuthenticationError if credentials are invalid
+   * @throws AppError if email not verified
    */
   async login(email: string, password: string): Promise<LoginResult> {
     // Find user by email
     const user = await this.userRepo.findByEmail(email);
     if (!user) {
-      throw new Error("INVALID_CREDENTIALS");
+      throw new AuthenticationError(ErrorCode.INVALID_CREDENTIALS);
     }
 
     // Verify password
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
-      throw new Error("INVALID_CREDENTIALS");
+      throw new AuthenticationError(ErrorCode.INVALID_CREDENTIALS);
     }
 
     // Check if email is verified
     if (!user.emailVerified) {
-      throw new Error("EMAIL_NOT_VERIFIED");
+      throw new AppError(ErrorCode.EMAIL_NOT_VERIFIED);
     }
 
     // Generate tokens
@@ -160,14 +168,14 @@ export class AuthService {
 
   /**
    * Register new user account
-   * 
-   * @throws Error if email already exists
+   *
+   * @throws ConflictError if email already exists
    */
   async signup(email: string, password: string, name: string): Promise<SignupResult> {
     // Check if email already exists
     const existingUser = await this.userRepo.findByEmail(email);
     if (existingUser) {
-      throw new Error("EMAIL_EXISTS");
+      throw new ConflictError(undefined, 'email', email);
     }
 
     // Create user (password is automatically hashed by repository)
@@ -207,14 +215,14 @@ export class AuthService {
 
   /**
    * Verify user email with token
-   * 
-   * @throws Error if token is invalid or expired
+   *
+   * @throws AppError if token is invalid or expired
    */
   async verifyEmail(token: string): Promise<void> {
     const tokenData = await this.tokenRepo.getEmailVerificationToken(token);
-    
+
     if (!tokenData) {
-      throw new Error("INVALID_TOKEN");
+      throw new AppError(ErrorCode.INVALID_VERIFICATION_TOKEN);
     }
 
     // Mark email as verified
@@ -226,18 +234,19 @@ export class AuthService {
 
   /**
    * Resend email verification token
-   * 
-   * @throws Error if user not found or already verified
+   *
+   * @throws NotFoundError if user not found
+   * @throws AppError if already verified
    */
   async resendVerification(email: string): Promise<string> {
     const user = await this.userRepo.findByEmail(email);
-    
+
     if (!user) {
-      throw new Error("USER_NOT_FOUND");
+      throw new NotFoundError(undefined, 'User', email);
     }
 
     if (user.emailVerified) {
-      throw new Error("EMAIL_ALREADY_VERIFIED");
+      throw new AppError(ErrorCode.EMAIL_NOT_VERIFIED, 'Email is already verified');
     }
 
     // Generate new verification token
@@ -286,14 +295,14 @@ export class AuthService {
 
   /**
    * Reset password with token
-   * 
-   * @throws Error if token is invalid or expired
+   *
+   * @throws AppError if token is invalid or expired
    */
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const tokenData = await this.tokenRepo.getPasswordResetToken(token);
-    
+
     if (!tokenData) {
-      throw new Error("INVALID_TOKEN");
+      throw new AppError(ErrorCode.INVALID_RESET_TOKEN);
     }
 
     // Update password (automatically hashed by repository)
@@ -312,8 +321,10 @@ export class AuthService {
 
   /**
    * Refresh access token using refresh token
-   * 
-   * @throws Error if refresh token is invalid or revoked
+   *
+   * @throws AuthenticationError if refresh token is invalid
+   * @throws AppError if refresh token is revoked
+   * @throws NotFoundError if user not found
    */
   async refreshAccessToken(refreshToken: string): Promise<RefreshResult> {
     // Verify refresh token
@@ -321,7 +332,7 @@ export class AuthService {
     try {
       payload = await verifyToken(refreshToken);
     } catch {
-      throw new Error("INVALID_TOKEN");
+      throw new AuthenticationError(ErrorCode.INVALID_TOKEN);
     }
 
     const userId = payload.sub as string;
@@ -330,13 +341,13 @@ export class AuthService {
     // Verify refresh token exists in database
     const isValid = await this.tokenRepo.verifyRefreshToken(userId, tokenId);
     if (!isValid) {
-      throw new Error("TOKEN_REVOKED");
+      throw new AuthenticationError(ErrorCode.REFRESH_TOKEN_INVALID, 'Refresh token has been revoked');
     }
 
     // Get user data
     const user = await this.userRepo.findById(userId);
     if (!user) {
-      throw new Error("USER_NOT_FOUND");
+      throw new NotFoundError(undefined, 'User', userId);
     }
 
     // Generate new access token

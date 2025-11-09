@@ -1,11 +1,17 @@
 /**
  * User Management Service
- * 
+ *
  * Centralizes user management operations to eliminate 100-150 duplicate lines across admin routes.
  * Handles admin checks, user lookup, role updates, and user operations.
  */
 
 import { TokenRepository, UserRepository } from "../repositories/index.ts";
+import { ErrorCode } from "../lib/error-codes.ts";
+import {
+  AppError,
+  NotFoundError,
+  AuthorizationError,
+} from "../../frontend/lib/errors.ts";
 
 export interface UserListOptions {
   limit?: number;
@@ -52,11 +58,13 @@ export class UserManagementService {
   /**
    * Get user and validate they exist
    * Eliminates duplicate user lookup + null check pattern (5+ occurrences)
+   *
+   * @throws NotFoundError if user not found
    */
   private async getUser(userId: string) {
     const user = await this.userRepo.findById(userId);
     if (!user) {
-      throw new Error("User not found");
+      throw new NotFoundError(undefined, 'User', userId);
     }
     return user;
   }
@@ -64,10 +72,12 @@ export class UserManagementService {
   /**
    * Prevent admin from performing actions on themselves
    * Eliminates duplicate self-action checks (2+ occurrences)
+   *
+   * @throws AuthorizationError if admin tries to perform action on themselves
    */
   private preventSelfAction(userId: string, adminId: string, action: string): void {
     if (userId === adminId) {
-      throw new Error(`Cannot ${action} your own account`);
+      throw new AuthorizationError(`Cannot ${action} your own account`);
     }
   }
 
@@ -167,6 +177,8 @@ export class UserManagementService {
   /**
    * Update user's role (prevents self-demotion)
    * Replaces: frontend/routes/api/admin/users/[id]/role.ts (20-30 lines → service call)
+   *
+   * @throws AuthorizationError if admin tries to demote themselves
    */
   async updateUserRole(
     userId: string,
@@ -175,7 +187,7 @@ export class UserManagementService {
   ): Promise<void> {
     // Prevent self-demotion
     if (userId === adminId && role === "user") {
-      throw new Error("Cannot demote yourself from admin");
+      throw new AuthorizationError('Cannot demote yourself from admin');
     }
 
     // Check if user exists
@@ -188,13 +200,15 @@ export class UserManagementService {
   /**
    * Admin-initiated email verification
    * Replaces: frontend/routes/api/admin/users/[id]/verify-email.ts (15-25 lines → service call)
+   *
+   * @throws AppError if email already verified
    */
   async verifyUserEmail(userId: string): Promise<void> {
     const user = await this.getUser(userId);
 
     // Check if already verified
     if (user.emailVerified) {
-      throw new Error("Email is already verified");
+      throw new AppError(ErrorCode.EMAIL_NOT_VERIFIED, 'Email is already verified');
     }
 
     // Verify email

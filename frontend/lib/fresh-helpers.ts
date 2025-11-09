@@ -1,10 +1,21 @@
 /**
  * Fresh API Helpers
- * 
+ *
  * Utilities for Fresh API route handlers with consistent patterns
  */
 
 import type { FreshContext } from "$fresh/server.ts";
+import { createLogger } from "../../shared/lib/logger.ts";
+import {
+  AppError,
+  ValidationError,
+  AuthenticationError,
+  AuthorizationError,
+} from "./errors.ts";
+import { ErrorCode, ErrorMessages, ErrorStatusCodes } from "../../shared/lib/error-codes.ts";
+import { ZodError } from "zod";
+
+const logger = createLogger('APIHandler');
 
 /**
  * Standardized API error structure
@@ -182,4 +193,116 @@ export function deleteCookie(headers: Headers, name: string, path: string = "/")
     "Set-Cookie",
     `${name}=; Max-Age=0; Path=${path}; HttpOnly; SameSite=Lax`
   );
+}
+
+/**
+ * Centralized Error Handler
+ * Converts any error to a standardized API error response
+ */
+export function handleError(error: unknown): Response {
+  // Handle AppError (our custom error classes)
+  if (error instanceof AppError) {
+    logger.error('Application error', {
+      code: error.code,
+      message: error.message,
+      statusCode: error.statusCode,
+      context: error.context,
+    });
+
+    return errorResponse(
+      error.code,
+      error.message,
+      error.statusCode,
+      error instanceof ValidationError ? error.fields : undefined
+    );
+  }
+
+  // Handle Zod validation errors
+  if (error instanceof ZodError) {
+    const fields: Record<string, string[]> = {};
+    error.errors.forEach((err) => {
+      const path = err.path.join('.');
+      if (!fields[path]) {
+        fields[path] = [];
+      }
+      fields[path]!.push(err.message);
+    });
+
+    logger.error('Validation error', { fields });
+
+    return errorResponse(
+      ErrorCode.VALIDATION_ERROR,
+      ErrorMessages[ErrorCode.VALIDATION_ERROR],
+      ErrorStatusCodes[ErrorCode.VALIDATION_ERROR],
+      fields
+    );
+  }
+
+  // Handle standard Error objects
+  if (error instanceof Error) {
+    // Check for specific error messages from requireUser/requireAdmin
+    if (error.message === 'Unauthorized') {
+      return errorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorMessages[ErrorCode.UNAUTHORIZED],
+        ErrorStatusCodes[ErrorCode.UNAUTHORIZED]
+      );
+    }
+
+    if (error.message === 'Admin access required') {
+      return errorResponse(
+        ErrorCode.FORBIDDEN,
+        ErrorMessages[ErrorCode.FORBIDDEN],
+        ErrorStatusCodes[ErrorCode.FORBIDDEN]
+      );
+    }
+
+    // Log unexpected errors
+    logger.error('Unexpected error', {
+      message: error.message,
+      stack: error.stack,
+    });
+
+    return errorResponse(
+      ErrorCode.INTERNAL_ERROR,
+      ErrorMessages[ErrorCode.INTERNAL_ERROR],
+      ErrorStatusCodes[ErrorCode.INTERNAL_ERROR]
+    );
+  }
+
+  // Handle unknown errors
+  logger.error('Unknown error', { error: String(error) });
+
+  return errorResponse(
+    ErrorCode.INTERNAL_ERROR,
+    ErrorMessages[ErrorCode.INTERNAL_ERROR],
+    ErrorStatusCodes[ErrorCode.INTERNAL_ERROR]
+  );
+}
+
+/**
+ * Higher-order function to wrap API handlers with error handling
+ *
+ * Usage:
+ * ```typescript
+ * export const handler: Handlers = {
+ *   POST: withErrorHandler(async (req, ctx) => {
+ *     // Your handler logic - just throw errors, they'll be caught and formatted
+ *     const user = requireUser(ctx);
+ *     const data = await parseJsonBody(req, LoginSchema);
+ *     return successResponse({ ... });
+ *   })
+ * };
+ * ```
+ */
+export function withErrorHandler<T extends AppState>(
+  handler: (req: Request, ctx: FreshContext<T>) => Promise<Response> | Response
+) {
+  return async (req: Request, ctx: FreshContext<T>): Promise<Response> => {
+    try {
+      return await handler(req, ctx);
+    } catch (error) {
+      return handleError(error);
+    }
+  };
 }

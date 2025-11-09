@@ -17,29 +17,29 @@ You are a backend development specialist focused on implementing server-side log
 Routes (HTTP) → Services (Business Logic) → Repositories (Data Access) → Deno KV
 ```
 
-**Fresh Handler Pattern (with Service Layer):**
+**Fresh Handler Pattern (with Service Layer and Error Handling):**
 ```typescript
 import { Handlers } from "$fresh/server.ts";
 import { AuthService } from "../../../../shared/services/index.ts";
-import { successResponse, errorResponse, type AppState } from "../../../lib/fresh-helpers.ts";
+import {
+  successResponse,
+  withErrorHandler,
+  type AppState
+} from "../../../lib/fresh-helpers.ts";
+import { NotFoundError, BadRequestError } from "../../../lib/errors.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      const body = await req.json();
-      const authService = new AuthService();
-      
-      // Service handles business logic
-      const result = await authService.login(body.email, body.password);
-      
-      return successResponse(result, 200);
-    } catch (error) {
-      if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
-        return errorResponse("INVALID_CREDENTIALS", "Invalid email or password", 401);
-      }
-      throw error;
-    }
-  }
+  // ✅ NEW: Use withErrorHandler wrapper for automatic error handling
+  POST: withErrorHandler(async (req, ctx) => {
+    const body = await req.json();
+    const authService = new AuthService();
+
+    // Service handles business logic and throws typed errors
+    const result = await authService.login(body.email, body.password);
+
+    return successResponse(result, 200);
+    // Errors automatically caught and formatted by withErrorHandler
+  })
 };
 ```
 
@@ -68,6 +68,178 @@ export const handler: Handlers<unknown, AppState> = {
 8. **Keep code simple** and maintainable
 9. **Leverage Deno 2 features**: built-in TypeScript, Web APIs, security model
 10. **Use Deno KV via repositories** - never direct KV access
+
+## Error Handling (IMPORTANT - Read First!)
+
+**✅ NEW: Standardized Error Handling System**
+
+The codebase uses a centralized error handling system with typed error classes and automatic error formatting.
+
+### Error Handling in Services
+
+**Services should throw typed errors from `frontend/lib/errors.ts`:**
+
+```typescript
+import { ErrorCode } from "../lib/error-codes.ts";
+import {
+  AppError,
+  AuthenticationError,
+  NotFoundError,
+  ConflictError,
+  BadRequestError,
+} from "../../frontend/lib/errors.ts";
+
+export class YourService {
+  async yourMethod(id: string) {
+    const item = await this.repo.findById(id);
+
+    // ✅ Throw typed errors
+    if (!item) {
+      throw new NotFoundError(undefined, 'Item', id);
+    }
+
+    if (item.isLocked) {
+      throw new BadRequestError("Cannot modify locked item");
+    }
+
+    // For auth-specific errors
+    if (!validCredentials) {
+      throw new AuthenticationError(ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    // For conflicts (duplicate email, etc.)
+    if (existingUser) {
+      throw new ConflictError(undefined, 'email', email);
+    }
+  }
+}
+```
+
+### Error Handling in Routes
+
+**Routes should use `withErrorHandler()` wrapper:**
+
+```typescript
+import {
+  successResponse,
+  withErrorHandler,
+  requireAdmin,
+  type AppState
+} from "../../../lib/fresh-helpers.ts";
+import { NotFoundError, BadRequestError } from "../../../lib/errors.ts";
+
+export const handler: Handlers<unknown, AppState> = {
+  // ✅ Wrap handler with withErrorHandler
+  DELETE: withErrorHandler(async (req, ctx) => {
+    requireAdmin(ctx);  // Throws AuthorizationError if not admin
+
+    const itemId = ctx.params['id'];
+    if (!itemId) {
+      throw new BadRequestError("Item ID is required");
+    }
+
+    const item = await repo.findById(itemId);
+    if (!item) {
+      throw new NotFoundError(undefined, 'Item', itemId);
+    }
+
+    // All errors automatically caught, logged, and formatted
+    return successResponse({ message: "Item deleted" });
+  })
+};
+```
+
+### Available Error Classes
+
+**Import from `frontend/lib/errors.ts`:**
+- `AppError(code, message?)` - Base class, takes `ErrorCode` enum
+- `ValidationError(message?, fields?)` - For validation errors
+- `AuthenticationError(code?, message?)` - For auth failures
+- `AuthorizationError(message?)` - For permission denials
+- `NotFoundError(message?, resourceType?, resourceId?)` - For 404s
+- `ConflictError(message?, conflictField?, conflictValue?)` - For duplicates
+- `BadRequestError(message?)` - For invalid requests
+- `RateLimitError(message?, retryAfter?)` - For rate limits
+- `InternalServerError(message?)` - For unexpected errors
+
+### Error Codes Enum
+
+**Import from `shared/lib/error-codes.ts`:**
+```typescript
+import { ErrorCode } from "../lib/error-codes.ts";
+
+// Authentication & Authorization
+ErrorCode.UNAUTHORIZED
+ErrorCode.FORBIDDEN
+ErrorCode.INVALID_CREDENTIALS
+ErrorCode.EMAIL_NOT_VERIFIED
+ErrorCode.TWO_FACTOR_REQUIRED
+ErrorCode.INVALID_TWO_FACTOR_CODE
+
+// User & Account Management
+ErrorCode.USER_NOT_FOUND
+ErrorCode.EMAIL_ALREADY_EXISTS
+ErrorCode.INVALID_VERIFICATION_TOKEN
+
+// Validation
+ErrorCode.VALIDATION_ERROR
+ErrorCode.BAD_REQUEST
+
+// Resources
+ErrorCode.NOT_FOUND
+ErrorCode.ALREADY_EXISTS
+
+// See shared/lib/error-codes.ts for complete list (35+ codes)
+```
+
+### Migration from Old Pattern
+
+**❌ OLD Pattern (manual error handling):**
+```typescript
+export const handler: Handlers = {
+  async POST(req, ctx) {
+    try {
+      const user = await userRepo.findById(id);
+      if (!user) {
+        return errorResponse("NOT_FOUND", "User not found", 404);
+      }
+      return successResponse(user);
+    } catch (error) {
+      if (error.message === "Admin access required") {
+        return errorResponse("FORBIDDEN", "Access denied", 403);
+      }
+      logger.error("Error", { error });
+      return errorResponse("SERVER_ERROR", "Failed", 500);
+    }
+  }
+};
+```
+
+**✅ NEW Pattern (typed errors with wrapper):**
+```typescript
+export const handler: Handlers = {
+  POST: withErrorHandler(async (req, ctx) => {
+    requireAdmin(ctx);  // Throws AuthorizationError
+
+    const user = await userRepo.findById(id);
+    if (!user) {
+      throw new NotFoundError(undefined, 'User', id);
+    }
+
+    return successResponse(user);
+    // Errors automatically logged and formatted
+  })
+};
+```
+
+**Benefits:**
+- 60-70% less boilerplate code
+- Automatic logging with context
+- Type-safe error codes
+- Consistent error responses
+- Better error messages
+
+---
 
 ## Three-Tier Architecture Pattern
 
