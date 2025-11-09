@@ -25,7 +25,7 @@ if (typeof BroadcastChannel !== 'undefined') {
       localStorage.setItem('access_token', accessToken);
 
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-      document.cookie = \`auth_token=\${accessToken}; expires=\${expiresAt.toUTCString()}; path=/; SameSite=Strict\`;
+      document.cookie = \`auth_token=\${accessToken}; expires=\${expiresAt.toUTCString()}; path=/; SameSite=Lax\`;
 
       console.debug('Token updated from another tab');
     } else if (event.data.type === 'REFRESH_STARTED') {
@@ -94,9 +94,9 @@ export async function refreshAccessToken() {
     // Store the new access token
     localStorage.setItem('access_token', newAccessToken);
 
-    // Update the cookie (for middleware)
+    // Update the cookie (for middleware) - MUST use SameSite=Lax to match login
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    document.cookie = \`auth_token=\${newAccessToken}; expires=\${expiresAt.toUTCString()}; path=/; SameSite=Strict\`;
+    document.cookie = \`auth_token=\${newAccessToken}; expires=\${expiresAt.toUTCString()}; path=/; SameSite=Lax\`;
 
     console.log('Access token refreshed successfully');
 
@@ -142,8 +142,8 @@ function getTokenAge(token) {
 
 /**
  * Setup automatic token refresh
- * Refreshes the token every 13 minutes (2 minutes before the 15-minute expiry)
- * Only refreshes when page is visible and user is active
+ * Refreshes the token every 10 minutes (5 minutes before the 15-minute expiry)
+ * Reduces dependency on page visibility and user activity checks
  */
 export function setupAutoRefresh() {
   let lastActivity = Date.now();
@@ -165,8 +165,8 @@ export function setupAutoRefresh() {
       const token = localStorage.getItem('access_token');
       if (token) {
         const tokenAge = getTokenAge(token);
-        // If token is older than 12 minutes, refresh immediately
-        if (tokenAge > 12 * 60 * 1000) {
+        // If token is older than 8 minutes, refresh immediately
+        if (tokenAge > 8 * 60 * 1000) {
           console.debug('Token age:', Math.floor(tokenAge / 60000), 'minutes - refreshing');
           refreshAccessToken();
         }
@@ -178,34 +178,23 @@ export function setupAutoRefresh() {
   const token = localStorage.getItem('access_token');
   if (token) {
     const tokenAge = getTokenAge(token);
-    // Only refresh immediately if token is older than 10 minutes
-    if (tokenAge > 10 * 60 * 1000) {
+    // Only refresh immediately if token is older than 8 minutes
+    if (tokenAge > 8 * 60 * 1000) {
       console.debug('Token age on load:', Math.floor(tokenAge / 60000), 'minutes - refreshing');
       refreshAccessToken();
     }
   }
 
-  // Set up periodic refresh (every 13 minutes)
+  // Set up periodic refresh (every 10 minutes for better reliability)
   setInterval(() => {
     const currentToken = localStorage.getItem('access_token');
     if (!currentToken) return;
 
-    // Only refresh if page is visible AND user was active in last 5 minutes
-    const timeSinceActivity = Date.now() - lastActivity;
-    const isUserActive = timeSinceActivity < 5 * 60 * 1000;
-
-    if (!isPageVisible) {
-      console.debug('Token refresh skipped - page not visible');
-      return;
-    }
-
-    if (!isUserActive) {
-      console.debug('Token refresh skipped - user inactive for', Math.floor(timeSinceActivity / 60000), 'minutes');
-      return;
-    }
-
+    // Refresh regardless of visibility or activity to prevent expiration
+    // The server-side refresh token is httpOnly and lasts 30 days
+    console.debug('Periodic token refresh triggered');
     refreshAccessToken();
-  }, 13 * 60 * 1000); // 13 minutes
+  }, 10 * 60 * 1000); // 10 minutes (5 minute buffer before 15 min expiry)
 }
 
 // Auto-initialize if this script is loaded

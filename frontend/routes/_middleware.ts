@@ -81,9 +81,9 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
       }
     }
     
-    // Check if auth is disabled via environment variable (defaults to true if not set)
+    // Check if auth is disabled via environment variable
     const disableAuthEnv = Deno.env.get('DISABLE_AUTH');
-    const disableAuth = disableAuthEnv === 'true' || disableAuthEnv === undefined;
+    const disableAuth = disableAuthEnv === 'true';
     if (disableAuth) {
       return await ctx.next();
     }

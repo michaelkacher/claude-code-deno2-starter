@@ -28,8 +28,6 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
   const isAuthPage = url.pathname === '/login' || url.pathname === '/signup';
   const showEmailBanner = !isAuthPage && !disableAuth;
   
-  console.log('🎨 _app.tsx App component render', { userEmail, userRole, initialTheme, url: url.pathname });
-  
   return (
     <html>
       <head>
