@@ -23,14 +23,58 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 
 ### Step 0: First-Run Detection and Project Context (IMPORTANT)
 
-Before starting, detect if this is the user's first feature by checking for existing features:
+Before starting, detect if this is the user's first feature by checking for existing project context:
 
-1. **Check for existing features:**
-   ```bash
-   ls features/proposed/ features/implemented/
+1. **Check for global requirements first:**
+   
+   Use the Read tool to check if `docs/requirements.md` exists and read its contents.
+
+2. **If docs/requirements.md exists (user already ran /requirements):**
+
+   Tell the user:
+   ```
+   ✅ Found existing project requirements in docs/requirements.md
+   I'll extract project context from there to avoid asking duplicate questions.
    ```
 
-2. **If no features exist (first run):**
+   **Extract project context from docs/requirements.md:**
+   - Read the file looking for sections like:
+     - "Project Purpose" or "Overview" or "What we're building"
+     - "Target Users" or "User Personas" or "Who will use this"
+     - "Goals" or "Objectives" or "Key Problems"
+     - "Tech Stack" or "Technology"
+
+   **Create features/PROJECT_CONTEXT.md from extracted data:**
+   ```markdown
+   # Project Context
+
+   **What we're building:** {extracted from requirements.md}
+
+   **Primary users:** {extracted from requirements.md}
+
+   **Key goal:** {extracted from requirements.md}
+
+   **Tech stack:** {extracted from requirements.md, default to Fresh 1.7.3 + Deno KV if not specified}
+
+   ---
+
+   *Extracted from docs/requirements.md on {date}*
+   This file provides lightweight project context for features. For comprehensive requirements, see `docs/requirements.md`.
+   ```
+
+   Say:
+   ```
+   ✅ Project context extracted from docs/requirements.md
+   Proceeding with feature development...
+   ```
+
+   **Skip to Step 0.5** - no need to ask project questions.
+
+3. **If docs/requirements.md does not exist, check for existing features:**
+   
+   Use the List Directory tool to check if any features exist in `features/proposed/` or `features/implemented/`.
+
+4. **If no features exist AND docs/requirements.md does not exist (first run):**
 
    Tell the user:
    ```
@@ -83,7 +127,7 @@ Before starting, detect if this is the user's first feature by checking for exis
    ✅ Project context saved! Now let's build your first feature.
    ```
 
-3. **If features exist (subsequent runs):**
+5. **If features exist (subsequent runs):**
 
    Skip the questions and proceed directly to feature development.
 
@@ -115,11 +159,9 @@ Before starting, detect if this is the user's first feature by checking for exis
 
 ### Step 0.5: Check for Existing Mockups and Related Features (NEW)
 
-Before asking for a feature name, check for existing mockups and features:
+Before asking for a feature name, use the File Search tool to check for existing mockups:
 
-```bash
-ls frontend/routes/mockups/*.tsx 2>/dev/null | grep -v "index.tsx"
-```
+Search for files matching `frontend/routes/mockups/*.tsx` (excluding `index.tsx`).
 
 **If mockups exist:**
 
@@ -143,10 +185,7 @@ Ask which mockup:
 Which mockup would you like to convert? (enter the name, e.g., "user-profile")
 ```
 
-Then read the mockup file to extract context:
-```bash
-cat frontend/routes/mockups/[mockup-name].tsx
-```
+Then read the mockup file to extract context using the Read tool.
 
 Extract the header comment block and use it as:
 - Visual reference for requirements
@@ -199,6 +238,25 @@ This will create: features/proposed/{feature-name}/requirements.md
 
 **Important**: Pass the feature name to the agent so it knows where to write files.
 
+**If features/PROJECT_CONTEXT.md exists:**
+
+Include this in the agent context:
+```
+Reading project context from features/PROJECT_CONTEXT.md...
+
+Project context will be used to:
+- Skip asking about overall project purpose
+- Skip asking about target users
+- Skip asking about tech stack
+- Focus only on feature-specific requirements
+
+The requirements agent will only ask about this specific feature's:
+- User stories and acceptance criteria
+- API endpoints and data models
+- UI/UX requirements
+- Edge cases and validation rules
+```
+
 **If related mockups/features were identified in Step 0.5:**
 
 Include this in the agent prompt:
@@ -214,12 +272,9 @@ Please ensure:
 
 **Also suggest checking existing feature requirements:**
 
-If related features are already implemented or proposed:
-```bash
-# Check for existing feature documentation
-ls features/proposed/{related-feature-name}/requirements.md 2>/dev/null
-ls features/implemented/{related-feature-name}/requirements.md 2>/dev/null
-```
+If related features are already implemented or proposed, use the File Search and Read tools to check for:
+- `features/proposed/{related-feature-name}/requirements.md`
+- `features/implemented/{related-feature-name}/requirements.md`
 
 Read any existing requirements to understand shared data models.
 
