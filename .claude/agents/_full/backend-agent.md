@@ -75,6 +75,97 @@ export const handler: Handlers<unknown, AppState> = {
 
 The codebase uses a centralized error handling system with typed error classes and automatic error formatting.
 
+### 🔐 Security Best Practices for Authenticated Routes (CRITICAL)
+
+**NEVER trust client-provided user IDs - ALWAYS use auth context!**
+
+```typescript
+// ❌ BAD - Accepting userId from request body (SECURITY VULNERABILITY!)
+const CreateItemSchema = z.object({
+  userId: z.string(),  // NEVER accept userId from client!
+  name: z.string(),
+});
+
+export const handler: Handlers<unknown, AppState> = {
+  POST: withErrorHandler(async (req, ctx) => {
+    const data = await parseJsonBody(req, CreateItemSchema);
+    // ⚠️ Client could send ANY userId - impersonate other users!
+    await service.createItem(data);
+  })
+};
+
+// ✅ GOOD - Get userId from authenticated context
+const CreateItemSchema = z.object({
+  // userId NOT in schema - comes from auth context
+  name: z.string(),
+});
+
+export const handler: Handlers<unknown, AppState> = {
+  POST: withErrorHandler(async (req, ctx) => {
+    // Require authentication and get user from JWT
+    const user = requireUser(ctx);
+    
+    // Parse request body (without userId)
+    const data = await parseJsonBody(req, CreateItemSchema);
+    
+    // Pass userId from auth context (secure!)
+    await service.createItem({
+      ...data,
+      userId: user.sub,  // From JWT payload, cannot be spoofed
+    });
+  })
+};
+```
+
+**Authentication Helpers:**
+```typescript
+import { requireUser, requireAdmin } from "../../../lib/fresh-helpers.ts";
+
+// Require any authenticated user (throws AuthenticationError if not logged in)
+const user = requireUser(ctx);
+// Returns: { sub: string, email: string, role: string, emailVerified: boolean, iat: number, exp: number }
+
+// Require admin role (throws AuthorizationError if not admin)
+requireAdmin(ctx);
+```
+
+**CRITICAL: User ID Field Name**
+
+The user ID is stored in the **`sub`** field (JWT standard "subject" claim), NOT `id`:
+
+```typescript
+// ✅ CORRECT - Use user.sub for user ID
+const user = requireUser(ctx);
+const userId = user.sub;  // This is the user's ID from the database
+
+await service.createItem({
+  ...data,
+  userId: user.sub,  // ✅ Correct field
+});
+
+// ❌ WRONG - user.id does NOT exist
+const userId = user.id;  // undefined! Will cause "userId is required" errors
+```
+
+**JWT Payload Structure (ctx.state.user):**
+```typescript
+{
+  sub: string,           // ✅ USER ID - use this!
+  email: string,         // User's email
+  role: string,          // User's role (e.g., "user", "admin")
+  emailVerified: boolean,
+  iat: number,           // Issued at (timestamp)
+  exp: number            // Expires at (timestamp)
+}
+```
+
+**Golden Rule:** User identity MUST come from `ctx.state.user.sub` (set by JWT middleware), NEVER from:
+- ❌ Request body
+- ❌ Query parameters  
+- ❌ Headers (except Authorization which is verified)
+- ❌ URL parameters
+- ❌ `user.id` (doesn't exist - use `user.sub`!)
+
 ### Error Handling in Services
 
 **Services should throw typed errors from `frontend/lib/errors.ts`:**

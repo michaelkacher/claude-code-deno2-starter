@@ -310,6 +310,75 @@ The agent will read from: features/proposed/{feature-name}/api-spec.md
 
 **Note**: The backend-agent will implement routes, services, and data models.
 
+### Step 6.5: Security Review - Authenticated Routes (MANDATORY)
+
+**After backend implementation, verify auth security for all authenticated endpoints:**
+
+1. **Identify authenticated routes:**
+   Check for routes that require authentication (user-specific data, protected resources).
+
+2. **Security checklist for EACH authenticated route:**
+
+   **❌ SECURITY VULNERABILITY - Check validation schemas:**
+   ```typescript
+   // Search in route files for: userId.*z\.string
+   const Schema = z.object({
+     userId: z.string(),  // ⚠️ RED FLAG - accepting userId from client!
+   });
+   ```
+
+   **✅ CORRECT PATTERN:**
+   ```typescript
+   // Validation schema should NOT include userId
+   const CreateSchema = z.object({
+     name: z.string(),
+     // ... other fields, but NO userId
+   });
+
+   export const handler: Handlers<unknown, AppState> = {
+     POST: withErrorHandler(async (req, ctx) => {
+       // Get userId from auth context
+       const user = requireUser(ctx);
+       const data = await parseJsonBody(req, CreateSchema);
+       
+       // CRITICAL: Use user.sub (NOT user.id - that doesn't exist!)
+       await service.create({
+         ...data,
+         userId: user.sub,  // ✅ Correct - JWT 'sub' claim contains user ID
+       });
+     })
+   };
+   ```
+
+3. **Automated security scan:**
+   ```bash
+   # Check for userId in validation schemas (potential security issue)
+   grep -n "userId.*z\." frontend/routes/api/**/*.ts
+   
+   # Check for incorrect user.id usage (should be user.sub)
+   grep -n "user\.id" frontend/routes/api/**/*.ts
+   
+   # All matches should be investigated
+   ```
+
+4. **Manual verification:**
+   - [ ] No validation schemas accept `userId` from request body
+   - [ ] All routes use `requireUser(ctx)` or `requireAdmin(ctx)` 
+   - [ ] User identity comes from `user.sub` (NOT `user.id` which doesn't exist!)
+   - [ ] No routes accept user IDs from query params or URL params for access control
+
+5. **Common security violations:**
+   - ❌ `userId` in Zod schema from request body
+   - ❌ `ownerId` in Zod schema from request body
+   - ❌ `createdBy` in Zod schema from request body
+   - ❌ Using `user.id` instead of `user.sub` (causes undefined errors)
+   - ✅ All user identity fields populated from `ctx.state.user.sub`
+
+**Why this matters:** 
+- Accepting user IDs from clients allows impersonation attacks
+- Using `user.id` causes runtime errors (field doesn't exist in JWT payload)
+- Always use `user.sub` for user ID (JWT standard "subject" claim)
+
 ### Step 7: Launch Frontend Agent
 
 Launch the **frontend-agent**:
