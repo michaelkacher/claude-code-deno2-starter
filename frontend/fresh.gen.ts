@@ -46,6 +46,7 @@ import * as $api_jobs_id_index from "./routes/api/jobs/[id]/index.ts";
 import * as $api_jobs_id_retry from "./routes/api/jobs/[id]/retry.ts";
 import * as $api_jobs_create from "./routes/api/jobs/create.ts";
 import * as $api_jobs_index from "./routes/api/jobs/index.ts";
+import * as $api_jobs_schedules_name_delete from "./routes/api/jobs/schedules/[name]/delete.ts";
 import * as $api_jobs_schedules_name_disable from "./routes/api/jobs/schedules/[name]/disable.ts";
 import * as $api_jobs_schedules_name_enable from "./routes/api/jobs/schedules/[name]/enable.ts";
 import * as $api_jobs_schedules_name_trigger from "./routes/api/jobs/schedules/[name]/trigger.ts";
@@ -145,6 +146,8 @@ const manifest = {
     "./routes/api/jobs/[id]/retry.ts": $api_jobs_id_retry,
     "./routes/api/jobs/create.ts": $api_jobs_create,
     "./routes/api/jobs/index.ts": $api_jobs_index,
+    "./routes/api/jobs/schedules/[name]/delete.ts":
+      $api_jobs_schedules_name_delete,
     "./routes/api/jobs/schedules/[name]/disable.ts":
       $api_jobs_schedules_name_disable,
     "./routes/api/jobs/schedules/[name]/enable.ts":

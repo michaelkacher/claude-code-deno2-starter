@@ -253,6 +253,29 @@ export default function JobDashboard() {
     }
   };
 
+  // Delete schedule
+  const deleteSchedule = async (name: string) => {
+    if (!confirm(`Are you sure you want to delete the schedule "${name}"?`)) return;
+
+    try {
+      const apiUrl = getApiUrl();
+      const accessToken = IS_BROWSER ? TokenStorage.getAccessToken() : null;
+      const response = await fetch(`${apiUrl}/api/jobs/schedules/${name}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to delete schedule');
+
+      alert(`Schedule "${name}" deleted successfully`);
+      await fetchSchedules();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete schedule');
+    }
+  };
+
   // Cleanup old jobs
   const cleanupJobs = async () => {
     if (!confirm('Delete all completed/failed jobs older than 7 days?')) return;
@@ -567,6 +590,14 @@ export default function JobDashboard() {
                           title={schedule.enabled ? 'Disable' : 'Enable'}
                         >
                           {schedule.enabled ? '⏸️' : '▶️'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteSchedule(schedule.name)}
+                          class="btn btn-sm btn-danger"
+                          title="Delete"
+                        >
+                          🗑️
                         </button>
                       </div>
                     </td>

@@ -34,6 +34,11 @@ export async function initializeBackgroundServices() {
     registerAllWorkers();
     logger.info('Workers registered successfully');
 
+    // Load persisted schedules from KV
+    logger.info('Loading persisted schedules...');
+    await loadPersistedSchedules();
+    logger.info('Persisted schedules loaded');
+
     // Start the job queue processor
     logger.info('Starting job queue...');
     await queue.start();
@@ -49,4 +54,20 @@ export async function initializeBackgroundServices() {
     logger.error('Failed to initialize background services', error);
     throw error;
   }
+}
+
+/**
+ * Load persisted schedules from Deno KV
+ * Recreates the handler functions for each schedule
+ */
+async function loadPersistedSchedules(): Promise<void> {
+  // Handler factory that creates job handlers for persisted schedules
+  const handlerFactory = (jobName: string, jobData: Record<string, unknown>) => {
+    return async () => {
+      logger.info('Persisted schedule triggered', { jobName, jobData });
+      await queue.add(jobName, jobData);
+    };
+  };
+
+  await scheduler.loadSchedules(handlerFactory);
 }

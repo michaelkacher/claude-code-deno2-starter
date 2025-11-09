@@ -26,6 +26,7 @@
  * ```
  */
 
+import { getKv } from './kv.ts';
 import { createLogger } from './logger.ts';
 
 const logger = createLogger('Scheduler');
@@ -45,6 +46,22 @@ export interface ScheduleConfig {
 export interface Schedule extends ScheduleConfig {
   nextRun?: Date;
   lastRun?: Date;
+  runCount: number;
+}
+
+/**
+ * Persisted schedule data (stored in KV)
+ * Excludes the handler function since it cannot be serialized
+ */
+export interface PersistedScheduleData {
+  name: string;
+  cron: string;
+  jobName: string;
+  jobData: Record<string, unknown>;
+  timezone: string;
+  enabled: boolean;
+  nextRun?: string;
+  lastRun?: string;
   runCount: number;
 }
 
@@ -142,6 +159,16 @@ export class JobScheduler {
   private isRunning = false;
   private checkInterval = 60 * 1000; // Check every minute
   private checkTimeout?: number;
+  private kv: Deno.Kv | null = null;
+
+  /**
+   * Initialize the scheduler (loads persisted schedules)
+   */
+  async init(): Promise<void> {
+    if (!this.kv) {
+      this.kv = await getKv();
+    }
+  }
 
   /**
    * Register a scheduled job
@@ -166,6 +193,78 @@ export class JobScheduler {
   }
 
   /**
+   * Register a scheduled job and persist its configuration to KV
+   * Used by the API when creating schedules
+   */
+  async scheduleAndPersist(
+    name: string,
+    cron: string,
+    jobName: string,
+    jobData: Record<string, unknown>,
+    handler: () => Promise<void>,
+    options: { timezone?: string; enabled?: boolean } = {},
+  ): Promise<void> {
+    await this.init();
+
+    // Register the schedule in memory
+    this.schedule(name, cron, handler, options);
+
+    // Get the nextRun timestamp
+    const schedule = this.schedules.get(name);
+    const nextRunISO = schedule?.nextRun?.toISOString();
+
+    // Persist the schedule configuration to KV
+    const persistedData: PersistedScheduleData = {
+      name,
+      cron,
+      jobName,
+      jobData,
+      timezone: options.timezone || 'UTC',
+      enabled: options.enabled ?? true,
+      ...(nextRunISO && { nextRun: nextRunISO }),
+      runCount: 0,
+    };
+
+    await this.kv!.set(['schedules', name], persistedData);
+  }
+
+  /**
+   * Load all persisted schedules from KV
+   * This is called when the scheduler starts to restore schedules
+   * The handler functions need to be re-registered by the application
+   */
+  async loadSchedules(
+    handlerFactory: (jobName: string, jobData: Record<string, unknown>) => () => Promise<void>
+  ): Promise<void> {
+    await this.init();
+
+    const entries = this.kv!.list<PersistedScheduleData>({ prefix: ['schedules'] });
+
+    for await (const entry of entries) {
+      const data = entry.value;
+      const handler = handlerFactory(data.jobName, data.jobData);
+
+      const schedule: Schedule = {
+        name: data.name,
+        cron: data.cron,
+        handler,
+        timezone: data.timezone,
+        enabled: data.enabled,
+        nextRun: data.nextRun ? new Date(data.nextRun) : CronParser.getNextRun(data.cron),
+        runCount: data.runCount,
+      };
+
+      // Add lastRun only if it exists
+      if (data.lastRun) {
+        schedule.lastRun = new Date(data.lastRun);
+      }
+
+      this.schedules.set(data.name, schedule);
+      logger.info('Loaded persisted schedule', { name: data.name, cron: data.cron });
+    }
+  }
+
+  /**
    * Unregister a scheduled job
    */
   unschedule(name: string): void {
@@ -173,22 +272,62 @@ export class JobScheduler {
   }
 
   /**
+   * Unregister a scheduled job and remove from KV
+   */
+  async unscheduleAndDelete(name: string): Promise<void> {
+    await this.init();
+    this.schedules.delete(name);
+    await this.kv!.delete(['schedules', name]);
+  }
+
+  /**
    * Enable a schedule
    */
-  enable(name: string): void {
+  async enable(name: string): Promise<void> {
     const schedule = this.schedules.get(name);
     if (schedule) {
       schedule.enabled = true;
+      
+      // Update in KV if it exists
+      await this.updateScheduleInKv(name);
     }
   }
 
   /**
    * Disable a schedule
    */
-  disable(name: string): void {
+  async disable(name: string): Promise<void> {
     const schedule = this.schedules.get(name);
     if (schedule) {
       schedule.enabled = false;
+      
+      // Update in KV if it exists
+      await this.updateScheduleInKv(name);
+    }
+  }
+
+  /**
+   * Update schedule metadata in KV (if persisted)
+   */
+  private async updateScheduleInKv(name: string): Promise<void> {
+    await this.init();
+    
+    const existingEntry = await this.kv!.get<PersistedScheduleData>(['schedules', name]);
+    if (existingEntry.value) {
+      const schedule = this.schedules.get(name);
+      if (schedule) {
+        const nextRunISO = schedule.nextRun?.toISOString();
+        const lastRunISO = schedule.lastRun?.toISOString();
+
+        const updated: PersistedScheduleData = {
+          ...existingEntry.value,
+          enabled: schedule.enabled ?? true, // Default to true if undefined
+          runCount: schedule.runCount,
+          ...(nextRunISO && { nextRun: nextRunISO }),
+          ...(lastRunISO && { lastRun: lastRunISO }),
+        };
+        await this.kv!.set(['schedules', name], updated);
+      }
     }
   }
 
@@ -290,6 +429,9 @@ export class JobScheduler {
       // Calculate next run
       schedule.nextRun = CronParser.getNextRun(schedule.cron, schedule.lastRun);
       schedule.runCount++;
+
+      // Update in KV if persisted
+      await this.updateScheduleInKv(schedule.name);
     } catch (error) {
       logger.error('Schedule failed', { scheduleName: schedule.name, error });
 
@@ -298,6 +440,9 @@ export class JobScheduler {
         schedule.cron,
         schedule.lastRun || new Date(),
       );
+
+      // Update in KV if persisted
+      await this.updateScheduleInKv(schedule.name);
     }
   }
 }

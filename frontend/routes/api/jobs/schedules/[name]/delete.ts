@@ -1,6 +1,6 @@
 /**
- * POST /api/jobs/schedules/:name/disable
- * Disable a scheduled job
+ * DELETE /api/jobs/schedules/:name
+ * Delete a scheduled job
  */
 
 import { Handlers } from "$fresh/server.ts";
@@ -14,7 +14,7 @@ import {
 } from "../../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (_req, ctx) => {
+  DELETE: withErrorHandler(async (_req, ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 
@@ -30,8 +30,8 @@ export const handler: Handlers<unknown, AppState> = {
       throw new NotFoundError(undefined, 'Schedule', name);
     }
 
-    await scheduler.disable(name);
+    await scheduler.unscheduleAndDelete(name);
 
-    return successResponse({ name, enabled: false, message: "Schedule disabled" });
+    return successResponse({ name, message: "Schedule deleted successfully" });
   }),
 };

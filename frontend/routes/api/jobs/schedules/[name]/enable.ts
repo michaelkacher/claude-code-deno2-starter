@@ -5,16 +5,16 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { scheduler } from "../../../../../../shared/lib/scheduler.ts";
-import {
-  requireAdmin,
-  successResponse,
-  withErrorHandler,
-  type AppState,
-} from "../../../../../lib/fresh-helpers.ts";
 import { BadRequestError, NotFoundError } from "../../../../../lib/errors.ts";
+import {
+    requireAdmin,
+    successResponse,
+    withErrorHandler,
+    type AppState,
+} from "../../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler((_req, ctx) => {
+  POST: withErrorHandler(async (_req, ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 
@@ -30,7 +30,7 @@ export const handler: Handlers<unknown, AppState> = {
       throw new NotFoundError(undefined, 'Schedule', name);
     }
 
-    scheduler.enable(name);
+    await scheduler.enable(name);
 
     return successResponse({ name, enabled: true, message: "Schedule enabled" });
   }),

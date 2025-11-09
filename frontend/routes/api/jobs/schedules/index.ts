@@ -8,14 +8,14 @@ import { z } from "zod";
 import { createLogger } from '../../../../../shared/lib/logger.ts';
 import { queue } from "../../../../../shared/lib/queue.ts";
 import { scheduler } from "../../../../../shared/lib/scheduler.ts";
-import {
-  parseJsonBody,
-  requireAdmin,
-  successResponse,
-  withErrorHandler,
-  type AppState,
-} from "../../../../lib/fresh-helpers.ts";
 import { ConflictError } from "../../../../lib/errors.ts";
+import {
+    parseJsonBody,
+    requireAdmin,
+    successResponse,
+    withErrorHandler,
+    type AppState,
+} from "../../../../lib/fresh-helpers.ts";
 
 const CreateScheduleSchema = z.object({
   name: z.string().min(1).max(100),
@@ -70,10 +70,12 @@ export const handler: Handlers<unknown, AppState> = {
       await queue.add(body.jobName, body.jobData);
     };
 
-    // Register the schedule
-    scheduler.schedule(
+    // Register the schedule with persistence
+    await scheduler.scheduleAndPersist(
       body.name,
       body.cron,
+      body.jobName,
+      body.jobData,
       handler,
       {
         timezone: body.timezone,
