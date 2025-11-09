@@ -5,15 +5,15 @@
  * Handles user lookup, password verification, TOTP validation, and backup code management.
  */
 
-import { generateQRCodeDataURL, generateQRCodeURL, generateSecret, verifyTOTP } from "../lib/totp.ts";
-import { UserRepository } from "../repositories/index.ts";
-import { AuthService } from "./auth.service.ts";
-import { ErrorCode } from "../lib/error-codes.ts";
 import {
   AppError,
   AuthenticationError,
   NotFoundError,
 } from "../../frontend/lib/errors.ts";
+import { ErrorCode } from "../lib/error-codes.ts";
+import { generateQRCodeDataURL, generateQRCodeURL, generateSecret, verifyTOTP } from "../lib/totp.ts";
+import { UserRepository } from "../repositories/index.ts";
+import { AuthService } from "./auth.service.ts";
 
 export interface TwoFactorSetupResult {
   secret: string;
@@ -33,9 +33,12 @@ export class TwoFactorService {
   private userRepo: UserRepository;
   private authService: AuthService;
 
-  constructor() {
-    this.userRepo = new UserRepository();
-    this.authService = new AuthService();
+  constructor(
+    userRepo?: UserRepository,
+    authService?: AuthService,
+  ) {
+    this.userRepo = userRepo || new UserRepository();
+    this.authService = authService || new AuthService();
   }
 
   /**
@@ -196,7 +199,7 @@ export class TwoFactorService {
     // Disable 2FA
     await this.userRepo.update(userId, {
       twoFactorEnabled: false,
-      twoFactorSecret: undefined,
+      twoFactorSecret: null,
       twoFactorBackupCodes: [],
     });
   }

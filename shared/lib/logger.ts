@@ -16,7 +16,7 @@
  * ```
  */
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 export interface LogMeta {
   [key: string]: unknown;
@@ -55,13 +55,41 @@ class LoggerImpl implements Logger {
     } catch {
       this.isDevelopment = true; // Default to development if env access fails
     }
-    this.minLevel = this.isDevelopment ? 'debug' : 'info';
+    
+    // Check for LOG_LEVEL override
+    const envLogLevel = this.getEnvLogLevel();
+    if (envLogLevel) {
+      this.minLevel = envLogLevel;
+    } else {
+      this.minLevel = this.isDevelopment ? 'debug' : 'info';
+    }
+  }
+
+  private getEnvLogLevel(): LogLevel | null {
+    try {
+      const level = Deno.env.get('LOG_LEVEL')?.toLowerCase();
+      if (level && ['debug', 'info', 'warn', 'error', 'silent'].includes(level)) {
+        return level as LogLevel;
+      }
+    } catch {
+      // Ignore env access errors
+    }
+    return null;
   }
 
   private shouldLog(level: LogLevel): boolean {
-    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+    // Check for runtime LOG_LEVEL changes
+    const envLogLevel = this.getEnvLogLevel();
+    const currentMinLevel = envLogLevel || this.minLevel;
+    
+    // Silent mode suppresses all logs
+    if (currentMinLevel === 'silent') {
+      return false;
+    }
+    
+    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error', 'silent'];
     const currentLevelIndex = levels.indexOf(level);
-    const minLevelIndex = levels.indexOf(this.minLevel);
+    const minLevelIndex = levels.indexOf(currentMinLevel);
     return currentLevelIndex >= minLevelIndex;
   }
 
@@ -73,6 +101,7 @@ class LoggerImpl implements Logger {
         info: 'ℹ️',
         warn: '⚠️',
         error: '❌',
+        silent: '', // Silent mode shouldn't actually log, but include for completeness
       }[entry.level];
 
       let output = `${emoji} [${entry.context}] ${entry.message}`;
@@ -119,9 +148,9 @@ class LoggerImpl implements Logger {
         try {
           const errorObj = error as Record<string, unknown>;
           entry.error = {
-            name: errorObj.name ? String(errorObj.name) : 'UnknownError',
-            message: errorObj.message ? String(errorObj.message) : JSON.stringify(error),
-            stack: errorObj.stack ? String(errorObj.stack) : undefined,
+            name: errorObj['name'] ? String(errorObj['name']) : 'UnknownError',
+            message: errorObj['message'] ? String(errorObj['message']) : JSON.stringify(error),
+            stack: errorObj['stack'] ? String(errorObj['stack']) : undefined,
           };
         } catch {
           // Fallback if JSON.stringify fails

@@ -12,6 +12,7 @@
 import { assertEquals, assertExists } from '@std/assert';
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { FakeTime } from '@std/testing/time';
+import { suppressLogs } from '../helpers/logger-test.ts';
 
 // Mock WebSocket class for testing
 class MockWebSocket {
@@ -988,11 +989,13 @@ describe('NotificationWebSocket', () => {
       // Arrange
       connection.onOpen(new Event('open'), mockWs as unknown as WebSocket);
 
-      // Act - Send malformed JSON
+      // Act - Send malformed JSON (suppress expected error log)
       const malformedMessage = new MessageEvent('message', {
         data: '{invalid-json}',
       });
-      await connection.onMessage(malformedMessage, mockWs as unknown as WebSocket);
+      await suppressLogs(async () => {
+        await connection.onMessage(malformedMessage, mockWs as unknown as WebSocket);
+      });
 
       // Assert - Should not throw (error logged)
       // Socket should still be open (just logged error)

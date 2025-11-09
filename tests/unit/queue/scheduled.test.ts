@@ -8,6 +8,7 @@ import { assertEquals } from '@std/assert';
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { closeKv } from '../../../shared/lib/kv.ts';
 import { JobQueue } from '../../../shared/lib/queue.ts';
+import { suppressLogs } from '../../helpers/logger-test.ts';
 
 describe('Queue Scheduled Jobs', {
   sanitizeResources: false,
@@ -96,6 +97,7 @@ describe('Queue Scheduled Jobs', {
       fn: async () => {
         const jobName = `retry-scheduled-test-${Date.now()}`;
         let attempts = 0;
+        let jobId = '';
 
         // Register handler that fails once, then succeeds
         queue.process(jobName, async () => {
@@ -105,18 +107,23 @@ describe('Queue Scheduled Jobs', {
           }
         });
 
-        // Start queue
-        await queue.start();
+        // Start queue and suppress expected "Job failed" error logs
+        await suppressLogs(async () => {
+          await queue.start();
 
-        // Add job
-        const jobId = await queue.add(jobName, { test: true }, {
-          maxRetries: 3,
+          // Add job
+          jobId = await queue.add(jobName, { test: true }, {
+            maxRetries: 3,
+          });
+
+          // Wait for retry (first attempt + exponential backoff ~2s + processing)
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          
+          queue.stop();
+          
+          // Give queue time to finish processing
+          await new Promise((resolve) => setTimeout(resolve, 100));
         });
-
-        // Wait for retry (first attempt + exponential backoff ~2s + processing)
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-
-        queue.stop();
 
         console.log('Retry attempts:', attempts);
 

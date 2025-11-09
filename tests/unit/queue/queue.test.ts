@@ -6,6 +6,7 @@ import { assertEquals, assertExists } from '@std/assert';
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { closeKv } from '../../../shared/lib/kv.ts';
 import { JobQueue } from '../../../shared/lib/queue.ts';
+import { suppressLogs } from '../../helpers/logger-test.ts';
 
 describe('JobQueue', {
   sanitizeResources: false,
@@ -138,14 +139,21 @@ describe('JobQueue', {
         maxRetries: 3,
       });
 
-      await queue.start();
+      // Suppress expected "Job failed" error logs from intentional failures
+      await suppressLogs(async () => {
+        await queue.start();
 
-      // Wait for retries
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+        // Wait for retries
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        
+        queue.stop();
+        
+        // Give queue time to finish processing
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
 
       assertEquals(attempts >= 2, true);
 
-      queue.stop();
       await queue.delete(jobId);
     });
   });

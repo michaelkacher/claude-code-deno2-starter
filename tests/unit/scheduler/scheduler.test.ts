@@ -3,7 +3,8 @@
  */
 
 import { assertEquals, assertExists } from '@std/assert';
-import { beforeEach, describe, it } from '@std/testing/bdd';
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
+import { closeKv } from '../../../shared/lib/kv.ts';
 import { CronPatterns, JobScheduler } from '../../../shared/lib/scheduler.ts';
 
 describe('JobScheduler', () => {
@@ -11,6 +12,11 @@ describe('JobScheduler', () => {
 
   beforeEach(() => {
     scheduler = new JobScheduler();
+  });
+
+  afterEach(async () => {
+    scheduler.stop();
+    await closeKv();
   });
 
   describe('schedule', () => {

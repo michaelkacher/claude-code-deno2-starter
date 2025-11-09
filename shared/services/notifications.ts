@@ -1,7 +1,7 @@
 import { NotificationRepository } from '../repositories/index.ts';
 import type {
-    CreateNotificationRequest,
-    NotificationData,
+  CreateNotificationRequest,
+  NotificationData,
 } from '../types/notifications.ts';
 
 /**
@@ -13,7 +13,14 @@ import type {
  * - ['notifications_by_user', userId, timestamp, notificationId] -> null (for listing by date)
  */
 export class NotificationService {
-  private static repo = new NotificationRepository();
+  private static repo: NotificationRepository = new NotificationRepository();
+
+  // Allow dependency injection for testing
+  constructor(repo?: NotificationRepository) {
+    if (repo) {
+      NotificationService.repo = repo;
+    }
+  }
   /**
    * Create a new notification for a user
    */

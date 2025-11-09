@@ -5,13 +5,13 @@
  * Handles admin checks, user lookup, role updates, and user operations.
  */
 
-import { TokenRepository, UserRepository } from "../repositories/index.ts";
-import { ErrorCode } from "../lib/error-codes.ts";
 import {
-  AppError,
-  NotFoundError,
-  AuthorizationError,
+    AppError,
+    AuthorizationError,
+    NotFoundError,
 } from "../../frontend/lib/errors.ts";
+import { ErrorCode } from "../lib/error-codes.ts";
+import { TokenRepository, UserRepository } from "../repositories/index.ts";
 
 export interface UserListOptions {
   limit?: number;
@@ -50,9 +50,12 @@ export class UserManagementService {
   private userRepo: UserRepository;
   private tokenRepo: TokenRepository;
 
-  constructor() {
-    this.userRepo = new UserRepository();
-    this.tokenRepo = new TokenRepository();
+  constructor(
+    userRepo?: UserRepository,
+    tokenRepo?: TokenRepository,
+  ) {
+    this.userRepo = userRepo || new UserRepository();
+    this.tokenRepo = tokenRepo || new TokenRepository();
   }
 
   /**
@@ -101,7 +104,7 @@ export class UserManagementService {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name ?? '',
       role: user.role,
       emailVerified: user.emailVerified,
       twoFactorEnabled: user.twoFactorEnabled,

@@ -64,12 +64,12 @@ export async function generateTOTP(
   const hmac = await hmacSha1(key, new Uint8Array(counterBuffer));
   
   // Dynamic truncation (RFC 4226)
-  const offset = hmac[hmac.length - 1] & 0x0f;
+  const offset = (hmac[hmac.length - 1] ?? 0) & 0x0f;
   const truncatedHash = (
-    ((hmac[offset] & 0x7f) << 24) |
-    ((hmac[offset + 1] & 0xff) << 16) |
-    ((hmac[offset + 2] & 0xff) << 8) |
-    (hmac[offset + 3] & 0xff)
+    (((hmac[offset] ?? 0) & 0x7f) << 24) |
+    (((hmac[offset + 1] ?? 0) & 0xff) << 16) |
+    (((hmac[offset + 2] ?? 0) & 0xff) << 8) |
+    ((hmac[offset + 3] ?? 0) & 0xff)
   );
   
   // Generate the code

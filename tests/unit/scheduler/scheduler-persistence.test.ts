@@ -30,6 +30,8 @@ describe('JobScheduler Persistence', () => {
 
   afterEach(async () => {
     scheduler.stop();
+    // Clear the scheduler's KV reference before cleanup to avoid double-close
+    (scheduler as unknown as { kv: Deno.Kv | null }).kv = null;
     await cleanup();
   });
 

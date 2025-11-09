@@ -12,16 +12,16 @@
  * This service eliminates duplicate authentication logic across 7+ API routes.
  */
 
-import { createAccessToken, createRefreshToken, verifyToken } from "../lib/jwt.ts";
-import { verifyPassword } from "../lib/password.ts";
-import { TokenRepository, UserRepository } from "../repositories/index.ts";
-import { ErrorCode } from "../lib/error-codes.ts";
 import {
   AppError,
   AuthenticationError,
-  NotFoundError,
   ConflictError,
+  NotFoundError,
 } from "../../frontend/lib/errors.ts";
+import { ErrorCode } from "../lib/error-codes.ts";
+import { createAccessToken, createRefreshToken, verifyToken } from "../lib/jwt.ts";
+import { verifyPassword } from "../lib/password.ts";
+import { TokenRepository, UserRepository } from "../repositories/index.ts";
 
 // ============================================================================
 // Types
@@ -73,9 +73,12 @@ export class AuthService {
   private userRepo: UserRepository;
   private tokenRepo: TokenRepository;
 
-  constructor() {
-    this.userRepo = new UserRepository();
-    this.tokenRepo = new TokenRepository();
+  constructor(
+    userRepo?: UserRepository,
+    tokenRepo?: TokenRepository,
+  ) {
+    this.userRepo = userRepo || new UserRepository();
+    this.tokenRepo = tokenRepo || new TokenRepository();
   }
 
   // ==========================================================================
@@ -142,7 +145,7 @@ export class AuthService {
     if (refreshToken) {
       try {
         const refreshPayload = await verifyToken(refreshToken);
-        const tokenId = refreshPayload.tokenId as string;
+        const tokenId = refreshPayload['jti'] as string;
         await this.tokenRepo.revokeRefreshToken(userId, tokenId);
       } catch {
         // Refresh token invalid or expired - ignore
@@ -153,8 +156,8 @@ export class AuthService {
     if (accessToken) {
       try {
         const accessPayload = await verifyToken(accessToken);
-        const tokenId = accessPayload.jti as string;
-        const expiresAt = accessPayload.exp as number;
+        const tokenId = accessPayload['jti'] as string;
+        const expiresAt = accessPayload['exp'] as number;
         await this.tokenRepo.blacklistToken(tokenId, userId, expiresAt);
       } catch {
         // Access token invalid - ignore
@@ -335,8 +338,8 @@ export class AuthService {
       throw new AuthenticationError(ErrorCode.INVALID_TOKEN);
     }
 
-    const userId = payload.sub as string;
-    const tokenId = payload.tokenId as string;
+    const userId = payload['sub'] as string;
+    const tokenId = payload['jti'] as string;
 
     // Verify refresh token exists in database
     const isValid = await this.tokenRepo.verifyRefreshToken(userId, tokenId);
