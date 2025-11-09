@@ -14,20 +14,20 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 
 // TODO: Import types from feature data models
-// import type { [Resource] } from "@/types/index.ts";
+// import type { Resource } from "@/types/index.ts";
 
 // TODO: Define type
-type [Resource] = {
-  id: string;
-  name: string;
+type Resource = {
+  id: string,
+  name: string,
   // Add other fields
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string,
+  updatedAt: string,
 };
 
 interface Data {
-  [resources]: [Resource][];
-  cursor: string | null;
+  resources: Resource[],
+  cursor: string | null,
   error?: string;
 }
 

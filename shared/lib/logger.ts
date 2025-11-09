@@ -190,6 +190,6 @@ export const logger: Logger = new Proxy({} as Logger, {
     if (!_defaultLogger) {
       _defaultLogger = createLogger('App');
     }
-    return (_defaultLogger as any)[prop];
+    return (_defaultLogger as Record<string, unknown>)[prop];
   }
 });

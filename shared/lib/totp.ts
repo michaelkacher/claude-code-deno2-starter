@@ -6,7 +6,7 @@
  * Based on RFC 6238: https://tools.ietf.org/html/rfc6238
  */
 
-import { decodeBase32, encodeBase32 } from 'jsr:@std/encoding/base32';
+import { decodeBase32, encodeBase32 } from '@std/encoding/base32';
 
 /**
  * Generate a random secret key for TOTP

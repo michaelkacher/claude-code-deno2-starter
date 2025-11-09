@@ -5,7 +5,7 @@
  * Run with: deno run --allow-env --allow-read --unstable-kv scripts/get-user-id.ts test@example.com
  */
 
-import 'jsr:@std/dotenv/load';
+import '@std/dotenv/load';
 import { getKv } from '../shared/lib/kv.ts';
 
 const email = Deno.args[0];

@@ -9,6 +9,10 @@
  *
  * Token savings: ~600-800 tokens vs writing from scratch
  *
+ * @fileoverview Template file with placeholder syntax - not meant to be linted as-is
+ * deno-lint-ignore-file
+ */
+ *
  * Instructions:
  * 1. Replace [Resource] with your resource name (e.g., Post, Task, Product)
  * 2. Replace [resource] with lowercase version (e.g., post, task, product)
@@ -19,15 +23,15 @@
  * 7. Update broadcast channel name if using custom channels
  */
 
-import { [Resource]Repository } from '../repositories/index.ts';
+import { ResourceRepository } from '../repositories/index.ts';
 import type {
-  Create[Resource]Request,
-  [Resource]Data,
-} from '../types/[resources].ts';
+  CreateResourceRequest,
+  ResourceData,
+} from '../types/resources.ts';
 
 /**
- * [Resource] Service
- * Thin wrapper around [Resource]Repository with WebSocket broadcasting
+ * Resource Service
+ * Thin wrapper around ResourceRepository with WebSocket broadcasting
  * 
  * Architecture:
  * - Service methods are static (stateless)

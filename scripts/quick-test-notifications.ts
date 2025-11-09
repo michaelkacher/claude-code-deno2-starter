@@ -59,7 +59,7 @@ try {
   
   console.log('✅ Success!', result.message);
   console.log('\n📬 Created notifications:');
-  result.notifications?.forEach((n: any, i: number) => {
+  result.notifications?.forEach((n: Notification, i: number) => {
     console.log(`  ${i + 1}. ${n.title}`);
   });
 

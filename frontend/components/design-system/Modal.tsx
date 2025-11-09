@@ -58,6 +58,7 @@ export function Modal({
               )}
               {showClose && (
                 <button
+                  type="button"
                   onClick={onClose}
                   class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ml-auto"
                   aria-label="Close modal"

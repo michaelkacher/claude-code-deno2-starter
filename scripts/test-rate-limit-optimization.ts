@@ -23,7 +23,7 @@ function createMockContext(ip: string) {
         return undefined;
       },
     },
-    json: (body: any, status?: number) => {
+    json: (body: unknown, status?: number) => {
       return { body, status: status || 200 };
     },
     header: (name: string, value: string) => {
@@ -32,7 +32,7 @@ function createMockContext(ip: string) {
     get responseHeaders() {
       return headers;
     },
-  } as any;
+  } as unknown as Response;
 }
 
 // Test 1: Atomic Operations
@@ -94,10 +94,10 @@ const limiter2 = createRateLimiter({
 // Track KV operations
 let kvGetCount = 0;
 const originalGet = kv.get.bind(kv);
-kv.get = ((...args: any[]) => {
+kv.get = ((...args: unknown[]) => {
   kvGetCount++;
   return originalGet(...args);
-}) as any;
+}) as typeof kv.get;
 
 // Warm up (first request will miss cache)
 const warmup = createMockContext(testIp2);

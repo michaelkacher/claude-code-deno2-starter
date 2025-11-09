@@ -69,10 +69,13 @@ export type Pagination = z.infer<typeof paginationSchema>;
 // Schema Generators
 // ============================================================================
 
+// deno-lint-ignore no-explicit-any
+type AnyZodObject = z.ZodObject<any>;
+
 /**
  * Generate Create schema from base schema (omits id, timestamps)
  */
-export function createSchemaFrom<T extends z.ZodObject<any>>(schema: T) {
+export function createSchemaFrom<T extends AnyZodObject>(schema: T) {
   return schema.omit({
     id: true,
     createdAt: true,
@@ -83,7 +86,7 @@ export function createSchemaFrom<T extends z.ZodObject<any>>(schema: T) {
 /**
  * Generate Update schema from base schema (partial, omits id, createdAt)
  */
-export function updateSchemaFrom<T extends z.ZodObject<any>>(schema: T) {
+export function updateSchemaFrom<T extends AnyZodObject>(schema: T) {
   return schema
     .omit({
       id: true,
@@ -109,7 +112,7 @@ export function updateSchemaFrom<T extends z.ZodObject<any>>(schema: T) {
  *   generateCRUDSchemas('User', UserSchema);
  * ```
  */
-export function generateCRUDSchemas<T extends z.ZodObject<any>>(
+export function generateCRUDSchemas<T extends AnyZodObject>(
   _name: string,
   baseSchema: T
 ) {

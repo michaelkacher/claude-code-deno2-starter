@@ -66,6 +66,7 @@ export function Panel({
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
           {title && <h2 class="text-2xl font-bold text-gray-900">{title}</h2>}
           <button
+            type="button"
             onClick={onClose}
             class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Close panel"

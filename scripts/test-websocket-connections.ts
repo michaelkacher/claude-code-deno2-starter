@@ -91,7 +91,7 @@ async function createWebSocketConnection(
   });
 }
 
-async function getConnectionStats(token: string): Promise<any> {
+async function getConnectionStats(token: string): Promise<unknown> {
   const response = await fetch(`${API_URL}/api/notifications/stats`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -205,6 +205,7 @@ async function testConnectionCleanup(token: string) {
     await delay(1000);
     
     // Forcefully close without proper cleanup
+    // deno-lint-ignore no-explicit-any
     (ws as any).close = () => {}; // Prevent normal close
     
     // Wait for periodic cleanup (60s) - too long for test

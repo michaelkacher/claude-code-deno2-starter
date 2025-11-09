@@ -25,7 +25,7 @@ async function makeAdmin(email: string) {
       Deno.exit(1);
     }
 
-    const user = userEntry.value as any;
+    const user = userEntry.value as User;
 
     if (user.role === 'admin') {
       console.log(`ℹ️  User "${user.name}" (${email}) is already an admin`);

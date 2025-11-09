@@ -4,7 +4,7 @@
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { getCookies } from "jsr:@std/http/cookie";
+import { getCookies } from "@std/http/cookie";
 import TwoFactorSetup from "../../islands/TwoFactorSetup.tsx";
 
 interface TwoFactorPageData {

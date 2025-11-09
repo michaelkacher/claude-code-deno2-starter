@@ -5,7 +5,7 @@
  * Run with: deno run --allow-net --unstable-kv scripts/test-notifications.ts
  */
 
-import 'jsr:@std/dotenv/load';
+import '@std/dotenv/load';
 
 const API_URL = Deno.env.get('API_URL') || 'http://localhost:3000/api';
 

@@ -69,6 +69,7 @@ export function PageHeader({
     <div class={`mb-8 ${className}`}>
       {backButton && (
         <button
+          type="button"
           onClick={onBack}
           class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-4 group transition-all"
         >

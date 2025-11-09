@@ -298,6 +298,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
 
       <div class="mb-4 flex justify-between items-center">
         <button
+          type="button"
           onClick={() => fetchUsers(pagination.value.page)}
           class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
           disabled={loading.value}
@@ -372,6 +373,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
                     {/* Role Toggle */}
                     {user.id !== currentUserId && (
                       <button
+                        type="button"
                         onClick={() => changeRole(user.id, user.role === 'admin' ? 'user' : 'admin')}
                         class="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
                         title={user.role === 'admin' ? 'Demote to user' : 'Promote to admin'}
@@ -383,6 +385,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
                     {/* Verify Email */}
                     {!user.emailVerified && (
                       <button
+                        type="button"
                         onClick={() => verifyEmail(user.id)}
                         class="text-green-600 hover:text-green-900"
                         title="Verify email"
@@ -393,6 +396,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
 
                     {/* Revoke Sessions */}
                     <button
+                      type="button"
                       onClick={() => revokeSessions(user.id)}
                       class="text-orange-600 hover:text-orange-900"
                       title="Revoke all sessions"
@@ -403,6 +407,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
                     {/* Delete User */}
                     {user.id !== currentUserId && (
                       <button
+                        type="button"
                         onClick={() => deleteUser(user.id, user.name)}
                         class="text-red-600 hover:text-red-900"
                         title="Delete user"
@@ -422,6 +427,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
       {pagination.value.totalPages > 1 && (
         <div class="mt-6 flex justify-between items-center">
           <button
+            type="button"
             onClick={() => fetchUsers(pagination.value.page - 1)}
             disabled={!pagination.value.hasPrev || loading.value}
             class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -432,6 +438,7 @@ export default function AdminUserTable({ users: initialUsers, pagination: initia
             Page {pagination.value.page} of {pagination.value.totalPages}
           </span>
           <button
+            type="button"
             onClick={() => fetchUsers(pagination.value.page + 1)}
             disabled={!pagination.value.hasNext || loading.value}
             class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

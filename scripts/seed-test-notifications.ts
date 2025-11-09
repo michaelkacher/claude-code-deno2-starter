@@ -7,7 +7,7 @@
  * Run with: deno run --allow-env --unstable-kv scripts/seed-test-notifications.ts
  */
 
-import 'jsr:@std/dotenv/load';
+import '@std/dotenv/load';
 import { NotificationService } from '../shared/services/notifications.ts';
 
 // Use a test user ID (replace with real user ID if you have one)

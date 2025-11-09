@@ -16,7 +16,7 @@ let count = 0;
 const users = kv.list({ prefix: ['users'] });
 
 for await (const entry of users) {
-  const user = entry.value as any;
+  const user = entry.value as User;
   count++;
   
   console.log(`\n${count}. ${user.name}`);

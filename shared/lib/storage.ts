@@ -32,10 +32,16 @@
  * ```
  */
 
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from 'npm:@aws-sdk/client-s3@^3.0.0';
+import { ensureDir } from "@std/fs";
+import { join } from "@std/path";
+import {
+    DeleteObjectCommand,
+    GetObjectCommand,
+    ListObjectsV2Command,
+    PutObjectCommand,
+    S3Client,
+} from 'npm:@aws-sdk/client-s3@^3.0.0';
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@^3.0.0';
-import { join } from 'jsr:@std/path';
-import { ensureDir } from 'jsr:@std/fs';
 
 // ============================================================================
 // Types
@@ -90,9 +96,7 @@ class LocalStorage implements Storage {
     await ensureDir(dir);
 
     // Write file
-    const buffer = file instanceof ArrayBuffer
-      ? new Uint8Array(file)
-      : file;
+    const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
     await Deno.writeFile(fullPath, buffer);
 
     // Return relative path
@@ -178,18 +182,18 @@ class S3Storage implements Storage {
     const key = folder ? `${folder}/${filename}` : filename;
 
     // Convert to buffer
-    const buffer = file instanceof ArrayBuffer
-      ? new Uint8Array(file)
-      : file;
+    const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
 
     // Upload to S3
-    await this.client.send(new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
-      Metadata: metadata,
-    }));
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+        Metadata: metadata,
+      }),
+    );
 
     // Return public URL or key
     if (this.publicUrl) {
@@ -199,10 +203,12 @@ class S3Storage implements Storage {
   }
 
   async download(path: string): Promise<Uint8Array> {
-    const response = await this.client.send(new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: path,
-    }));
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: path,
+      }),
+    );
 
     if (!response.Body) {
       throw new Error('No file content received');
@@ -228,10 +234,12 @@ class S3Storage implements Storage {
   }
 
   async delete(path: string): Promise<void> {
-    await this.client.send(new DeleteObjectCommand({
-      Bucket: this.bucket,
-      Key: path,
-    }));
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: path,
+      }),
+    );
   }
 
   async getSignedUrl(path: string, expiresIn: number): Promise<string> {
@@ -244,20 +252,24 @@ class S3Storage implements Storage {
   }
 
   async list(prefix = ''): Promise<string[]> {
-    const response = await this.client.send(new ListObjectsV2Command({
-      Bucket: this.bucket,
-      Prefix: prefix,
-    }));
+    const response = await this.client.send(
+      new ListObjectsV2Command({
+        Bucket: this.bucket,
+        Prefix: prefix,
+      }),
+    );
 
     return response.Contents?.map((obj) => obj.Key || '') || [];
   }
 
   async exists(path: string): Promise<boolean> {
     try {
-      await this.client.send(new GetObjectCommand({
-        Bucket: this.bucket,
-        Key: path,
-      }));
+      await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: path,
+        }),
+      );
       return true;
     } catch {
       return false;

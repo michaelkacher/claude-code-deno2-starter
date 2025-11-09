@@ -311,6 +311,10 @@ test.describe('[Feature Name] - Performance', () => {
   });
 });
 
+// Use Playwright types when available, otherwise use unknown
+// deno-lint-ignore no-explicit-any
+type PageType = any; // Playwright Page type
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -318,7 +322,7 @@ test.describe('[Feature Name] - Performance', () => {
 /**
  * Helper: Log in a user
  */
-async function login(page: any, email: string, password: string) {
+async function login(page: PageType, email: string, password: string) {
   await page.goto(`${BASE_URL}/login`);
   await page.fill('[data-testid="email-input"]', email);
   await page.fill('[data-testid="password-input"]', password);
@@ -329,7 +333,7 @@ async function login(page: any, email: string, password: string) {
 /**
  * Helper: Create test data via API
  */
-async function createTestData(request: any, data: any) {
+async function createTestData(request: PageType, data: unknown) {
   const response = await request.post(`${API_URL}/api/[endpoint]`, {
     data,
   });
@@ -339,14 +343,14 @@ async function createTestData(request: any, data: any) {
 /**
  * Helper: Clean up test data
  */
-async function cleanupTestData(request: any, id: string) {
+async function cleanupTestData(request: PageType, id: string) {
   await request.delete(`${API_URL}/api/[endpoint]/${id}`);
 }
 
 /**
  * Helper: Wait for element to be stable (not animating)
  */
-async function waitForStable(page: any, selector: string) {
+async function waitForStable(page: PageType, selector: string) {
   const element = page.locator(selector);
   await element.waitFor({ state: 'visible' });
   
