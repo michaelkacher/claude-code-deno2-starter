@@ -6,7 +6,6 @@
  * that should be promoted to admin on first login.
  * 
  * Security: Only runs if:
- * - DISABLE_AUTH=false (authentication is enabled)
  * - INITIAL_ADMIN_EMAIL is set
  * - User with that email exists
  * - User is not already an admin
@@ -24,14 +23,6 @@ const logger = createLogger('InitialAdminSetup');
  * Safe to call on every startup - only promotes once
  */
 export async function setupInitialAdmin(): Promise<void> {
-  // Check if auth is disabled
-  const authDisabled = Deno.env.get('DISABLE_AUTH') === 'true';
-  
-  if (authDisabled) {
-    // Auth is disabled, no need for admin setup
-    return;
-  }
-
   // Check if initial admin email is specified
   const initialAdminEmail = Deno.env.get('INITIAL_ADMIN_EMAIL');
   

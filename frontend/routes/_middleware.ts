@@ -80,13 +80,6 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
         // Invalid token
       }
     }
-    
-    // Check if auth is disabled via environment variable
-    const disableAuthEnv = Deno.env.get('DISABLE_AUTH');
-    const disableAuth = disableAuthEnv === 'true';
-    if (disableAuth) {
-      return await ctx.next();
-    }
 
     // Allow public routes
     const isPublicRoute = publicRoutes.some(route => {

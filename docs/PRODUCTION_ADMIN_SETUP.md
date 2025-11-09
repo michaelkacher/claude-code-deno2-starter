@@ -6,6 +6,10 @@ Complete guide for setting up the first admin user in production.
 
 When deploying to production, you need at least one admin user to access the admin panel. This guide covers the automatic setup process.
 
+**Development vs Production:**
+- **Development:** Auto-creates `admin@dev.local` on first run (zero config!)
+- **Production:** Use `INITIAL_ADMIN_EMAIL` to auto-promote a user to admin
+
 ---
 
 ## Automatic Admin Setup (Recommended)
@@ -22,7 +26,7 @@ The template includes an automatic admin setup system that runs on server startu
 
 ### Security Features
 
-✅ **Only runs if authentication is enabled** (`DISABLE_AUTH=false`)  
+✅ **Production only** - Development uses auto-created admin@dev.local  
 ✅ **Only promotes once** - safe to leave variable set temporarily  
 ✅ **No exposed endpoints** - completely server-side  
 ✅ **Automatic cleanup** - reminds you to remove the variable  
@@ -154,7 +158,6 @@ After setup, verify your admin access:
 **Problem**: Signed up but not promoted to admin
 
 **Checklist**:
-- [ ] Is `DISABLE_AUTH=false`? (Auth must be enabled)
 - [ ] Did you restart the server after signing up?
 - [ ] Is the email **exactly** the same? (case-sensitive)
 - [ ] Check deployment logs for setup messages
@@ -163,9 +166,6 @@ After setup, verify your admin access:
 ```bash
 # Check current environment variables
 deno eval "console.log(Deno.env.get('INITIAL_ADMIN_EMAIL'))"
-
-# Verify auth is enabled
-deno eval "console.log(Deno.env.get('DISABLE_AUTH'))"
 ```
 
 ---
@@ -267,13 +267,14 @@ After you have admin access, you can promote other users through the admin panel
 ## Environment Variable Reference
 
 ```bash
-# Required for automatic admin setup
+# Production: Automatic admin setup
 INITIAL_ADMIN_EMAIL=your-email@company.com
 
-# Must be false for admin setup to work
-DISABLE_AUTH=false
+# Development: Customize first-run admin (optional)
+DEV_ADMIN_EMAIL=admin@dev.local
+DEV_ADMIN_PASSWORD=admin123
 
-# Other auth-related variables
+# Authentication
 JWT_SECRET=your-secret-key
 JWT_EXPIRES_IN=7d
 CORS_ORIGIN=https://your-app.deno.dev
@@ -327,12 +328,12 @@ If you encounter issues:
 
 1. **Check deployment logs** for error messages
 2. **Verify environment variables** are set correctly
-3. **Test locally** with the same setup
+3. **Test locally** with the same setup (auto-creates admin@dev.local)
 4. **Review this guide** for troubleshooting steps
 5. **Use the CLI script** as a fallback method
 
 For persistent issues, check that:
-- Authentication is enabled (`DISABLE_AUTH=false`)
 - Database is accessible
 - User account was created successfully
 - Email matches exactly (case-sensitive)
+- Server restarted after signup

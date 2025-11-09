@@ -20,13 +20,9 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
   const userRole = state?.userRole || null;
   const initialTheme = state?.initialTheme || null;
   
-  // Check if auth is disabled
-  const disableAuthEnv = typeof Deno !== 'undefined' ? Deno.env.get('DISABLE_AUTH') : undefined;
-  const disableAuth = disableAuthEnv === 'true' || disableAuthEnv === undefined;
-  
   // Don't show email verification banner on login or signup pages
   const isAuthPage = url.pathname === '/login' || url.pathname === '/signup';
-  const showEmailBanner = !isAuthPage && !disableAuth;
+  const showEmailBanner = !isAuthPage;
   
   return (
     <html>

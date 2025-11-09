@@ -5,6 +5,7 @@
  * Called from Fresh server startup
  */
 
+import { setupDevAdmin } from './lib/dev-admin-setup.ts';
 import { setupInitialAdmin } from './lib/initial-admin-setup.ts';
 import { createLogger } from './lib/logger.ts';
 import { queue } from './lib/queue.ts';
@@ -20,7 +21,11 @@ const logger = createLogger('Startup');
 export async function initializeBackgroundServices() {
   logger.info('initializeBackgroundServices() CALLED');
   try {
-    // Setup initial admin if specified (only runs if DISABLE_AUTH=false)
+    // Auto-create dev admin on first run (development only)
+    logger.info('Checking for first-run dev admin setup...');
+    await setupDevAdmin();
+
+    // Setup initial admin if specified (production)
     logger.info('Setting up initial admin user...');
     await setupInitialAdmin();
 

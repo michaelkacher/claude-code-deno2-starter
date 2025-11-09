@@ -56,14 +56,9 @@ Then clone your new repository that was created.
 ```bash
 git clone <your-repo-url>
 cd <your-project>
-
-# Set up environment variables
-cp .env.example .env
 ```
 
-Edit `.env` with your configuration. (this is not required to run in dev mode)
-
-2. Run the project
+### 2. Run the Project
 
 ```bash
 # Start the Fresh server with background services
@@ -72,7 +67,22 @@ deno task dev
 # API: http://localhost:3000/api/*
 ```
 
-3. Gather Requirements (Not required, but recommended for larger projects)
+**First Run Auto-Setup:**
+On first run in development mode, a test admin account is automatically created:
+- 📧 Email: `admin@dev.local`
+- 🔑 Password: `admin123`
+
+Visit http://localhost:3000/login to access the admin panel!
+
+**Customize Credentials (Optional):**
+Create a `.env` file and set:
+```bash
+DEV_ADMIN_EMAIL=your@email.com
+DEV_ADMIN_PASSWORD=yourpassword
+DEV_ADMIN_NAME="Your Name"
+```
+
+### 3. Gather Requirements (Not required, but recommended for larger projects)
 ```bash
 # Gathers information on the scope of the project, personas, goals,
 # Non-functional requirements, and more

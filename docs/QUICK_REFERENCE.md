@@ -48,17 +48,31 @@ git push origin main             # Auto-deploy via GitHub Actions
 
 ## Authentication & Security
 
+### First Run Setup (Development)
+
+On first run in development mode, a test admin account is automatically created:
+- 📧 Email: `admin@dev.local`
+- 🔑 Password: `admin123`
+
+**Customize Credentials (Optional):**
+```bash
+# .env file
+DEV_ADMIN_EMAIL=your@email.com
+DEV_ADMIN_PASSWORD=yourpassword
+DEV_ADMIN_NAME="Your Name"
+```
+
 ### Environment Variables
 
 ```bash
-# .env file
-DISABLE_AUTH=false               # Authentication is ENABLED (default: false)
+# .env file - Authentication
 JWT_EXPIRES_IN=15m               # Access token expiry (15 minutes)
 JWT_REFRESH_EXPIRES_IN=30d       # Refresh token expiry (30 days)
 JWT_SECRET=your-secret-here      # Min 32 chars, required for auth
-```
 
-**Important:** `DISABLE_AUTH` only disables auth when explicitly set to `"true"`. If undefined or `"false"`, authentication is ENABLED.
+# Production: Auto-promote to admin
+INITIAL_ADMIN_EMAIL=user@company.com  # Remove after first admin created
+```
 
 ### Token Refresh Mechanism
 
@@ -92,11 +106,10 @@ The app automatically refreshes access tokens to keep users logged in:
 // Page middleware (_middleware.ts)
 1. Extract auth_token from cookie
 2. Decode JWT and set ctx.state (userEmail, userRole)
-3. Check DISABLE_AUTH environment variable
-4. If auth enabled:
-   - Verify token signature via /api/auth/verify
-   - Redirect to login if invalid/expired
-5. Pass ctx.state to _app.tsx (server-side only)
+3. Allow public routes (/, /login, /signup, etc.)
+4. Verify token signature via /api/auth/verify
+5. Redirect to login if invalid/expired
+6. Pass ctx.state to _app.tsx (server-side only)
 
 // Client-side state
 - Navigation receives props from _app.tsx
@@ -300,7 +313,8 @@ When you have:
 - ✅ Clear separation: Routes → Services → Database
 
 ### Authentication
-- ✅ Always set DISABLE_AUTH explicitly in .env (never rely on undefined)
+- ✅ Development: Auto-setup creates admin@dev.local on first run
+- ✅ Production: Use INITIAL_ADMIN_EMAIL for first admin, then remove it
 - ✅ Use consistent cookie settings (SameSite=Lax for auth_token)
 - ✅ Token refresh should run regardless of user activity
 - ✅ Provide sufficient buffer time before token expiry (5+ minutes)
@@ -327,13 +341,11 @@ deno task kill-ports
 **Root Causes:**
 1. **Token expired before refresh** - Check token refresh is running
 2. **Cookie SameSite mismatch** - Should always be `Lax` for auth_token
-3. **DISABLE_AUTH defaulting incorrectly** - Set explicitly in .env
-4. **Page visibility/activity blocking refresh** - Fixed in latest version
+3. **Page visibility/activity blocking refresh** - Fixed in latest version
 
 **Debug Steps:**
 ```bash
 # 1. Check .env configuration
-DISABLE_AUTH=false               # Must be explicit
 JWT_EXPIRES_IN=15m               # Or increase to 30m/1h
 
 # 2. Open browser console and look for:
@@ -397,8 +409,9 @@ This is **expected behavior** when there's no auth cookie. The middleware sets `
 
 Before reporting issues, verify:
 
-- [ ] `.env` file exists with `DISABLE_AUTH=false` explicitly set
-- [ ] JWT_SECRET is at least 32 characters
+- [ ] Dev server running (`deno task dev`)
+- [ ] First run created admin@dev.local (check console output)
+- [ ] JWT_SECRET is at least 32 characters in `.env`
 - [ ] Dev server restarted after .env changes
 - [ ] Browser console shows token refresh logs every 10 minutes
 - [ ] Cookies are not being blocked by browser/extensions
