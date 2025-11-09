@@ -392,7 +392,24 @@ After frontend implementation, **MANDATORY runtime safety verification**:
    // Solution: Read component interface first!
    ```
 
-   **❌ UNSAFE Pattern 4: Direct localStorage access**
+   **❌ UNSAFE Pattern 4: Controlled component event handlers**
+   ```typescript
+   // Search for: e\.target
+   onChange={(e) => setState(e.target.value)}           // BAD
+   onChange={(e) => setState(e.currentTarget.value)}    // GOOD
+   ```
+
+   **❌ UNSAFE Pattern 5: Controlled Select with children pattern**
+   ```typescript
+   // Check for: <Select.*value.*>.*<option
+   <Select value={state}>                               // BAD - unreliable
+     <option value="1">Item 1</option>
+   </Select>
+   
+   <Select value={state} options={[...]} />            // GOOD - reliable
+   ```
+
+   **❌ UNSAFE Pattern 6: Direct localStorage access**
    ```typescript
    // Search for: localStorage\.
    localStorage.getItem('token')      // BAD
@@ -405,6 +422,8 @@ After frontend implementation, **MANDATORY runtime safety verification**:
    - [ ] Every `.length` has null check or `?.`
    - [ ] Every nested property uses `?.` optional chaining
    - [ ] All design system components checked against their interfaces
+   - [ ] All event handlers use `e.currentTarget` not `e.target`
+   - [ ] All controlled `<Select>` components use `options` prop pattern
    - [ ] No direct `localStorage` calls (use `TokenStorage`)
    - [ ] No manual `fetch` calls (use `apiClient`)
 

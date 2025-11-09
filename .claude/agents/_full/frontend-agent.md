@@ -127,17 +127,73 @@ interface SelectProps {
   children?: JSX.Element | JSX.Element[];        // Supports both!
 }
 
-// Step 2: Use based on interface
-// Option A: Pass options prop
-<Select options={[{value: '1', label: 'Option 1'}]} />
+// Step 2: PREFER options prop for controlled components
+// ✅ BEST - Controlled component with options prop (more reliable)
+<Select 
+  value={selectedValue}
+  onChange={(e) => setSelectedValue(e.currentTarget.value)}
+  options={items.map(item => ({ value: item.id, label: item.name }))}
+/>
 
-// Option B: Pass children (if supported)
-<Select>
+// ⚠️ USE WITH CAUTION - Children pattern (can cause state issues)
+<Select value={selectedValue} onChange={(e) => setSelectedValue(e.currentTarget.value)}>
   <option value="1">Option 1</option>
 </Select>
 ```
 
-### 4. Component Props - Handle Both Required and Optional
+**CRITICAL: Design System Select Component Usage**
+
+When using the `Select` component from the design system:
+- ✅ **ALWAYS use `options` prop for controlled components**
+- ✅ **ALWAYS use `e.currentTarget` not `e.target` in event handlers**
+- ❌ **AVOID `children` pattern for controlled selects** (can cause value binding issues)
+
+```typescript
+// ❌ BAD - Children pattern with controlled component (unreliable)
+<Select value={state} onChange={(e) => setState(e.target.value)}>
+  {items.map(item => <option value={item.id}>{item.name}</option>)}
+</Select>
+
+// ✅ GOOD - Options prop with controlled component (reliable)
+<Select 
+  value={state} 
+  onChange={(e) => setState((e.currentTarget as HTMLSelectElement).value)}
+  options={items.map(item => ({ value: item.id, label: item.name }))}
+/>
+```
+
+### 4. Controlled Component Event Handlers - USE currentTarget
+
+```typescript
+// ❌ BAD - Using e.target (can point to wrong element in event bubbling)
+<Input 
+  value={name}
+  onInput={(e) => setName((e.target as HTMLInputElement).value)}
+/>
+
+<Select 
+  value={choice}
+  onChange={(e) => setChoice((e.target as HTMLSelectElement).value)}
+/>
+
+// ✅ GOOD - Using e.currentTarget (always correct element)
+<Input 
+  value={name}
+  onInput={(e) => setName((e.currentTarget as HTMLInputElement).value)}
+/>
+
+<Select 
+  value={choice}
+  onChange={(e) => setChoice((e.currentTarget as HTMLSelectElement).value)}
+/>
+```
+
+**Why currentTarget matters:**
+- `e.target` = element that triggered the event (could be child element)
+- `e.currentTarget` = element that has the event listener (always correct)
+- In forms with nested elements, `target` can cause bugs
+
+### 5. Component Props - Handle Both Required and Optional
 
 ```typescript
 // When creating/modifying components that accept arrays or objects:
