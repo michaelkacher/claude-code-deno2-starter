@@ -38,7 +38,7 @@ deno task kv:reset         # Delete database (fresh start)
 deno task kv:inspect       # View all data
 
 # Testing
-deno test                  # Tests use :memory: (isolated)
+deno task test                  # Tests use :memory: (isolated)
 ```
 
 ## Best Practices

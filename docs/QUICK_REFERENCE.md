@@ -1,6 +1,6 @@
 # Quick Reference Guide
 
-**Last Updated:** 2025-01-27
+**Last Updated:** 2025-11-08
 
 This is a condensed reference for common patterns and workflows. For detailed guides, see `docs/guides/`.
 
@@ -30,7 +30,7 @@ deno task dev
 /new-feature                     # Converts mockup to full feature
 
 # Testing
-deno test                        # Run all tests
+deno task test                        # Run all tests
 deno task test:watch             # Watch mode
 deno task test:coverage          # Coverage report
 
@@ -42,6 +42,67 @@ deno lint                        # Lint code
 # Deployment
 deno task deploy                 # Deploy to Deno Deploy
 git push origin main             # Auto-deploy via GitHub Actions
+```
+
+---
+
+## Authentication & Security
+
+### Environment Variables
+
+```bash
+# .env file
+DISABLE_AUTH=false               # Authentication is ENABLED (default: false)
+JWT_EXPIRES_IN=15m               # Access token expiry (15 minutes)
+JWT_REFRESH_EXPIRES_IN=30d       # Refresh token expiry (30 days)
+JWT_SECRET=your-secret-here      # Min 32 chars, required for auth
+```
+
+**Important:** `DISABLE_AUTH` only disables auth when explicitly set to `"true"`. If undefined or `"false"`, authentication is ENABLED.
+
+### Token Refresh Mechanism
+
+The app automatically refreshes access tokens to keep users logged in:
+
+- **Access Token:** 15 minutes (stored in cookie + localStorage)
+- **Refresh Token:** 30 days (httpOnly cookie, server-side only)
+- **Auto-refresh:** Every 10 minutes (5-minute buffer before expiry)
+- **Cookie Settings:** `SameSite=Lax` for both login and refresh
+
+```typescript
+// Token refresh runs automatically in the background
+// No user action needed - handled by /lib/token-refresh
+
+// Timeline:
+// 0 min:  Login → tokens issued
+// 10 min: Auto-refresh (5 min before expiry)
+// 20 min: Auto-refresh again
+// ...continues every 10 minutes
+```
+
+**Key Points:**
+- Refresh happens regardless of page visibility or user activity
+- Uses BroadcastChannel for cross-tab synchronization
+- If refresh fails (401/403), redirects to login automatically
+- Refresh token is httpOnly and cannot be accessed by JavaScript
+
+### Middleware Flow
+
+```typescript
+// Page middleware (_middleware.ts)
+1. Extract auth_token from cookie
+2. Decode JWT and set ctx.state (userEmail, userRole)
+3. Check DISABLE_AUTH environment variable
+4. If auth enabled:
+   - Verify token signature via /api/auth/verify
+   - Redirect to login if invalid/expired
+5. Pass ctx.state to _app.tsx (server-side only)
+
+// Client-side state
+- Navigation receives props from _app.tsx
+- UserProfileDropdown initializes from props
+- Token stored in localStorage + cookie
+- Auto-refresh keeps session alive
 ```
 
 ---
@@ -230,12 +291,19 @@ When you have:
 - ✅ KISS - Keep It Simple, Stupid
 - ✅ DRY - Don't Repeat Yourself
 - ✅ Test first (TDD)
+- ✅ Use logger for server-side code (never console.log in routes/services)
 
 ### Architecture
 - ✅ Start simple, scale later
 - ✅ Use boring, proven technology
 - ✅ Avoid premature optimization
 - ✅ Clear separation: Routes → Services → Database
+
+### Authentication
+- ✅ Always set DISABLE_AUTH explicitly in .env (never rely on undefined)
+- ✅ Use consistent cookie settings (SameSite=Lax for auth_token)
+- ✅ Token refresh should run regardless of user activity
+- ✅ Provide sufficient buffer time before token expiry (5+ minutes)
 
 ### Testing
 - ✅ Test business logic (not frameworks)
@@ -254,6 +322,35 @@ deno task kill-ports
 # Then restart: deno task dev
 ```
 
+### "Unexpected logout / Session expired"
+
+**Root Causes:**
+1. **Token expired before refresh** - Check token refresh is running
+2. **Cookie SameSite mismatch** - Should always be `Lax` for auth_token
+3. **DISABLE_AUTH defaulting incorrectly** - Set explicitly in .env
+4. **Page visibility/activity blocking refresh** - Fixed in latest version
+
+**Debug Steps:**
+```bash
+# 1. Check .env configuration
+DISABLE_AUTH=false               # Must be explicit
+JWT_EXPIRES_IN=15m               # Or increase to 30m/1h
+
+# 2. Open browser console and look for:
+"Periodic token refresh triggered"
+"Access token refreshed successfully"
+
+# 3. Verify cookie settings in DevTools:
+# - auth_token: SameSite=Lax, expires in 15 minutes
+# - refresh_token: HttpOnly, SameSite=Lax, expires in 30 days
+```
+
+**Solutions:**
+- Increase token expiry time: `JWT_EXPIRES_IN=30m` or `1h`
+- Verify token refresh script is loaded in browser
+- Check network tab for `/api/auth/refresh` calls every 10 minutes
+- Ensure refresh token cookie is not blocked by browser settings
+
 ### "Module not found"
 ```bash
 # Always include .ts extension in imports
@@ -267,6 +364,14 @@ import { foo } from './bar';      // ❌ Wrong
 const kv = await Deno.openKv(':memory:');
 ```
 
+### "State is null in _app.tsx"
+
+This is **expected behavior** when there's no auth cookie. The middleware sets `ctx.state` correctly, but:
+- Client-side renders don't have access to server-side state
+- State is only available during server-side rendering
+- Use props passed from _app.tsx to islands for user data
+- Never rely on ctx.state being available in client-side code
+
 ---
 
 ## Resources
@@ -277,6 +382,28 @@ const kv = await Deno.openKv(':memory:');
 - **Deno Docs:** https://deno.com/manual
 - **Fresh Docs:** https://fresh.deno.dev/docs
 - **Deno KV Docs:** https://deno.com/kv
+
+### Key Architecture Points
+
+1. **Single Server:** All code runs on one Fresh server (SSR + API + Islands)
+2. **Token Refresh:** Automatic every 10 minutes with 5-minute buffer
+3. **Auth Flow:** Cookie → Middleware → State → Props → Islands
+4. **Logging:** Use `createLogger()` for all server-side code, console for client-side debug only
+5. **State Management:** Server state (ctx.state) is separate from client state (signals/localStorage)
+
+---
+
+## Troubleshooting Checklist
+
+Before reporting issues, verify:
+
+- [ ] `.env` file exists with `DISABLE_AUTH=false` explicitly set
+- [ ] JWT_SECRET is at least 32 characters
+- [ ] Dev server restarted after .env changes
+- [ ] Browser console shows token refresh logs every 10 minutes
+- [ ] Cookies are not being blocked by browser/extensions
+- [ ] Fresh cache cleared: `rm -rf frontend/_fresh`
+- [ ] Using latest code with consistent SameSite=Lax cookies
 
 ---
 
