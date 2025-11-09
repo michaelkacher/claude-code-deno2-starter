@@ -27,17 +27,22 @@ export async function setupDevAdmin(): Promise<void> {
   const isDevelopment = !denoEnv || denoEnv === 'development';
   
   if (!isDevelopment) {
+    logger.debug('Skipping dev admin setup - not in development mode');
     return; // Skip in production/staging/test
   }
+
+  logger.info('Running dev admin setup check...');
 
   try {
     const userRepo = new UserRepository();
     
     // Check if any users exist
     const userCount = await userRepo.countUsers();
+    logger.debug('User count check', { userCount });
     
     if (userCount > 0) {
       // Users already exist, skip setup
+      logger.info('Users already exist, skipping dev admin creation');
       return;
     }
 
@@ -90,6 +95,10 @@ export async function setupDevAdmin(): Promise<void> {
       usingDefaults: email === defaultEmail && password === defaultPassword
     });
   } catch (error) {
+    // Log error prominently - this is important for first-run experience
+    console.error('\n❌ FAILED TO CREATE DEVELOPMENT ADMIN USER');
+    console.error('Error:', error);
+    console.error('You can still use the app by signing up manually at /signup\n');
     logger.error('Failed to setup development admin', { error });
     // Don't throw - this shouldn't crash the app
     // User can still create account manually via signup

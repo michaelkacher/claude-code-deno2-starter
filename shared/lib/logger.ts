@@ -49,11 +49,11 @@ class LoggerImpl implements Logger {
 
   constructor(context: string) {
     this.context = context;
-    // Safely check environment - default to production if we can't access env
+    // Safely check environment - default to development unless explicitly production
     try {
-      this.isDevelopment = Deno.env.get('DENO_ENV') === 'development';
+      this.isDevelopment = Deno.env.get('DENO_ENV') !== 'production';
     } catch {
-      this.isDevelopment = false;
+      this.isDevelopment = true; // Default to development if env access fails
     }
     this.minLevel = this.isDevelopment ? 'debug' : 'info';
   }
