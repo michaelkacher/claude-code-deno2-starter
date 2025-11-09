@@ -215,7 +215,38 @@ export function List({ items }: { items?: Item[] }) {
 }
 ```
 
-### 5. SSR Safety - Check Browser Environment
+### 6. List Rendering Keys - ENSURE Uniqueness
+
+**CRITICAL**: React/Preact keys must be unique for each item in a list.
+
+```typescript
+// ❌ BAD - Assumes values are unique (dangerous!)
+const modifiers = [2, 1, 1, 0, 0, -1];  // Contains duplicates!
+{modifiers.map(mod => (
+  <option key={mod} value={mod}>{mod}</option>  // ⚠️ Duplicate keys!
+))}
+
+// ✅ GOOD - Use index when values might duplicate
+{modifiers.map((mod, idx) => (
+  <option key={`mod-${idx}`} value={mod}>{mod}</option>
+))}
+
+// ✅ BETTER - Composite key for debugging clarity
+{modifiers.map((mod, idx) => (
+  <option key={`${fieldName}-${mod}-${idx}`} value={mod}>{mod}</option>
+))}
+
+// ✅ BEST - Use unique ID when available
+{items.map(item => (
+  <Card key={item.id}>{item.name}</Card>
+))}
+```
+
+**Key Priority:** 1) Unique ID → 2) Composite key → 3) Index only
+
+**Console warning:** "two or more children with the same key" = fix immediately!
+
+### 7. SSR Safety - Check Browser Environment
 
 ```typescript
 // ❌ BAD - Will crash during SSR
