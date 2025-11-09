@@ -41,8 +41,9 @@ irm https://deno.land/install.ps1 | iex
 # Linux: snap install deno
 ```
 
-2. **AI Assistant**:
+2. **AI Assistant** (choose one):
    - **Claude Code**: Install with `npm install -g @anthropic-ai/claude-code` ([pricing](https://www.claude.com/pricing))
+   - **GitHub Copilot**: VS Code integration(requires GitHub Copilot subscription)
 
 ## Quick Start
 
@@ -81,7 +82,7 @@ deno task dev
 
 ```bash
 # Guided customization workflow to brand your application
-# Works with Claude Code or GitHub Copilot
+# Works with Claude Code and GitHub Copilot
 /customize
 
 # The command walks you through:
@@ -91,6 +92,9 @@ deno task dev
 # - Updating navigation structure
 # - Creates/updates frontend/lib/config.ts with your settings
 ```
+
+**Note:** For GitHub Copilot, type `/customize` in Copilot Chat after reloading VS Code.
+All commands work identically in both Claude Code and GitHub Copilot.
 
 **What gets customized:**
 - Site name, description, and URL
