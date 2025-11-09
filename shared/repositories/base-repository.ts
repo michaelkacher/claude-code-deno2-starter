@@ -99,7 +99,11 @@ export abstract class BaseRepository<T> {
       
       return entry.value;
     } catch (error) {
-      this.logger.error(`Error getting ${this.entityName}`, { key, error });
+      this.logger.error(`Error getting ${this.entityName}`, error, { 
+        key,
+        keyString: JSON.stringify(key),
+        operation: 'get'
+      });
       throw error;
     }
   }
@@ -119,7 +123,12 @@ export abstract class BaseRepository<T> {
       
       this.logger.debug(`${this.entityName} saved`, { key });
     } catch (error) {
-      this.logger.error(`Error setting ${this.entityName}`, { key, error });
+      this.logger.error(`Error setting ${this.entityName}`, error, { 
+        key,
+        keyString: JSON.stringify(key),
+        operation: 'set',
+        hasExpiration: !!options?.expireIn
+      });
       throw error;
     }
   }
@@ -133,7 +142,11 @@ export abstract class BaseRepository<T> {
       await kv.delete(key);
       this.logger.debug(`${this.entityName} deleted`, { key });
     } catch (error) {
-      this.logger.error(`Error deleting ${this.entityName}`, { key, error });
+      this.logger.error(`Error deleting ${this.entityName}`, error, { 
+        key,
+        keyString: JSON.stringify(key),
+        operation: 'delete'
+      });
       throw error;
     }
   }
@@ -182,7 +195,13 @@ export abstract class BaseRepository<T> {
         hasMore: cursor !== null,
       };
     } catch (error) {
-      this.logger.error(`Error listing ${this.entityName}`, { prefix, error });
+      this.logger.error(`Error listing ${this.entityName}`, error, { 
+        prefix,
+        prefixString: JSON.stringify(prefix),
+        operation: 'list',
+        limit: options.limit,
+        reverse: options.reverse
+      });
       throw error;
     }
   }
@@ -210,7 +229,11 @@ export abstract class BaseRepository<T> {
       
       return count;
     } catch (error) {
-      this.logger.error(`Error counting ${this.entityName}`, { prefix, error });
+      this.logger.error(`Error counting ${this.entityName}`, error, { 
+        prefix,
+        prefixString: JSON.stringify(prefix),
+        operation: 'count'
+      });
       throw error;
     }
   }
@@ -224,7 +247,11 @@ export abstract class BaseRepository<T> {
       const entry = await kv.get(key);
       return entry.value !== null;
     } catch (error) {
-      this.logger.error(`Error checking ${this.entityName} existence`, { key, error });
+      this.logger.error(`Error checking ${this.entityName} existence`, error, { 
+        key,
+        keyString: JSON.stringify(key),
+        operation: 'exists'
+      });
       throw error;
     }
   }

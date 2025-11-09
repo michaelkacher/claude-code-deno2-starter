@@ -114,6 +114,22 @@ class LoggerImpl implements Logger {
           message: error.message,
           stack: error.stack,
         };
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle plain objects and other error-like objects
+        try {
+          const errorObj = error as Record<string, unknown>;
+          entry.error = {
+            name: errorObj.name ? String(errorObj.name) : 'UnknownError',
+            message: errorObj.message ? String(errorObj.message) : JSON.stringify(error),
+            stack: errorObj.stack ? String(errorObj.stack) : undefined,
+          };
+        } catch {
+          // Fallback if JSON.stringify fails
+          entry.error = {
+            name: 'UnknownError',
+            message: String(error),
+          };
+        }
       } else {
         entry.error = {
           name: 'Unknown',
