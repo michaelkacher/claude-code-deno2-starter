@@ -4,6 +4,8 @@
     "jsr:@std/assert@*": "1.0.15",
     "jsr:@std/assert@1": "1.0.15",
     "jsr:@std/assert@^1.0.15": "1.0.15",
+    "jsr:@std/async@^1.0.15": "1.0.15",
+    "jsr:@std/data-structures@^1.0.9": "1.0.9",
     "jsr:@std/dotenv@*": "0.225.5",
     "jsr:@std/encoding@*": "1.0.10",
     "jsr:@std/fs@*": "1.0.19",
@@ -28,6 +30,12 @@
       "dependencies": [
         "jsr:@std/internal@^1.0.12"
       ]
+    },
+    "@std/async@1.0.15": {
+      "integrity": "55d1d9d04f99403fe5730ab16bdcc3c47f658a6bf054cafb38a50f046238116e"
+    },
+    "@std/data-structures@1.0.9": {
+      "integrity": "033d6e17e64bf1f84a614e647c1b015fa2576ae3312305821e1a4cb20674bb4d"
     },
     "@std/dotenv@0.225.5": {
       "integrity": "9ce6f9d0ec3311f74a32535aa1b8c62ed88b1ab91b7f0815797d77a6f60c922f"
@@ -55,6 +63,8 @@
       "integrity": "a917ffdeb5924c9be436dc78bc32e511760e14d3a96e49c607fc5ecca86d0092",
       "dependencies": [
         "jsr:@std/assert@^1.0.15",
+        "jsr:@std/async",
+        "jsr:@std/data-structures",
         "jsr:@std/internal@^1.0.12"
       ]
     }

@@ -74,16 +74,16 @@ export const defaultConfig: SiteConfig = {
 
   navigation: {
     primary: [
-      {
-        label: "Home",
-        href: "/",
-        icon: "🏠",
-      },
-      {
-        label: "Design System",
-        href: "/design-system",
-        icon: "🎨",
-      },
+      // {
+      //   label: "Home",
+      //   href: "/",
+      //   icon: "🏠",
+      // },
+      // {
+      //   label: "Design System",
+      //   href: "/design-system",
+      //   icon: "🎨",
+      // },
     //   {
     //     label: "Documentation",
     //     href: "/docs",

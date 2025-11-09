@@ -18,15 +18,15 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import {
-  accessToken,
-  addNotification,
-  clearAuth,
-  isAuthenticated,
-  markNotificationAsRead,
-  notifications,
-  setUnreadCount,
-  setWsConnected,
-  wsConnection,
+    accessToken,
+    addNotification,
+    clearAuth,
+    isAuthenticated,
+    markNotificationAsRead,
+    notifications,
+    setUnreadCount,
+    setWsConnected,
+    wsConnection,
 } from './store.ts';
 
 // ============================================================================
@@ -70,13 +70,82 @@ enum ConnectionState {
 let connectionState: ConnectionState = ConnectionState.DISCONNECTED;
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Decode JWT to check expiration (client-side only, no verification)
+ */
+function isTokenExpiringSoon(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    const exp = payload.exp * 1000; // Convert to milliseconds
+    const now = Date.now();
+    
+    // Consider token as expiring soon if less than 2 minutes remaining
+    const TWO_MINUTES = 2 * 60 * 1000;
+    return (exp - now) < TWO_MINUTES;
+  } catch (error) {
+    console.error('[WebSocket] Error checking token expiration:', error);
+    return true; // Assume expired if we can't parse
+  }
+}
+
+/**
+ * Refresh the access token
+ */
+async function refreshToken(): Promise<boolean> {
+  try {
+    console.log('[WebSocket] Refreshing token...');
+    const response = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      console.error('[WebSocket] Token refresh failed:', response.status);
+      if (response.status === 401 || response.status === 403) {
+        // Refresh token is invalid/expired, clear auth
+        clearAuth();
+      }
+      return false;
+    }
+
+    const data = await response.json();
+    const newAccessToken = data.data?.access_token || data.accessToken;
+
+    if (!newAccessToken) {
+      console.error('[WebSocket] No access token in refresh response');
+      return false;
+    }
+
+    // Update the token in storage (this will trigger signal updates)
+    localStorage.setItem('access_token', newAccessToken);
+    accessToken.value = newAccessToken;
+
+    // Update the cookie for middleware
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    document.cookie = `auth_token=${newAccessToken}; expires=${expiresAt.toUTCString()}; path=/; SameSite=Lax`;
+
+    console.log('[WebSocket] Token refreshed successfully');
+    return true;
+  } catch (error) {
+    console.error('[WebSocket] Token refresh error:', error);
+    return false;
+  }
+}
+
+// ============================================================================
 // WebSocket Connection Management
 // ============================================================================
 
 /**
  * Connect to WebSocket server for real-time notifications
  */
-export function connectWebSocket() {
+export async function connectWebSocket() {
   if (!IS_BROWSER) return;
 
   // Connection state guard: prevent concurrent connection attempts
@@ -90,6 +159,18 @@ export function connectWebSocket() {
     console.log('[WebSocket] Not authenticated, skipping connection');
     connectionState = ConnectionState.DISCONNECTED;
     return;
+  }
+
+  // Check if token is expiring soon and refresh if needed
+  const currentToken = accessToken.value;
+  if (isTokenExpiringSoon(currentToken)) {
+    console.log('[WebSocket] Token expiring soon, refreshing before connection...');
+    const refreshed = await refreshToken();
+    if (!refreshed) {
+      console.error('[WebSocket] Failed to refresh token, cannot connect');
+      connectionState = ConnectionState.DISCONNECTED;
+      return;
+    }
   }
 
   // Don't reconnect if already connected

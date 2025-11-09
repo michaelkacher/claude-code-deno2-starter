@@ -4,7 +4,6 @@
  */
 
 import { UserRepository } from '../repositories/index.ts';
-import { NotificationService } from '../services/notifications.ts';
 import { verifyToken } from './jwt.ts';
 import { getKv } from './kv.ts';
 import { createLogger } from './logger.ts';
@@ -22,6 +21,35 @@ interface WebSocketClient {
   lastActivity: number; // Last time we received a message
 }
 
+/**
+ * Optional dependencies for testing
+ * Allows injection of mock implementations
+ */
+export interface WebSocketDependencies {
+  verifyToken?: (token: string) => Promise<Record<string, unknown>>;
+  createUserRepository?: () => {
+    findById: (id: string) => Promise<{ id: string; role: string } | null>;
+    close: () => Promise<void>;
+  };
+  getUnreadCount?: (userId: string) => Promise<number>;
+  getUserNotifications?: (userId: string, options?: { limit?: number }) => Promise<unknown[]>;
+  getKv?: () => Promise<Deno.Kv>;
+}
+
+/**
+ * Resolved dependencies with fallbacks to real implementations
+ */
+type ResolvedDependencies = {
+  verifyToken: (token: string) => Promise<Record<string, unknown>>;
+  createUserRepository: () => {
+    findById: (id: string) => Promise<{ id: string; role: string } | null>;
+    close: () => Promise<void>;
+  };
+  getUnreadCount: (userId: string) => Promise<number>;
+  getUserNotifications: (userId: string, options?: { limit?: number }) => Promise<unknown[]>;
+  getKv: () => Promise<Deno.Kv>;
+};
+
 // Configuration
 const MAX_CONNECTIONS_PER_USER = 5; // Allow multiple devices/tabs
 const CLEANUP_INTERVAL_MS = 60000; // Check for dead connections every 60s
@@ -35,12 +63,19 @@ const clients = new Map<string, Map<string, WebSocketClient>>();
 // Track total connection count for global limit
 let totalConnections = 0;
 
+// Track cleanup interval for control
+let cleanupIntervalId: number | undefined;
+
 /**
  * Periodic cleanup of dead connections
  * Runs every 60 seconds to check for connections that haven't responded to heartbeat
  */
-function startPeriodicCleanup() {
-  setInterval(() => {
+export function startPeriodicCleanup() {
+  if (cleanupIntervalId !== undefined) {
+    return; // Already running
+  }
+  
+  cleanupIntervalId = setInterval(() => {
     const now = Date.now();
     let cleaned = 0;
     
@@ -98,14 +133,49 @@ function startPeriodicCleanup() {
   }, CLEANUP_INTERVAL_MS);
 }
 
-// Start periodic cleanup when module loads
-startPeriodicCleanup();
+/**
+ * Stop periodic cleanup
+ * Useful for tests to prevent background timers
+ */
+export function stopPeriodicCleanup() {
+  if (cleanupIntervalId !== undefined) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = undefined;
+  }
+}
+
+// Start periodic cleanup when module loads (except in test environments)
+// Tests should call startPeriodicCleanup() explicitly if needed
+if (Deno.env.get('DENO_DEPLOYMENT_ID') || !Deno.env.get('TEST')) {
+  startPeriodicCleanup();
+}
 
 /**
  * Set up WebSocket connection
  * Authentication happens AFTER connection via message
  */
-export function setupWebSocketConnection() {
+export function setupWebSocketConnection(deps?: WebSocketDependencies) {
+  // Lazy-load NotificationService to avoid circular dependency
+  const getNotificationService = async () => {
+    const { NotificationService } = await import('../services/notifications.ts');
+    return NotificationService;
+  };
+
+  // Create dependencies object with fallbacks to real implementations
+  const dependencies: ResolvedDependencies = {
+    verifyToken: deps?.verifyToken || verifyToken,
+    createUserRepository: deps?.createUserRepository || (() => new UserRepository()),
+    getUnreadCount: deps?.getUnreadCount || (async (userId: string) => {
+      const NS = await getNotificationService();
+      return NS.getUnreadCount(userId);
+    }),
+    getUserNotifications: deps?.getUserNotifications || (async (userId: string, options?: { limit?: number }) => {
+      const NS = await getNotificationService();
+      return NS.getUserNotifications(userId, options);
+    }),
+    getKv: deps?.getKv || getKv,
+  };
+
   let authenticated = false;
   let userId: string | null = null;
   let connectionId: string | null = null;
@@ -147,14 +217,20 @@ export function setupWebSocketConnection() {
           }
 
           try {
-            logger.debug('Verifying token');
-            const payload = await verifyToken(data.token);
+            logger.debug('Verifying token', { tokenLength: data.token?.length });
+            const payload = await dependencies.verifyToken(data.token);
+            logger.debug('Token verified', { payload });
             const authenticatedUserId = payload['sub'] as string;
+            
+            if (!authenticatedUserId) {
+              throw new Error('Token missing sub claim');
+            }
+            
             userId = authenticatedUserId;
             authenticated = true;
 
             // Check if user is admin
-            const userRepo = new UserRepository();
+            const userRepo = dependencies.createUserRepository();
             const user = await userRepo.findById(authenticatedUserId);
             const isAdmin = user?.role === 'admin';
 
@@ -226,14 +302,14 @@ export function setupWebSocketConnection() {
             });
 
             // Send current unread count
-            const unreadCount = await NotificationService.getUnreadCount(authenticatedUserId);
+            const unreadCount = await dependencies.getUnreadCount(authenticatedUserId);
             sendMessage(ws, {
               type: 'unread_count',
               unreadCount,
             });
 
             // Start watching for notification changes (don't await - runs in background)
-            watchNotifications(authenticatedUserId, connectionId, ws).catch(error => {
+            watchNotifications(authenticatedUserId, connectionId, ws, dependencies).catch(error => {
               logger.error('Watch notifications failed', error, { userId: authenticatedUserId, connectionId });
             });
 
@@ -241,17 +317,25 @@ export function setupWebSocketConnection() {
             startHeartbeat(authenticatedClient);
             logger.info('WebSocket setup complete', { userId: authenticatedUserId });
           } catch (error) {
-            logger.warn('Authentication failed', { error: error instanceof Error ? error.message : 'Unknown error' });
+            logger.warn('Authentication failed', { 
+              error: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined,
+              tokenProvided: !!data.token,
+              tokenLength: data.token?.length,
+            });
             sendMessage(ws, {
               type: 'auth_failed',
               message: 'Invalid or expired token',
             });
-            ws.close();
+            // Only close if not already closing/closed
+            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+              ws.close();
+            }
             return;
           }
         } else if (authenticated && userId && connectionId) {
           // Handle regular messages
-          handleClientMessage(userId, connectionId, data);
+          handleClientMessage(userId, connectionId, data, dependencies);
 
           // Update last activity and reset heartbeat on any message
           if (client) {
@@ -264,7 +348,10 @@ export function setupWebSocketConnection() {
             type: 'error',
             message: 'Authentication required',
           });
-          ws.close();
+          // Only close if not already closing/closed
+          if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+            ws.close();
+          }
         }
       } catch (error) {
         logger.error('Error parsing message', error);
@@ -337,8 +424,8 @@ export function setupWebSocketConnection() {
  * Note: Test scripts that open their own KV connection won't trigger this watcher,
  * but in production all notifications are created via API so this works perfectly.
  */
-async function watchNotifications(userId: string, connectionId: string, socket: WebSocket) {
-  const kv = await getKv();
+async function watchNotifications(userId: string, connectionId: string, socket: WebSocket, deps: ResolvedDependencies) {
+  const kv = await deps.getKv();
 
   try {
     const signalKey: Deno.KvKey = ['notification_updates', userId];
@@ -385,7 +472,7 @@ async function watchNotifications(userId: string, connectionId: string, socket: 
         connection.lastActivity = Date.now();
       }
       
-      await sendNotificationUpdate(userId, socket);
+      await sendNotificationUpdate(userId, socket, deps);
     }
   } catch (error) {
     logger.error('Watcher error', error, { userId, connectionId });
@@ -395,10 +482,10 @@ async function watchNotifications(userId: string, connectionId: string, socket: 
 /**
  * Send notification update to client
  */
-async function sendNotificationUpdate(userId: string, socket: WebSocket) {
+async function sendNotificationUpdate(userId: string, socket: WebSocket, deps: ResolvedDependencies) {
   try {
-    const unreadCount = await NotificationService.getUnreadCount(userId);
-    const latestNotifications = await NotificationService.getUserNotifications(
+    const unreadCount = await deps.getUnreadCount(userId);
+    const latestNotifications = await deps.getUserNotifications(
       userId,
       { limit: 5 },
     );
@@ -419,7 +506,7 @@ async function sendNotificationUpdate(userId: string, socket: WebSocket) {
 /**
  * Handle incoming messages from client
  */
-function handleClientMessage(userId: string, connectionId: string, data: unknown) {
+function handleClientMessage(userId: string, connectionId: string, data: unknown, deps: ResolvedDependencies) {
   const userConnections = clients.get(userId);
   const client = userConnections?.get(connectionId);
   
@@ -449,9 +536,9 @@ function handleClientMessage(userId: string, connectionId: string, data: unknown
 
     case 'fetch_notifications':
       // Client requesting fresh data
-      NotificationService.getUserNotifications(userId, {
+      deps.getUserNotifications(userId, {
         limit: messageData.limit || 10,
-      }).then((notifications) => {
+      }).then((notifications: unknown[]) => {
         // Re-check client still exists
         const currentClient = clients.get(userId)?.get(connectionId);
         if (currentClient) {

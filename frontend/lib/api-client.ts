@@ -440,9 +440,6 @@ export const adminApi = {
   getUsers: () =>
     apiClient.get('/api/admin/users', true),
 
-  updateUser: (userId: string, data: unknown) =>
-    apiClient.put(`/api/admin/users/${userId}`, data, true),
-
   deleteUser: (userId: string) =>
     apiClient.delete(`/api/admin/users/${userId}`, true),
 
