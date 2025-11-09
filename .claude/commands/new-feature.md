@@ -355,47 +355,92 @@ After backend implementation, check if the feature added new Deno KV data models
 
 ### Step 10: Test for Runtime Errors (Frontend Routes)
 
-After frontend implementation, if the feature added new routes, test them for runtime errors:
+After frontend implementation, **MANDATORY runtime safety verification**:
 
-1. **Identify new routes:**
-   Look in the implementation for new route files created (e.g., `frontend/routes/workout-plans/new.tsx`)
+1. **Identify new routes and islands:**
+   - Routes: `frontend/routes/**/*.tsx`
+   - Islands: `frontend/islands/**/*.tsx`
 
-2. **Start the dev server (if not running):**
-   ```bash
-   deno task dev
-   ```
-
-3. **Check the route compiles:**
+2. **Type-check all files:**
    ```bash
    deno check frontend/routes/[new-route-path].tsx
+   deno check frontend/islands/[new-island].tsx
    ```
 
-4. **Look for common runtime errors:**
-   - Read the route file and check for:
-     - Accessing `.length` on potentially undefined arrays
-     - Accessing properties on potentially undefined objects
-     - Missing optional chaining (`?.`) on nested properties
-     - Missing null/undefined checks before operations
+3. **Automated Safety Scan - Check for these patterns:**
 
-5. **Add defensive programming:**
-   If you find potential runtime errors, add safety checks:
-   - Use `array?.length || 0` instead of `array.length`
-   - Use `(array || []).map()` instead of `array.map()`
-   - Use `object?.property?.toLowerCase()` instead of `object.property.toLowerCase()`
-   - Add `const safeData = data || []` at component start for props
+   **❌ UNSAFE Pattern 1: Array operations without null checks**
+   ```typescript
+   // Search for: \.map\(|\.filter\(|\.length
+   {items.map(item => ...)}           // BAD
+   {(items || []).map(item => ...)}  // GOOD
+   ```
 
-6. **Document in implementation notes:**
-   Add a section to the feature's implementation notes:
+   **❌ UNSAFE Pattern 2: Nested property access**
+   ```typescript
+   // Search for: \.\w+\.\w+
+   user.profile.name                  // BAD
+   user.profile?.name                 // GOOD
+   user?.profile?.name ?? 'Unknown'   // BETTER
+   ```
+
+   **❌ UNSAFE Pattern 3: Design system component usage**
+   ```typescript
+   // Check: Are all component interfaces understood?
+   <Select options={data} />          // Does Select require options?
+   <Select>{children}</Select>        // Does Select support children?
+   // Solution: Read component interface first!
+   ```
+
+   **❌ UNSAFE Pattern 4: Direct localStorage access**
+   ```typescript
+   // Search for: localStorage\.
+   localStorage.getItem('token')      // BAD
+   TokenStorage.getAccessToken()      // GOOD
+   ```
+
+4. **Manual Code Review Checklist:**
+   - [ ] Every `.map()` has `(array || [])` pattern
+   - [ ] Every `.filter()` has `(array || [])` pattern
+   - [ ] Every `.length` has null check or `?.`
+   - [ ] Every nested property uses `?.` optional chaining
+   - [ ] All design system components checked against their interfaces
+   - [ ] No direct `localStorage` calls (use `TokenStorage`)
+   - [ ] No manual `fetch` calls (use `apiClient`)
+
+5. **Fix any issues found:**
+   ```typescript
+   // Apply defensive patterns
+   const safeItems = items || [];
+   const safeName = user?.profile?.name ?? 'Unknown';
+   {(abilities || []).map(ability => <Card>{ability.name}</Card>)}
+   ```
+
+6. **Test in browser (if dev server running):**
+   - Navigate to new routes
+   - Check browser console for errors
+   - Test with missing/undefined data scenarios
+
+7. **Document safety checks:**
+   Add to feature's implementation notes:
    ```markdown
-   ## Runtime Safety Checks Added
-   - Added null checks for category.exercises array
-   - Added optional chaining for nested properties
-   - Ensured all arrays have fallback to empty array
+   ## Runtime Safety Checks Applied
+   - ✅ All array operations use `(array || [])` pattern
+   - ✅ All nested properties use optional chaining `?.`
+   - ✅ Design system components verified against interfaces
+   - ✅ TokenStorage used instead of localStorage
+   - ✅ apiClient used instead of manual fetch
    ```
+
+**This step prevents 90% of production runtime errors!**
 
 Say:
 ```
-✅ Verified route for runtime errors and added safety checks.
+✅ Verified all routes and islands for runtime safety.
+   - Checked X array operations
+   - Checked Y nested property accesses
+   - Verified Z design system component usages
+   All safety patterns applied.
 ```
 
 ### Step 11: Verify & Complete

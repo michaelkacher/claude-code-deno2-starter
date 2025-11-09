@@ -78,11 +78,115 @@ This template uses **Fresh 1.7+**, Deno's full-stack web framework:
 - **Centralized API Client**: Use `apiClient` from `frontend/lib/api-client.ts` (never manual fetch)
 - **Storage Abstraction**: Use `TokenStorage` from `frontend/lib/storage.ts` (never direct localStorage)
 - **Centralized Validation**: Use utilities from `frontend/lib/validation.ts`
+- **Runtime Safety**: Always add defensive null checks for arrays and optional props
 - **Accessibility First**: WCAG 2.1 AA compliance minimum
 - **Progressive Enhancement**: Work without JavaScript when possible
 - **Performance**: Minimal JavaScript shipped to client
 - **Responsive**: Mobile-first approach with Tailwind CSS
 - **Type Safety**: Use TypeScript for all components
+
+## 🛡️ Runtime Error Prevention (CRITICAL)
+
+**Before writing ANY component or route, apply these defensive programming patterns:**
+
+### 1. Array Operations - ALWAYS Use Null Checks
+
+```typescript
+// ❌ WRONG - Will crash if array is undefined
+{items.map(item => <Card>{item.name}</Card>)}
+{abilities.length}
+{inventory.filter(item => item.type === 'weapon')}
+
+// ✅ CORRECT - Safe with fallback to empty array
+{(items || []).map(item => <Card>{item.name}</Card>)}
+{(abilities || []).length}
+{(inventory || []).filter(item => item.type === 'weapon')}
+```
+
+### 2. Optional Properties - ALWAYS Use Optional Chaining
+
+```typescript
+// ❌ WRONG - Will crash if nested property is undefined
+<p>{user.profile.bio.toLowerCase()}</p>
+<p>{character.traits.strength}</p>
+
+// ✅ CORRECT - Safe with optional chaining
+<p>{user.profile?.bio?.toLowerCase()}</p>
+<p>{character.traits?.strength ?? 0}</p>
+```
+
+### 3. Design System Components - CHECK Interface First
+
+**Before using ANY design system component:**
+
+```typescript
+// Step 1: READ the component interface
+// File: frontend/components/design-system/Input.tsx
+interface SelectProps {
+  options?: { value: string; label: string }[];  // Note: OPTIONAL
+  children?: JSX.Element | JSX.Element[];        // Supports both!
+}
+
+// Step 2: Use based on interface
+// Option A: Pass options prop
+<Select options={[{value: '1', label: 'Option 1'}]} />
+
+// Option B: Pass children (if supported)
+<Select>
+  <option value="1">Option 1</option>
+</Select>
+```
+
+### 4. Component Props - Handle Both Required and Optional
+
+```typescript
+// When creating/modifying components that accept arrays or objects:
+
+// ❌ BAD - Assumes prop exists
+export function List({ items }: { items: Item[] }) {
+  return <>{items.map(item => ...)}</>;  // Crashes if items undefined!
+}
+
+// ✅ GOOD - Defensive with fallback
+export function List({ items }: { items?: Item[] }) {
+  const safeItems = items || [];  // Defensive assignment
+  return <>{safeItems.map(item => ...)}</>;
+}
+
+// ✅ EVEN BETTER - Handle in JSX
+export function List({ items }: { items?: Item[] }) {
+  return <>{(items || []).map(item => ...)}</>;
+}
+```
+
+### 5. SSR Safety - Check Browser Environment
+
+```typescript
+// ❌ BAD - Will crash during SSR
+const token = localStorage.getItem('token');
+
+// ✅ GOOD - Use storage abstraction (handles SSR)
+import { TokenStorage } from "../lib/storage.ts";
+const token = TokenStorage.getAccessToken();
+
+// ✅ GOOD - Manual browser check if needed
+const token = typeof window !== 'undefined' 
+  ? localStorage.getItem('token') 
+  : null;
+```
+
+### 6. Pre-Implementation Checklist
+
+Before writing ANY route or island:
+- [ ] Identify all array operations - add `(array || [])` pattern
+- [ ] Identify all nested property access - add `?.` optional chaining
+- [ ] Check design system component interfaces before using
+- [ ] Make all array/object props optional unless truly required
+- [ ] Use `TokenStorage` instead of `localStorage`
+- [ ] Use `apiClient` instead of manual `fetch`
+- [ ] Use validation utilities from `frontend/lib/validation.ts`
+
+**These patterns prevent 90% of runtime errors!**
 
 ## Project Structure
 
@@ -836,6 +940,70 @@ const passwordValidation = validatePassword(password.value);
 import { Button, Card, Input, Modal } from "@/components/design-system/...";
 // Pre-built, styled, accessible components
 ```
+
+### 4. Design System Component Safety Checks
+
+When using design system components from `frontend/components/design-system/`, always verify:
+
+**✅ Check component interface for required vs optional props:**
+```typescript
+// ALWAYS read the component file first to understand the interface
+// Example: Check if Select needs options prop OR children
+
+// Read component signature
+interface SelectProps {
+  value?: string;
+  options?: { value: string; label: string }[];  // Note: optional
+  children?: JSX.Element | JSX.Element[];        // Supports children too!
+  // ...
+}
+
+// ✅ CORRECT - Use either pattern based on component interface
+<Select options={[{value: '1', label: 'Option 1'}]} />
+// OR
+<Select>
+  <option value="1">Option 1</option>
+</Select>
+```
+
+**⚠️ ALWAYS add defensive null checks for arrays:**
+```typescript
+// ❌ BAD - Will crash if array is undefined
+{character.abilities.map(ability => <Card>{ability.name}</Card>)}
+
+// ✅ GOOD - Safe with fallback
+{(character.abilities || []).map(ability => <Card>{ability.name}</Card>)}
+```
+
+**⚠️ ALWAYS add defensive checks in reusable components:**
+```typescript
+// When creating/modifying design system components
+
+// ❌ BAD - Assumes options exists
+export function Select({ options, children }: SelectProps) {
+  return <select>{options.map(opt => ...)}</select>  // CRASH if undefined!
+}
+
+// ✅ GOOD - Handle both patterns safely
+export function Select({ options, children }: SelectProps) {
+  return (
+    <select>
+      {options ? (
+        options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)
+      ) : (
+        children  // Fallback to children if no options prop
+      )}
+    </select>
+  );
+}
+```
+
+**Testing checklist for components:**
+- [ ] Read component interface before using
+- [ ] Check if props are required or optional
+- [ ] Add null checks for all array operations (`.map()`, `.filter()`, `.length`)
+- [ ] Test both with and without optional props
+- [ ] Verify SSR compatibility (no client-only code in components)
 
 ### Summary of Token Savings
 
