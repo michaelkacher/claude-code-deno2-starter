@@ -863,7 +863,7 @@ import { IS_BROWSER } from "$fresh/runtime.ts";
 
 **Standard library:**
 ```typescript
-import { assertEquals } from "jsr:@std/assert";
+import { assertEquals } from "@std/assert";
 import { load } from "$std/dotenv/mod.ts";
 ```
 
@@ -1075,7 +1075,7 @@ export async function getUsers(): Promise<User[]> {
 
 **Example test with Deno KV:**
 ```typescript
-import { assertEquals, assertRejects } from 'jsr:@std/assert';
+import { assertEquals, assertRejects } from '@std/assert';
 import { UserService } from '../services/users.ts';
 
 Deno.test('UserService - create user with valid data', async () => {
@@ -1253,6 +1253,48 @@ import { logger } from "../lib/logger.ts";
 - ❌ Broad permissions (use minimal required)
 - ❌ Mixing npm and JSR when JSR package exists
 - ❌ Using `console.log` instead of `logger` from `shared/lib/logger.ts`
+- ❌ Using `any` type - use `unknown`, specific types, or `Record<string, unknown>`
+- ❌ Using `process.env` - use `Deno.env.get()` instead
+- ❌ Unversioned JSR imports like `jsr:@std/assert` - use `@std/assert` (uses import map)
+- ❌ Buttons without explicit `type="button"` or `type="submit"` attribute
+- ❌ Untagged TODOs - use `// TODO[@team]:` or `// TODO[@dev]:` format
+
+### TypeScript Strict Mode Rules
+
+This project uses strict TypeScript compiler options:
+- `noUncheckedIndexedAccess: true` - Array/object access may be undefined
+- `noPropertyAccessFromIndexSignature: true` - Use bracket notation for dynamic keys
+- `exactOptionalPropertyTypes: true` - Distinguish between `undefined` and missing properties
+- `noImplicitReturns: true` - All code paths must return a value
+- `noFallthroughCasesInSwitch: true` - Switch cases must break/return
+
+**Examples:**
+```typescript
+// ❌ BAD - using any
+function processData(data: any) { }
+
+// ✅ GOOD - using unknown or specific types
+function processData(data: unknown) { }
+function processData(data: Record<string, unknown>) { }
+
+// ❌ BAD - unversioned import
+import { assertEquals } from 'jsr:@std/assert';
+
+// ✅ GOOD - use import map
+import { assertEquals } from '@std/assert';
+
+// ❌ BAD - missing button type
+<button onClick={handleClick}>Click me</button>
+
+// ✅ GOOD - explicit type
+<button type="button" onClick={handleClick}>Click me</button>
+
+// ❌ BAD - untagged TODO
+// TODO: Fix this later
+
+// ✅ GOOD - tagged TODO
+// TODO[@team]: Implement proper error handling for edge cases
+```
 
 ## Token Efficiency Best Practices
 

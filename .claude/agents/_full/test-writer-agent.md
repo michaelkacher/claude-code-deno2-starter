@@ -88,13 +88,13 @@ This approach is **3-5x faster** than writing tests from scratch!
 
 ## Test Structure: BDD Pattern
 
-**CRITICAL**: All tests MUST use BDD-style patterns with `describe()` and `it()` from `jsr:@std/testing/bdd`.
+**CRITICAL**: All tests MUST use BDD-style patterns with `describe()` and `it()` from `@std/testing/bdd`.
 
 ### Required Pattern
 
 ```typescript
-import { assertEquals, assertRejects } from 'jsr:@std/assert';
-import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { assertEquals, assertRejects } from '@std/assert';
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { setupTestKv } from '../../helpers/kv-test.ts';
 
 describe('ServiceName', () => {
@@ -155,6 +155,40 @@ describe('ServiceName', () => {
     });
   });
 });
+```
+
+## Code Quality & Linting Rules
+
+### Import Standards
+**CRITICAL**: Always use `@std/` imports (not `jsr:@std/`) to leverage the import map:
+
+```typescript
+// ❌ WRONG - unversioned import (triggers linting error)
+import { assertEquals } from 'jsr:@std/assert';
+import { describe, it } from 'jsr:@std/testing/bdd';
+
+// ✅ CORRECT - use import map
+import { assertEquals } from '@std/assert';
+import { describe, it } from '@std/testing/bdd';
+```
+
+### Type Safety
+- ❌ Never use `any` type - use `unknown` or specific types
+- ✅ Use `Record<string, unknown>` for generic objects
+- ✅ Use type guards when working with `unknown` values
+
+### TODO Comments
+All TODOs must be tagged for tracking:
+
+```typescript
+// ❌ WRONG - untagged
+// TODO: Add more test cases
+
+// ✅ CORRECT - tagged for team
+// TODO[@team]: Add integration tests for payment flow
+
+// ✅ CORRECT - tagged for development
+// TODO[@dev]: Mock external API calls when ready
 ```
 
 ## TDD Process
@@ -259,8 +293,8 @@ describe('[Feature Name]', () => {
 
 **`tests/unit/repositories/users.test.ts`** (RECOMMENDED - Business Logic)
 ```typescript
-import { assertEquals, assertRejects } from 'jsr:@std/assert';
-import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { assertEquals, assertRejects } from '@std/assert';
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { setupTestKv } from '../../helpers/kv-test.ts';
 import { UserRepository } from '../../../shared/repositories/user-repository.ts';
 
@@ -324,8 +358,8 @@ describe('UserRepository', () => {
 
 **Testing with Deno KV** (FAST WAY - Use Helper)
 ```typescript
-import { assertEquals } from 'jsr:@std/assert';
-import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { assertEquals } from '@std/assert';
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { setupTestKv, seedKv } from '../../helpers/kv-test.ts';
 import { UserRepository } from '../../../shared/repositories/user-repository.ts';
 

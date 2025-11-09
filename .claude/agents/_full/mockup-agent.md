@@ -371,6 +371,45 @@ Next steps:
 5. **No backend calls** - Pure frontend/static
 6. **Clear visual hierarchy** - Use headings, spacing, colors
 7. **Responsive** - Use Tailwind responsive classes when possible
+8. **Always add type="button"** - All button elements must have explicit type attribute
+
+## Code Quality & Linting Rules
+
+### Button Type Attribute (CRITICAL)
+All `<button>` elements MUST have an explicit `type` attribute:
+
+```tsx
+// ❌ WRONG - missing type (triggers linting error)
+<button onClick={() => count.value++}>
+  Increment
+</button>
+
+// ✅ CORRECT - explicit type="button"
+<button type="button" onClick={() => count.value++}>
+  Increment
+</button>
+
+// ✅ CORRECT - type="submit" for forms
+<form onSubmit={handleSubmit}>
+  <button type="submit">Submit</button>
+</form>
+```
+
+**Why**: Buttons inside forms default to `type="submit"` which can cause unintended form submissions.
+
+### TypeScript Best Practices
+- ❌ Never use `any` type - use `unknown` or specific types
+- ✅ Use `Record<string, unknown>` for generic mock data objects
+- ✅ Define interfaces for complex mock data structures
+
+### Import Standards
+```tsx
+// ✅ CORRECT - import design system components from index
+import { Button, Card } from "../../components/design-system/index.ts";
+
+// ✅ CORRECT - import Preact signals
+import { useSignal } from "@preact/signals";
+```
 
 ## Limitations
 

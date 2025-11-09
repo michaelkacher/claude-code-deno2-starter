@@ -693,6 +693,34 @@ Deno.test("WorkoutCard renders workout name", () => {
 - ❌ Direct `localStorage` access (use `TokenStorage`)
 - ❌ Duplicate validation logic (use validation utilities)
 - ❌ Custom API client functions (use provided helpers)
+- ❌ Buttons without explicit `type="button"` or `type="submit"` attribute
+- ❌ Using `any` type - use `unknown` or specific types instead
+- ❌ Unversioned JSR imports like `jsr:@std/assert` - use `@std/assert`
+- ❌ Using `console.log` in server code - use `logger` from `shared/lib/logger.ts`
+
+### Button Type Attribute (CRITICAL)
+
+All `<button>` elements MUST have an explicit `type` attribute:
+
+```tsx
+// ❌ BAD - missing type
+<button onClick={handleClick}>Click me</button>
+
+// ✅ GOOD - explicit type="button" for non-form buttons
+<button type="button" onClick={handleClick}>
+  Click me
+</button>
+
+// ✅ GOOD - type="submit" for form submissions
+<form onSubmit={handleSubmit}>
+  <button type="submit">Submit</button>
+</form>
+
+// ✅ GOOD - type="reset" for form resets
+<button type="reset">Clear Form</button>
+```
+
+**Rule**: Default button type in forms is `submit`, which can cause unintended form submissions. Always be explicit.
 
 ## Development Commands
 
