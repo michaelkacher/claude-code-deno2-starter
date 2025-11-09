@@ -21,10 +21,10 @@ import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
 import { setupTestKv } from '../../helpers/kv-test.ts';
 
-// TODO: Import your service
+// TODO(@dev): Import your service
 // import { [ServiceName] } from '../../../shared/services/[service].ts';
 
-// TODO: Define test data
+// TODO(@dev): Define test data
 const validData = {
   // Add required fields with valid values
   // Example: name: 'Test Item', status: 'active'
@@ -68,7 +68,7 @@ describe('[ServiceName]', () => {
 
       // Standard assertions for created resource
       assertEquals(typeof result.id, 'string');
-      assertEquals(result.name, validData.name); // TODO: Update field names
+      assertEquals(result.name, validData.name); // TODO(@dev): Update field names
       assertEquals(typeof result.createdAt, 'string');
       assertEquals(typeof result.updatedAt, 'string');
     });
@@ -77,7 +77,7 @@ describe('[ServiceName]', () => {
       await assertRejects(
         () => service.create(invalidData.missingRequired),
         Error,
-        'required', // TODO: Update expected error message
+        'required', // TODO(@dev): Update expected error message
       );
     });
 
@@ -85,18 +85,18 @@ describe('[ServiceName]', () => {
       await assertRejects(
         () => service.create(invalidData.invalidFormat),
         Error,
-        'invalid', // TODO: Update expected error message
+        'invalid', // TODO(@dev): Update expected error message
       );
     });
 
-    // TODO: If resource has unique constraint (e.g., email), keep this test
+    // TODO(@dev): If resource has unique constraint (e.g., email), keep this test
     it('should prevent duplicates', async () => {
       await service.create(validData);
 
       await assertRejects(
         () => service.create(validData), // Same data
         Error,
-        'already exists', // TODO: Update expected error message
+        'already exists', // TODO(@dev): Update expected error message
       );
     });
   });
@@ -122,7 +122,7 @@ describe('[ServiceName]', () => {
       assertEquals(result.length, 2);
     });
 
-    // TODO: If service supports pagination, keep this test
+    // TODO(@dev): If service supports pagination, keep this test
     it('should paginate correctly', async () => {
       // Create 15 items
       for (let i = 0; i < 15; i++) {
@@ -219,7 +219,7 @@ describe('[ServiceName]', () => {
   // CUSTOM BUSINESS LOGIC Tests (Add below)
   // ============================================================================
 
-  // TODO: Add tests for custom business logic specific to your service
+  // TODO(@dev): Add tests for custom business logic specific to your service
   // Examples:
   // - Status transitions
   // - Calculations

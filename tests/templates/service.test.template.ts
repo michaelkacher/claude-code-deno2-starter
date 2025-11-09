@@ -20,7 +20,7 @@ import { assertEquals, assertRejects } from 'jsr:@std/assert';
 import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
 import { setupTestKv } from '../../helpers/kv-test.ts';
 
-// TODO: Import the service to test
+// TODO(@dev): Import the service to test
 // import { FeatureService } from '../../../shared/services/[feature].ts';
 
 describe('[FeatureService]', () => {
@@ -43,7 +43,7 @@ describe('[FeatureService]', () => {
 
       // Arrange: Set up test data that exercises the business rule
       const validInput = {
-        // TODO: Add input that should pass business validation
+        // TODO(@dev): Add input that should pass business validation
       };
 
       // Act: Execute the business logic
@@ -51,7 +51,7 @@ describe('[FeatureService]', () => {
 
       // Assert: Verify business rule was applied correctly
       assertEquals(result.propertyName, expectedValue);
-      // TODO: Assert on business logic outcomes, not HTTP codes
+      // TODO(@dev): Assert on business logic outcomes, not HTTP codes
     });
 
     it('should reject invalid [domain concept]', async () => {
@@ -59,7 +59,7 @@ describe('[FeatureService]', () => {
 
       // Arrange: Data that violates a business rule
       const invalidInput = {
-        // TODO: Add input that violates business rule
+        // TODO(@dev): Add input that violates business rule
       };
 
       // Act & Assert: Verify business rule is enforced
@@ -93,7 +93,7 @@ describe('[FeatureService]', () => {
 
       // Arrange: Input for calculation
       const input = {
-        // TODO: Add data for calculation
+        // TODO(@dev): Add data for calculation
       };
 
       // Act: Execute business calculation
@@ -110,7 +110,7 @@ describe('[FeatureService]', () => {
 
       // Arrange: Input data
       const rawData = {
-        // TODO: Raw input
+        // TODO(@dev): Raw input
       };
 
       // Act: Transform according to business rules
@@ -125,7 +125,7 @@ describe('[FeatureService]', () => {
     it('should handle edge case [specific case]', async () => {
       const service = new FeatureService(kv);
 
-      // TODO: Test edge cases specific to your business domain
+      // TODO(@dev): Test edge cases specific to your business domain
       // Examples:
       // - Empty collections
       // - Maximum/minimum values

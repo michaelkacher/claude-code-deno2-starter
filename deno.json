@@ -43,7 +43,7 @@
   },
   "imports": {
     "@/": "./shared/",
-    "@std/": "jsr:@std/",
+    "@std/": "jsr:@std@^1.0.0/",
     "$fresh/": "https://deno.land/x/fresh@1.7.3/",
     "$std/dotenv/mod.ts": "https://deno.land/std@0.216.0/dotenv/mod.ts",
     "preact": "https://esm.sh/preact@10.22.0",

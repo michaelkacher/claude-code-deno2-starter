@@ -221,7 +221,7 @@ export default function CreateScheduleModal({ onClose, onScheduleCreated }: Crea
       <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-[600px] max-h-[90vh] overflow-y-auto shadow-lg" onClick={(e) => e.stopPropagation()}>
         <div class="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
           <h2 class="m-0 text-2xl text-gray-900 dark:text-gray-100">Create New Schedule</h2>
-          <button class="bg-transparent border-none text-3xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 cursor-pointer p-0 w-8 h-8 leading-8 text-center" onClick={onClose}>×</button>
+          <button type="button" class="bg-transparent border-none text-3xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 cursor-pointer p-0 w-8 h-8 leading-8 text-center" onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit} class="p-5">

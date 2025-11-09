@@ -8,7 +8,7 @@ import { assertEquals } from 'jsr:@std/assert';
 import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
 import { createTestClient, TestClient } from '../../helpers/test-client.ts';
 
-// TODO: Import types
+// TODO(@dev): Import types
 // import type { Feature } from '../../../shared/types/index.ts';
 
 describe('[ENDPOINT] API', () => {
@@ -19,14 +19,14 @@ describe('[ENDPOINT] API', () => {
   });
 
   afterEach(async () => {
-    // TODO: Clean up test data if needed
+    // TODO(@dev): Clean up test data if needed
   });
 
   describe('POST /api/[endpoint]', () => {
     it('should create resource with valid data', async () => {
       // Arrange
       const validData = {
-        // TODO: Add valid test data
+        // TODO(@dev): Add valid test data
       };
 
       // Act
@@ -40,7 +40,7 @@ describe('[ENDPOINT] API', () => {
     it('should return 400 for invalid data', async () => {
       // Arrange
       const invalidData = {
-        // TODO: Add invalid test data
+        // TODO(@dev): Add invalid test data
       };
 
       // Act
@@ -65,7 +65,7 @@ describe('[ENDPOINT] API', () => {
   describe('GET /api/[endpoint]', () => {
     it('should list all resources', async () => {
       // Arrange
-      // TODO: Create test data
+      // TODO(@dev): Create test data
 
       // Act
       const response = await client.get('/api/[endpoint]');

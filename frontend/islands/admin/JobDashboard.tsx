@@ -369,10 +369,10 @@ export default function JobDashboard() {
       <div class="dashboard-header">
         <h1>Background Jobs</h1>
         <div class="header-actions">
-          <button onClick={() => showCreateModal.value = true} class="btn btn-primary">
+          <button type="button" onClick={() => showCreateModal.value = true} class="btn btn-primary">
             ➕ Create Job
           </button>
-          <button onClick={cleanupJobs} class="btn btn-secondary">
+          <button type="button" onClick={cleanupJobs} class="btn btn-secondary">
             🗑️ Cleanup Old Jobs
           </button>
         </div>
@@ -407,12 +407,14 @@ export default function JobDashboard() {
       {/* Tabs */}
       <div class="tabs">
         <button
+          type="button"
           class={`tab ${selectedTab.value === 'jobs' ? 'active' : ''}`}
           onClick={() => selectedTab.value = 'jobs'}
         >
           📋 Jobs
         </button>
         <button
+          type="button"
           class={`tab ${selectedTab.value === 'schedules' ? 'active' : ''}`}
           onClick={() => selectedTab.value = 'schedules'}
         >
@@ -482,6 +484,7 @@ export default function JobDashboard() {
                         <div class="action-buttons">
                           {job.status === 'failed' && (
                             <button
+                              type="button"
                               onClick={() => retryJob(job.id)}
                               class="btn btn-sm btn-primary"
                               title="Retry"
@@ -490,6 +493,7 @@ export default function JobDashboard() {
                             </button>
                           )}
                           <button
+                            type="button"
                             onClick={() => deleteJob(job.id)}
                             class="btn btn-sm btn-danger"
                             title="Delete"
@@ -511,7 +515,7 @@ export default function JobDashboard() {
       {selectedTab.value === 'schedules' && (
         <div class="schedules-section">
           <div class="section-header">
-            <button onClick={() => showCreateScheduleModal.value = true} class="btn btn-primary">
+            <button type="button" onClick={() => showCreateScheduleModal.value = true} class="btn btn-primary">
               ➕ Create Schedule
             </button>
           </div>
@@ -549,6 +553,7 @@ export default function JobDashboard() {
                     <td>
                       <div class="action-buttons">
                         <button
+                          type="button"
                           onClick={() => triggerSchedule(schedule.name)}
                           class="btn btn-sm btn-primary"
                           title="Trigger Now"
@@ -556,6 +561,7 @@ export default function JobDashboard() {
                           ▶️
                         </button>
                         <button
+                          type="button"
                           onClick={() => toggleSchedule(schedule.name, schedule.enabled)}
                           class="btn btn-sm btn-secondary"
                           title={schedule.enabled ? 'Disable' : 'Enable'}

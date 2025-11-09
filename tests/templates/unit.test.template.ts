@@ -7,7 +7,7 @@
 import { assertEquals, assertThrows } from 'jsr:@std/assert';
 import { describe, it } from 'jsr:@std/testing/bdd';
 
-// TODO: Import the function/class to test
+// TODO(@dev): Import the function/class to test
 // import { functionName } from '../../../shared/lib/[feature].ts';
 
 describe('[FeatureName]', () => {
@@ -36,7 +36,7 @@ describe('[FeatureName]', () => {
     });
 
     it('should handle edge case', () => {
-      // TODO: Test edge cases (null, empty, boundary values)
+      // TODO(@dev): Test edge cases (null, empty, boundary values)
     });
   });
 });
