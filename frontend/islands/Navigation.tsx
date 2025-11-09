@@ -11,7 +11,6 @@
  * - No visible refresh/flicker in the header
  */
 
-import { memo } from 'preact/compat';
 import { getFeatures, getMobileNavigationItems, getNavigationItems, getSiteName } from '../lib/config.ts';
 import DarkModeToggle from './DarkModeToggle.tsx';
 import MobileMenuToggle from './MobileMenuToggle.tsx';
@@ -95,11 +94,4 @@ function Navigation(props: NavigationProps) {
   );
 }
 
-// Memoize Navigation to prevent re-renders when props haven't changed
-// This is critical for preventing child islands from re-rendering on page navigation
-export default memo(Navigation, (prevProps, nextProps) => {
-  // ALWAYS return true to skip re-render on page navigation
-  // Islands should maintain their own state independently of props
-  // Props are only used for initial hydration
-  return true;
-});
+export default Navigation;
