@@ -72,7 +72,7 @@ deno task dev
 # API: http://localhost:3000/api/*
 ```
 
-3. Requirements (Not required, but recommended for larger projects)
+3. Gather Requirements (Not required, but recommended for larger projects)
 ```bash
 # Gathers information on the scope of the project, personas, goals,
 # Non-functional requirements, and more
@@ -92,9 +92,6 @@ deno task dev
 # - Updating navigation structure
 # - Creates/updates frontend/lib/config.ts with your settings
 ```
-
-**Note:** For GitHub Copilot, type `/customize` in Copilot Chat after reloading VS Code.
-All commands work identically in both Claude Code and GitHub Copilot.
 
 **What gets customized:**
 - Site name, description, and URL

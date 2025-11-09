@@ -4,48 +4,37 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from '../../../../../shared/lib/logger.ts';
 import { NotificationRepository } from "../../../../../shared/repositories/index.ts";
 import {
-  errorResponse,
   requireUser,
   successResponse,
+  withErrorHandler,
   type AppState,
 } from "../../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('MarkAsReadAPI');
+import { BadRequestError, NotFoundError } from "../../../../lib/errors.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async PATCH(req, ctx) {
-    try {
-      // Require authentication
-      const user = requireUser(ctx);
+  PATCH: withErrorHandler(async (_req, ctx) => {
+    // Require authentication
+    const user = requireUser(ctx);
 
-      // Get notification ID from route params
-      const notificationId = ctx.params.id;
-
-      const notificationRepo = new NotificationRepository();
-
-      // Get notification to verify ownership
-      const notification = await notificationRepo.findById(user.sub, notificationId);
-      if (!notification) {
-        return errorResponse("NOT_FOUND", "Notification not found", 404);
-      }
-
-      // Mark as read (userId is already verified by findById)
-      await notificationRepo.markAsRead(user.sub, notificationId);
-
-      return successResponse({ message: "Notification marked as read" });
-    } catch (error) {
-      if (error.message === "Authentication required") {
-        return errorResponse("UNAUTHORIZED", "Authentication required", 401);
-      }
-      logger.error("Mark as read error", { error });
-      return errorResponse(
-        "SERVER_ERROR",
-        "Failed to mark notification as read",
-        500,
-      );
+    // Get notification ID from route params
+    const notificationId = ctx.params.id;
+    if (!notificationId) {
+      throw new BadRequestError("Notification ID is required");
     }
-  },
+
+    const notificationRepo = new NotificationRepository();
+
+    // Get notification to verify ownership
+    const notification = await notificationRepo.findById(user.sub, notificationId);
+    if (!notification) {
+      throw new NotFoundError("Notification not found", "notification", notificationId);
+    }
+
+    // Mark as read (userId is already verified by findById)
+    await notificationRepo.markAsRead(user.sub, notificationId);
+
+    return successResponse({ message: "Notification marked as read" });
+  }),
 };

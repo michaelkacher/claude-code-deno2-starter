@@ -5,16 +5,12 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-  errorResponse,
   parseJsonBody,
-  successResponse,
+  withErrorHandler,
   type AppState,
 } from "../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('SignupAPI');
 
 const SignupSchema = z.object({
   email: z.string().email(),
@@ -23,46 +19,30 @@ const SignupSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      // Parse and validate request body
-      const body = await parseJsonBody(req);
-      const { email, password, name } = SignupSchema.parse(body);
+  POST: withErrorHandler(async (req, _ctx) => {
+    // Parse and validate request body (Zod errors automatically handled)
+    const { email, password, name } = await parseJsonBody(req, SignupSchema);
 
-      const authService = new AuthService();
+    const authService = new AuthService();
 
-      // Create user account
-      let signupResult;
-      try {
-        signupResult = await authService.signup(email, password, name);
-      } catch (error) {
-        if (error instanceof Error && error.message === "EMAIL_EXISTS") {
-          return errorResponse("EMAIL_EXISTS", "Email already registered", 409);
-        }
-        throw error;
-      }
+    // Create user account (service throws typed errors)
+    const signupResult = await authService.signup(email, password, name);
 
-      // TODO(@team): Send verification email
-      // await sendVerificationEmail(signupResult.user.email, signupResult.verificationToken);
+    // TODO(@team): Send verification email
+    // await sendVerificationEmail(signupResult.user.email, signupResult.verificationToken);
 
-      // Return success (without sensitive data)
-      return successResponse(
-        {
+    // Return success (without sensitive data)
+    return new Response(
+      JSON.stringify({
+        data: {
           user: signupResult.user,
           message: "Account created successfully. Please check your email to verify your account.",
         },
-        201
-      );
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return errorResponse(
-          "VALIDATION_ERROR",
-          error.errors[0].message,
-          400
-        );
+      }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
       }
-      logger.error("Signup error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to create account", 500);
-    }
-  },
+    );
+  }),
 };

@@ -1,75 +1,35 @@
 /**
  * GET /api/jobs/:id - Get job details by ID
- * DELETE /api/jobs/:id - Delete a job (only if completed or failed)
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from '../../../../../shared/lib/logger.ts';
 import { JobRepository } from "../../../../../shared/repositories/index.ts";
 import {
-  errorResponse,
   requireAdmin,
   successResponse,
+  withErrorHandler,
   type AppState,
 } from "../../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('JobDetailAPI');
+import { BadRequestError, NotFoundError } from "../../../../lib/errors.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async GET(_req, ctx) {
-    try {
-      requireAdmin(ctx);
+  GET: withErrorHandler(async (_req, ctx) => {
+    // Require admin role (throws AuthorizationError if not admin)
+    requireAdmin(ctx);
 
-      const jobId = ctx.params.id;
-      const jobRepo = new JobRepository();
-      const job = await jobRepo.findById(jobId);
-
-      if (!job) {
-        return errorResponse("NOT_FOUND", "Job not found", 404);
-      }
-
-      return successResponse(job);
-    } catch (error) {
-      if (error instanceof Error && error.message === "Admin access required") {
-        return errorResponse("FORBIDDEN", "Admin access required", 403);
-      }
-      logger.error("Get job error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to get job", 500);
+    // Get job ID from route params
+    const jobId = ctx.params['id'];
+    if (!jobId) {
+      throw new BadRequestError("Job ID is required");
     }
-  },
 
-  async DELETE(_req, ctx) {
-    try {
-      requireAdmin(ctx);
+    const jobRepo = new JobRepository();
+    const job = await jobRepo.findById(jobId);
 
-      const jobId = ctx.params.id;
-      const jobRepo = new JobRepository();
-
-      // Get job to verify it exists
-      const job = await jobRepo.findById(jobId);
-      if (!job) {
-        return errorResponse("NOT_FOUND", "Job not found", 404);
-      }
-
-      // Only allow deletion of completed or failed jobs
-      if (job.status === "pending" || job.status === "running") {
-        return errorResponse(
-          "BAD_REQUEST",
-          "Cannot delete pending or running jobs",
-          400,
-        );
-      }
-
-      // Delete job
-      await jobRepo.deleteJob(jobId);
-
-      return successResponse({ message: "Job deleted" });
-    } catch (error) {
-      if (error instanceof Error && error.message === "Admin access required") {
-        return errorResponse("FORBIDDEN", "Admin access required", 403);
-      }
-      logger.error("Delete job error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to delete job", 500);
+    if (!job) {
+      throw new NotFoundError(undefined, 'Job', jobId);
     }
-  },
+
+    return successResponse(job);
+  }),
 };

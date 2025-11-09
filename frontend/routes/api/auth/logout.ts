@@ -4,61 +4,50 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-    deleteCookie,
-    errorResponse,
-    getCookie,
-    requireUser,
-    type AppState
+  deleteCookie,
+  getCookie,
+  requireUser,
+  withErrorHandler,
+  type AppState
 } from "../../../lib/fresh-helpers.ts";
 
-const logger = createLogger('LogoutAPI');
-
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      // Get user from auth middleware
-      const user = requireUser(ctx);
-      const authService = new AuthService();
+  POST: withErrorHandler(async (req, _ctx) => {
+    // Get user from auth middleware (throws AuthenticationError if not authenticated)
+    const user = requireUser(_ctx);
+    const authService = new AuthService();
 
-      // Get refresh token from cookie
-      const refreshToken = getCookie(req.headers, "refresh_token");
-      
-      // Get access token from header
-      const authHeader = req.headers.get("Authorization");
-      const accessToken = authHeader?.startsWith("Bearer ") 
-        ? authHeader.substring(7) 
-        : undefined;
+    // Get refresh token from cookie
+    const refreshToken = getCookie(req.headers, "refresh_token");
 
-      // Logout and revoke tokens
-      await authService.logout(user.sub, refreshToken, accessToken);
+    // Get access token from header
+    const authHeader = req.headers.get("Authorization");
+    const accessToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : undefined;
 
-      // Delete refresh token cookie
-      const headers = new Headers();
-      deleteCookie(headers, "refresh_token");
+    // Logout and revoke tokens
+    await authService.logout(user.sub, refreshToken, accessToken);
 
-      return new Response(
-        JSON.stringify({
-          data: {
-            message: "Logged out successfully",
-          },
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            ...Object.fromEntries(headers.entries()),
-          },
-        }
-      );
-    } catch (error) {
-      if (error instanceof Error && error.message === "Unauthorized") {
-        return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
+    // Delete refresh token cookie
+    const headers = new Headers();
+    deleteCookie(headers, "refresh_token");
+
+    return new Response(
+      JSON.stringify({
+        data: {
+          message: "Logged out successfully",
+        },
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...Object.fromEntries(headers.entries()),
+        },
       }
-      logger.error("Logout error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to logout", 500);
-    }
-  },
+    );
+  }),
 };

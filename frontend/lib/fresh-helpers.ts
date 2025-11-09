@@ -117,22 +117,29 @@ export async function parseJsonBody<T>(
 
 /**
  * Get user from context (requires auth middleware)
+ * @throws AuthenticationError if user not authenticated
  */
 export function requireUser(ctx: FreshContext<AppState>): AuthUser {
   const user = ctx.state.user;
   if (!user) {
-    throw new Error("Unauthorized");
+    throw new AuthenticationError(ErrorCode.UNAUTHORIZED, undefined, 'missing_token');
   }
   return user;
 }
 
 /**
  * Check if user has admin role
+ * @throws AuthenticationError if user not authenticated
+ * @throws AuthorizationError if user is not an admin
  */
 export function requireAdmin(ctx: FreshContext<AppState>): AuthUser {
   const user = requireUser(ctx);
   if (user.role !== "admin") {
-    throw new Error("Admin access required");
+    throw new AuthorizationError(
+      'Admin access required',
+      'admin',
+      user.role
+    );
   }
   return user;
 }
@@ -238,26 +245,8 @@ export function handleError(error: unknown): Response {
     );
   }
 
-  // Handle standard Error objects
+  // Handle standard Error objects (unexpected errors)
   if (error instanceof Error) {
-    // Check for specific error messages from requireUser/requireAdmin
-    if (error.message === 'Unauthorized') {
-      return errorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorMessages[ErrorCode.UNAUTHORIZED],
-        ErrorStatusCodes[ErrorCode.UNAUTHORIZED]
-      );
-    }
-
-    if (error.message === 'Admin access required') {
-      return errorResponse(
-        ErrorCode.FORBIDDEN,
-        ErrorMessages[ErrorCode.FORBIDDEN],
-        ErrorStatusCodes[ErrorCode.FORBIDDEN]
-      );
-    }
-
-    // Log unexpected errors
     logger.error('Unexpected error', {
       message: error.message,
       stack: error.stack,

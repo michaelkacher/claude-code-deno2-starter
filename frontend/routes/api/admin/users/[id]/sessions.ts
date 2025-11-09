@@ -1,41 +1,37 @@
 /**
  * DELETE /api/admin/users/[id]/sessions
  * Revoke all user's refresh tokens (logout all devices)
- * 
- * REFACTORED: Uses UserManagementService to eliminate duplicate logic
+ *
+ * REFACTORED: Uses UserManagementService and withErrorHandler pattern
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from "../../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../../shared/services/index.ts";
+import { BadRequestError } from "../../../../../lib/errors.ts";
 import {
-    errorResponse,
     requireAdmin,
     successResponse,
+    withErrorHandler,
     type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
 
-const logger = createLogger('AdminRevokeSessionsAPI');
-
 export const handler: Handlers<unknown, AppState> = {
-  async DELETE(_req, ctx) {
-    try {
-      requireAdmin(ctx);
+  DELETE: withErrorHandler(async (_req, ctx) => {
+    // Require admin access (throws AuthorizationError if not admin)
+    requireAdmin(ctx);
 
-      const userId = ctx.params.id;
-      const userMgmt = new UserManagementService();
-
-      await userMgmt.revokeAllUserSessions(userId);
-
-      return successResponse({
-        message: "All user sessions revoked successfully",
-      });
-    } catch (error) {
-      if (error instanceof Error && error.message === "Admin access required") {
-        return errorResponse("FORBIDDEN", "Admin access required", 403);
-      }
-      logger.error("Revoke sessions error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to revoke sessions", 500);
+    const userId = ctx.params["id"];
+    if (!userId) {
+      throw new BadRequestError("User ID is required");
     }
-  },
+
+    const userMgmt = new UserManagementService();
+
+    // Revoke sessions (service throws typed errors)
+    await userMgmt.revokeAllUserSessions(userId);
+
+    return successResponse({
+      message: "All user sessions revoked successfully",
+    });
+  }),
 };

@@ -340,15 +340,19 @@ return successResponse(
 );
 // Returns: { "data": {...}, "meta": {...} }
 
-// Error response
-import { errorResponse } from '@/lib/fresh-helpers.ts';
+// Error handling - Throw typed errors (automatically handled by withErrorHandler)
+import { ValidationError, NotFoundError, BadRequestError } from '@/lib/errors.ts';
 
-return errorResponse(
-  'VALIDATION_ERROR',  // Error code (uppercase snake_case)
-  'Invalid email',     // Human-readable message
-  400,                 // HTTP status
-  { field: 'email' }   // Optional details object
-);
+// Validation error
+throw new ValidationError('Invalid email', { email: ['Must be valid email format'] });
+
+// Not found error
+throw new NotFoundError(undefined, 'User', userId);
+
+// Bad request error
+throw new BadRequestError('Invalid request parameters');
+
+// All errors are caught by withErrorHandler() and converted to proper responses
 // Returns: { "error": { "code": "...", "message": "...", "details": {...} } }
 ```
 

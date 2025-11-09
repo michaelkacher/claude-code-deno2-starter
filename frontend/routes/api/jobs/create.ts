@@ -5,17 +5,14 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { createLogger } from "../../../../shared/lib/logger.ts";
 import { JobRepository } from "../../../../shared/repositories/index.ts";
 import {
-    errorResponse,
-    parseJsonBody,
-    requireAdmin,
-    successResponse,
-    type AppState,
+  parseJsonBody,
+  requireAdmin,
+  successResponse,
+  withErrorHandler,
+  type AppState,
 } from "../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('CreateJobAPI');
 
 const CreateJobSchema = z.object({
   name: z.string().min(1).max(100),
@@ -30,29 +27,18 @@ const CreateJobSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      // Require admin role
-      requireAdmin(ctx);
+  POST: withErrorHandler(async (req, ctx) => {
+    // Require admin role (throws AuthorizationError if not admin)
+    requireAdmin(ctx);
 
-      // Parse and validate request body
-      const body = await parseJsonBody(req, CreateJobSchema);
+    // Parse and validate request body (throws ValidationError on invalid data)
+    const body = await parseJsonBody(req, CreateJobSchema);
 
-      const jobRepo = new JobRepository();
+    const jobRepo = new JobRepository();
 
-      // Create job
-      const job = await jobRepo.create(body.name, body.data, body.options);
+    // Create job
+    const job = await jobRepo.create(body.name, body.data, body.options);
 
-      return successResponse(job, 201);
-    } catch (error) {
-      if (error.message === "Admin access required") {
-        return errorResponse("FORBIDDEN", "Admin access required", 403);
-      }
-      if (error.name === "ZodError") {
-        return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
-      }
-      logger.error("Create job error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to create job", 500);
-    }
-  },
+    return successResponse(job, 201);
+  }),
 };

@@ -1,23 +1,20 @@
 /**
  * POST /api/2fa/regenerate-backup-codes
  * Generate new backup codes (requires password + current code)
- * 
- * REFACTORED: Uses TwoFactorService to eliminate duplicate logic
+ *
+ * REFACTORED: Uses TwoFactorService with new error handling pattern
  */
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { createLogger } from "../../../../shared/lib/logger.ts";
 import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
-  errorResponse,
   parseJsonBody,
   requireUser,
   successResponse,
+  withErrorHandler,
   type AppState,
 } from "../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('RegenerateBackupCodesAPI');
 
 const RegenerateCodesSchema = z.object({
   password: z.string().min(1),
@@ -25,48 +22,20 @@ const RegenerateCodesSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      const user = requireUser(ctx);
-      const body = await parseJsonBody(req);
-      const validatedBody = RegenerateCodesSchema.parse(body);
+  POST: withErrorHandler(async (req, ctx) => {
+    const user = requireUser(ctx);
+    const { password, code } = await parseJsonBody(req, RegenerateCodesSchema);
 
-      const twoFactorService = new TwoFactorService();
-      const result = await twoFactorService.regenerateBackupCodes(
-        user.sub,
-        validatedBody.password,
-        validatedBody.code
-      );
+    const twoFactorService = new TwoFactorService();
+    const result = await twoFactorService.regenerateBackupCodes(
+      user.sub,
+      password,
+      code
+    );
 
-      return successResponse({
-        message: "Backup codes regenerated successfully",
-        backupCodes: result.backupCodes,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.message === "Authentication required") {
-        return errorResponse("UNAUTHORIZED", "Authentication required", 401);
-      }
-      if (error instanceof Error && error.message === "2FA is not enabled") {
-        return errorResponse("NOT_ENABLED", error.message, 400);
-      }
-      if (error instanceof Error && error.message === "Invalid password") {
-        return errorResponse("INVALID_PASSWORD", error.message, 400);
-      }
-      if (error instanceof Error && error.message === "Invalid verification code") {
-        return errorResponse("INVALID_CODE", error.message, 400);
-      }
-      if (error instanceof Error && error.message === "User not found") {
-        return errorResponse("NOT_FOUND", error.message, 404);
-      }
-      if (error instanceof z.ZodError) {
-        return errorResponse("VALIDATION_ERROR", "Invalid request body", 400);
-      }
-      logger.error("Regenerate backup codes error", { error });
-      return errorResponse(
-        "SERVER_ERROR",
-        "Failed to regenerate backup codes",
-        500,
-      );
-    }
-  },
+    return successResponse({
+      message: "Backup codes regenerated successfully",
+      backupCodes: result.backupCodes,
+    });
+  }),
 };

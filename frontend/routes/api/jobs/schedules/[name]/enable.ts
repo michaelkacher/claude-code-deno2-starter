@@ -4,34 +4,34 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from '../../../../../../shared/lib/logger.ts';
 import { scheduler } from "../../../../../../shared/lib/scheduler.ts";
 import {
-  errorResponse,
   requireAdmin,
   successResponse,
+  withErrorHandler,
   type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('EnableScheduleAPI');
+import { BadRequestError, NotFoundError } from "../../../../../lib/errors.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      // Require admin role
-      requireAdmin(ctx);
+  POST: withErrorHandler((_req, ctx) => {
+    // Require admin role (throws AuthorizationError if not admin)
+    requireAdmin(ctx);
 
-      const name = ctx.params.name;
-
-      scheduler.enable(name);
-
-      return successResponse({ name, enabled: true, message: "Schedule enabled" });
-    } catch (error) {
-      if (error.message === "Admin access required") {
-        return errorResponse("FORBIDDEN", "Admin access required", 403);
-      }
-      logger.error("Enable schedule error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to enable schedule", 500);
+    // Get schedule name from route params
+    const name = ctx.params['name'];
+    if (!name) {
+      throw new BadRequestError("Schedule name is required");
     }
-  },
+
+    // Verify schedule exists
+    const schedule = scheduler.getSchedule(name);
+    if (!schedule) {
+      throw new NotFoundError(undefined, 'Schedule', name);
+    }
+
+    scheduler.enable(name);
+
+    return successResponse({ name, enabled: true, message: "Schedule enabled" });
+  }),
 };

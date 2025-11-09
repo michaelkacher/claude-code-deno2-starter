@@ -5,57 +5,37 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-    errorResponse,
-    parseJsonBody,
-    successResponse,
-    type AppState,
+  parseJsonBody,
+  withErrorHandler,
+  type AppState,
 } from "../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('VerifyEmailAPI');
 
 const VerifyEmailSchema = z.object({
   token: z.string().uuid(),
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      // Parse and validate request body
-      const body = await parseJsonBody(req);
-      const { token } = VerifyEmailSchema.parse(body);
+  POST: withErrorHandler(async (req, _ctx) => {
+    // Parse and validate request body (Zod errors automatically handled)
+    const { token } = await parseJsonBody(req, VerifyEmailSchema);
 
-      const authService = new AuthService();
+    const authService = new AuthService();
 
-      // Verify email
-      try {
-        await authService.verifyEmail(token);
-      } catch (error) {
-        if (error instanceof Error && error.message === "INVALID_TOKEN") {
-          return errorResponse(
-            "INVALID_TOKEN",
-            "Invalid or expired verification token",
-            400
-          );
-        }
-        throw error;
+    // Verify email (service throws typed errors)
+    await authService.verifyEmail(token);
+
+    return new Response(
+      JSON.stringify({
+        data: {
+          message: "Email verified successfully. You can now log in.",
+        },
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
       }
-
-      return successResponse({
-        message: "Email verified successfully. You can now log in.",
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return errorResponse(
-          "VALIDATION_ERROR",
-          error.errors[0].message,
-          400
-        );
-      }
-      logger.error("Verify email error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to verify email", 500);
-    }
-  },
+    );
+  }),
 };

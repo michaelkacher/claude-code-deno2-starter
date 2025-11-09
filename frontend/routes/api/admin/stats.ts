@@ -1,47 +1,38 @@
 /**
  * GET /api/admin/stats
  * Admin dashboard statistics
+ *
+ * REFACTORED: Uses withErrorHandler pattern
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from "../../../../shared/lib/logger.ts";
 import { UserRepository } from "../../../../shared/repositories/index.ts";
 import {
-    errorResponse,
     requireAdmin,
     successResponse,
+    withErrorHandler,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
 
-const logger = createLogger('AdminStatsAPI');
-
 export const handler: Handlers<unknown, AppState> = {
-  async GET(req, ctx) {
-    try {
-      // Require admin role
-      requireAdmin(ctx);
+  GET: withErrorHandler(async (_req, ctx) => {
+    // Require admin access (throws AuthorizationError if not admin)
+    requireAdmin(ctx);
 
-      const userRepo = new UserRepository();
+    const userRepo = new UserRepository();
 
-      // Get user stats
-      const stats = await userRepo.getStats();
+    // Get user stats
+    const stats = await userRepo.getStats();
 
-      return successResponse({
-        users: {
-          total: stats.totalUsers,
-          verified: stats.verifiedCount,
-          unverified: stats.totalUsers - stats.verifiedCount,
-          admins: stats.adminCount,
-          with2FA: stats.twoFactorCount,
-        },
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      if (error.message === "Admin access required") {
-        return errorResponse("FORBIDDEN", "Admin access required", 403);
-      }
-      logger.error("Get stats error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to get stats", 500);
-    }
-  },
+    return successResponse({
+      users: {
+        total: stats.totalUsers,
+        verified: stats.verifiedCount,
+        unverified: stats.totalUsers - stats.verifiedCount,
+        admins: stats.adminCount,
+        with2FA: stats.twoFactorCount,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }),
 };

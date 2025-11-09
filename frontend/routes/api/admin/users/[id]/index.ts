@@ -1,48 +1,35 @@
 /**
  * DELETE /api/admin/users/[id]
  * Delete user account
- * 
- * REFACTORED: Uses UserManagementService to eliminate duplicate logic
+ *
+ * REFACTORED: Uses UserManagementService and withErrorHandler pattern
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from "../../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../../shared/services/index.ts";
+import { BadRequestError } from "../../../../../lib/errors.ts";
 import {
-    errorResponse,
     requireAdmin,
     successResponse,
+    withErrorHandler,
     type AppState,
 } from "../../../../../lib/fresh-helpers.ts";
 
-const logger = createLogger('AdminDeleteUserAPI');
-
 export const handler: Handlers<unknown, AppState> = {
-  async DELETE(_req, ctx) {
-    try {
-      const admin = requireAdmin(ctx);
-      const userId = ctx.params.id;
-
-      const userMgmt = new UserManagementService();
-      await userMgmt.deleteUser(userId, admin.sub);
-
-      return successResponse({
-        message: "User deleted successfully",
-      });
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === "Admin access required") {
-          return errorResponse("FORBIDDEN", "Admin access required", 403);
-        }
-        if (error.message === "User not found") {
-          return errorResponse("USER_NOT_FOUND", error.message, 404);
-        }
-        if (error.message.includes("Cannot delete")) {
-          return errorResponse("CANNOT_DELETE_SELF", error.message, 400);
-        }
-      }
-      logger.error("Delete user error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to delete user", 500);
+  DELETE: withErrorHandler(async (_req, ctx) => {
+    // Require admin access (throws AuthorizationError if not admin)
+    const admin = requireAdmin(ctx);
+    const userId = ctx.params["id"];
+    if (!userId) {
+      throw new BadRequestError("User ID is required");
     }
-  },
+
+    const userMgmt = new UserManagementService();
+    // Delete user (throws NotFoundError if not found, ValidationError if self-delete)
+    await userMgmt.deleteUser(userId, admin.sub);
+
+    return successResponse({
+      message: "User deleted successfully",
+    });
+  }),
 };

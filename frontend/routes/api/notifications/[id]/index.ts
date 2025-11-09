@@ -4,56 +4,41 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from '../../../../../shared/lib/logger.ts';
 import { NotificationRepository } from "../../../../../shared/repositories/index.ts";
 import {
-  errorResponse,
   requireUser,
   successResponse,
+  withErrorHandler,
   type AppState,
 } from "../../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('DeleteNotificationAPI');
+import { BadRequestError, NotFoundError, AuthorizationError } from "../../../../lib/errors.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  async DELETE(req, ctx) {
-    try {
-      // Require authentication
-      const user = requireUser(ctx);
+  DELETE: withErrorHandler(async (_req, ctx) => {
+    // Require authentication
+    const user = requireUser(ctx);
 
-      // Get notification ID from route params
-      const notificationId = ctx.params.id;
-
-      const notificationRepo = new NotificationRepository();
-
-      // Get notification to verify ownership
-      const notification = await notificationRepo.findById(user.sub, notificationId);
-      if (!notification) {
-        return errorResponse("NOT_FOUND", "Notification not found", 404);
-      }
-
-      if (notification.userId !== user.sub) {
-        return errorResponse(
-          "FORBIDDEN",
-          "Cannot delete another user's notification",
-          403,
-        );
-      }
-
-      // Delete notification
-      await notificationRepo.deleteNotification(user.sub, notificationId);
-
-      return successResponse({ message: "Notification deleted" });
-    } catch (error) {
-      if (error.message === "Authentication required") {
-        return errorResponse("UNAUTHORIZED", "Authentication required", 401);
-      }
-      logger.error("Delete notification error", { error });
-      return errorResponse(
-        "SERVER_ERROR",
-        "Failed to delete notification",
-        500,
-      );
+    // Get notification ID from route params
+    const notificationId = ctx.params.id;
+    if (!notificationId) {
+      throw new BadRequestError("Notification ID is required");
     }
-  },
+
+    const notificationRepo = new NotificationRepository();
+
+    // Get notification to verify ownership
+    const notification = await notificationRepo.findById(user.sub, notificationId);
+    if (!notification) {
+      throw new NotFoundError("Notification not found", "notification", notificationId);
+    }
+
+    if (notification.userId !== user.sub) {
+      throw new AuthorizationError("Cannot delete another user's notification");
+    }
+
+    // Delete notification
+    await notificationRepo.deleteNotification(user.sub, notificationId);
+
+    return successResponse({ message: "Notification deleted" });
+  }),
 };

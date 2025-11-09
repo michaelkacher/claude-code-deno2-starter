@@ -14,7 +14,7 @@ import {
 import { NotFoundError, BadRequestError } from "../../../../lib/errors.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, ctx) => {
+  POST: withErrorHandler(async (_req, ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

@@ -5,16 +5,12 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-    errorResponse,
-    parseJsonBody,
-    successResponse,
-    type AppState,
+  parseJsonBody,
+  withErrorHandler,
+  type AppState,
 } from "../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('ResetPasswordAPI');
 
 const ResetPasswordSchema = z.object({
   token: z.string().uuid(),
@@ -22,41 +18,25 @@ const ResetPasswordSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      // Parse and validate request body
-      const body = await parseJsonBody(req);
-      const { token, newPassword } = ResetPasswordSchema.parse(body);
+  POST: withErrorHandler(async (req, _ctx) => {
+    // Parse and validate request body (Zod errors automatically handled)
+    const { token, newPassword } = await parseJsonBody(req, ResetPasswordSchema);
 
-      const authService = new AuthService();
+    const authService = new AuthService();
 
-      // Reset password
-      try {
-        await authService.resetPassword(token, newPassword);
-      } catch (error) {
-        if (error instanceof Error && error.message === "INVALID_TOKEN") {
-          return errorResponse(
-            "INVALID_TOKEN",
-            "Invalid or expired reset token",
-            400
-          );
-        }
-        throw error;
+    // Reset password (service throws typed errors)
+    await authService.resetPassword(token, newPassword);
+
+    return new Response(
+      JSON.stringify({
+        data: {
+          message: "Password reset successful. Please log in with your new password.",
+        },
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
       }
-
-      return successResponse({
-        message: "Password reset successful. Please log in with your new password.",
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return errorResponse(
-          "VALIDATION_ERROR",
-          error.errors[0].message,
-          400
-        );
-      }
-      logger.error("Reset password error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to reset password", 500);
-    }
-  },
+    );
+  }),
 };

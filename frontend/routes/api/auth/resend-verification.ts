@@ -5,71 +5,40 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
-import { createLogger } from '../../../../shared/lib/logger.ts';
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-  errorResponse,
   parseJsonBody,
-  successResponse,
+  withErrorHandler,
   type AppState,
 } from "../../../lib/fresh-helpers.ts";
-
-const logger = createLogger('ResendVerificationAPI');
 
 const ResendVerificationSchema = z.object({
   email: z.string().email(),
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  async POST(req, ctx) {
-    try {
-      // Parse and validate request body
-      const body = await parseJsonBody(req);
-      const { email } = ResendVerificationSchema.parse(body);
+  POST: withErrorHandler(async (req, _ctx) => {
+    // Parse and validate request body (Zod errors automatically handled)
+    const { email } = await parseJsonBody(req, ResendVerificationSchema);
 
-      const authService = new AuthService();
+    const authService = new AuthService();
 
-      // Resend verification email
-      let verificationToken;
-      try {
-        verificationToken = await authService.resendVerification(email);
-      } catch (error) {
-        if (error instanceof Error) {
-          if (error.message === "USER_NOT_FOUND") {
-            // Don't reveal if email exists or not
-            return successResponse({
-              message: "If an account exists with this email, a verification link will be sent.",
-            });
-          }
-          if (error.message === "EMAIL_ALREADY_VERIFIED") {
-            return errorResponse(
-              "ALREADY_VERIFIED",
-              "Email is already verified",
-              400
-            );
-          }
-        }
-        throw error;
+    // Resend verification email (service throws typed errors)
+    const _verificationToken = await authService.resendVerification(email);
+
+    // TODO(@team): Send verification email
+    // await sendVerificationEmail(email, verificationToken);
+
+    return new Response(
+      JSON.stringify({
+        data: {
+          message: "If an account exists with this email, a verification link will be sent.",
+        },
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
       }
-
-      // TODO(@team): Send verification email
-      // await sendVerificationEmail(email, verificationToken);
-
-      logger.info('Verification email resent', { email });
-
-      return successResponse({
-        message: "If an account exists with this email, a verification link will be sent.",
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return errorResponse(
-          "VALIDATION_ERROR",
-          error.errors[0].message,
-          400
-        );
-      }
-      logger.error("Resend verification error", { error });
-      return errorResponse("SERVER_ERROR", "Failed to resend verification", 500);
-    }
-  },
+    );
+  }),
 };

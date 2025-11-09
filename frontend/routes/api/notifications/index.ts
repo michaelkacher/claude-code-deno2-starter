@@ -4,54 +4,33 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createLogger } from '../../../../shared/lib/logger.ts';
 import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
-    errorResponse,
     requireUser,
     successResponse,
+    withErrorHandler,
     type AppState,
 } from "../../../lib/fresh-helpers.ts";
 
-const logger = createLogger('NotificationsAPI');
-
 export const handler: Handlers<unknown, AppState> = {
-  async GET(req, ctx) {
-    try {
-      // Require authentication
-      const user = requireUser(ctx);
+  GET: withErrorHandler(async (req, ctx) => {
+    // Require authentication
+    const user = requireUser(ctx);
 
-      // Parse query parameters
-      const url = new URL(req.url);
-      const limit = parseInt(url.searchParams.get("limit") || "50");
-      const cursor = url.searchParams.get("cursor") || undefined;
+    // Parse query parameters
+    const url = new URL(req.url);
+    const limit = parseInt(url.searchParams.get("limit") || "50");
+    const cursor = url.searchParams.get("cursor") || undefined;
 
-      const notificationRepo = new NotificationRepository();
-      const result = await notificationRepo.listUserNotifications(user.sub, { limit, cursor });
-      const unreadCount = await notificationRepo.getUnreadCount(user.sub);
+    const notificationRepo = new NotificationRepository();
+    const result = await notificationRepo.listUserNotifications(user.sub, { limit, cursor });
+    const unreadCount = await notificationRepo.getUnreadCount(user.sub);
 
-      logger.debug('Listed user notifications', { 
-        userId: user.sub, 
-        count: result.items?.length || 0, 
-        unreadCount 
-      });
-
-      return successResponse({
-        notifications: result.items,
-        unreadCount,
-        cursor: result.cursor,
-        hasMore: result.hasMore,
-      });
-    } catch (error) {
-      if (error.message === "Authentication required") {
-        return errorResponse("UNAUTHORIZED", "Authentication required", 401);
-      }
-      logger.error("List notifications error", { error });
-      return errorResponse(
-        "SERVER_ERROR",
-        "Failed to list notifications",
-        500,
-      );
-    }
-  },
+    return successResponse({
+      notifications: result.items,
+      unreadCount,
+      cursor: result.cursor,
+      hasMore: result.hasMore,
+    });
+  }),
 };
