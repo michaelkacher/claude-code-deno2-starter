@@ -6,8 +6,8 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect } from 'preact/hooks';
 import { useSignal } from '@preact/signals';
+import { useEffect } from 'preact/hooks';
 import { TokenStorage } from '../lib/storage.ts';
 
 export default function EmailVerificationBanner() {
@@ -84,6 +84,7 @@ export default function EmailVerificationBanner() {
           )}
           <div class="mt-2 flex items-center gap-4">
             <button
+              type="button"
               onClick={handleResend}
               disabled={isResending.value}
               class="text-sm font-medium text-yellow-700 hover:text-yellow-600 underline disabled:opacity-50 disabled:cursor-not-allowed"
@@ -91,6 +92,7 @@ export default function EmailVerificationBanner() {
               {isResending.value ? 'Sending...' : 'Resend verification email'}
             </button>
             <button
+              type="button"
               onClick={handleDismiss}
               class="text-sm font-medium text-yellow-700 hover:text-yellow-600"
             >
@@ -101,6 +103,7 @@ export default function EmailVerificationBanner() {
         <div class="ml-auto pl-3">
           <div class="-mx-1.5 -my-1.5">
             <button
+              type="button"
               onClick={handleDismiss}
               class="inline-flex rounded-md p-1.5 text-yellow-500 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-600"
             >

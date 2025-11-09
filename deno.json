@@ -62,6 +62,17 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "useUnknownInCatchVariables": false
@@ -69,7 +80,35 @@
   "lint": {
     "rules": {
       "tags": ["recommended"],
-      "include": ["ban-untagged-todo"]
+      "include": [
+        "ban-untagged-todo",
+        "no-throw-literal",
+        "no-const-assign",
+        "no-debugger",
+        "no-duplicate-case",
+        "no-empty",
+        "no-empty-character-class",
+        "no-empty-pattern",
+        "no-ex-assign",
+        "no-explicit-any",
+        "no-fallthrough",
+        "no-invalid-regexp",
+        "no-irregular-whitespace",
+        "no-prototype-builtins",
+        "no-self-assign",
+        "no-sparse-arrays",
+        "no-unreachable",
+        "no-unsafe-finally",
+        "use-isnan",
+        "valid-typeof",
+        "jsx-button-has-type"
+      ],
+      "exclude": [
+        "no-unused-vars",
+        "require-await",
+        "no-await-in-loop",
+        "no-window"
+      ]
     },
     "exclude": [
       "dist",

@@ -42,7 +42,7 @@ export const handler: Handlers<unknown, AppState> = {
         throw error;
       }
 
-      // TODO: Send verification email
+      // TODO(@team): Send verification email
       // await sendVerificationEmail(signupResult.user.email, signupResult.verificationToken);
 
       // Return success (without sensitive data)

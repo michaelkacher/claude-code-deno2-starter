@@ -23,6 +23,7 @@ export default function MobileMenuToggle({ children }: MobileMenuToggleProps) {
     <>
       {/* Mobile menu button */}
       <button
+        type="button"
         onClick={toggleMobileMenu}
         class="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
       >

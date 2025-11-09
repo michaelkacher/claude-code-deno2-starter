@@ -32,7 +32,7 @@ export const handler: Handlers<unknown, AppState> = {
       // Request password reset
       const resetToken = await authService.requestPasswordReset(email);
 
-      // TODO: Send password reset email
+      // TODO(@team): Send password reset email
       // if (resetToken) {
       //   await sendPasswordResetEmail(email, resetToken);
       // }

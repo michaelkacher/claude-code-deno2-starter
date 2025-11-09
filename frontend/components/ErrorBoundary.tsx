@@ -55,7 +55,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
 
-    // TODO: Send to error tracking service in production
+    // TODO(@team): Send to error tracking service in production
     // Example: Sentry.captureException(error, { extra: errorInfo });
 
     this.setState({ errorInfo });
@@ -114,12 +114,14 @@ export default class ErrorBoundary extends Component<Props, State> {
 
             <div class="flex gap-3">
               <button
+                type="button"
                 onClick={this.handleReload}
                 class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
               >
                 Reload Page
               </button>
               <button
+                type="button"
                 onClick={this.handleGoHome}
                 class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
               >

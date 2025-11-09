@@ -52,7 +52,7 @@ export const handler: Handlers<unknown, AppState> = {
         throw error;
       }
 
-      // TODO: Send verification email
+      // TODO(@team): Send verification email
       // await sendVerificationEmail(email, verificationToken);
 
       logger.info('Verification email resent', { email });

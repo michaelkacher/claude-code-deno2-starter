@@ -137,6 +137,7 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
           </div>
 
           <button
+            type="button"
             onClick={() => step.value = 'verify'}
             class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
           >
@@ -227,12 +228,14 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
 
           <div class="flex gap-3">
             <button
+              type="button"
               onClick={copyBackupCodes}
               class="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors font-medium"
             >
               📋 Copy Codes
             </button>
             <button
+              type="button"
               onClick={handleFinish}
               class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
             >

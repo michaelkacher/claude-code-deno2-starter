@@ -8,7 +8,7 @@
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useEffect } from 'preact/hooks';
 import { ThemeStorage } from '../lib/storage.ts';
-import { theme, isDarkMode, toggleTheme, setTheme } from '../lib/store.ts';
+import { isDarkMode, setTheme, theme, toggleTheme } from '../lib/store.ts';
 
 interface DarkModeToggleProps {
   initialTheme?: 'light' | 'dark' | null;
@@ -49,6 +49,7 @@ export default function DarkModeToggle({ initialTheme }: DarkModeToggleProps) {
 
   return (
     <button
+      type="button"
       onClick={handleToggle}
       class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       title={isDarkMode.value ? 'Switch to light mode' : 'Switch to dark mode'}

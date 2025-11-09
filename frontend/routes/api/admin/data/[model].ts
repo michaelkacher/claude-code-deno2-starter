@@ -47,7 +47,7 @@ export const handler: Handlers<unknown, AppState> = {
 
       const kv = await getKv();
       const entries = kv.list({ prefix: [model] });
-      const data: any[] = [];
+      const data: Array<Record<string, unknown>> = [];
       const allProperties = new Set<string>();
       let totalCount = 0;
       let skipped = 0;
@@ -58,7 +58,7 @@ export const handler: Handlers<unknown, AppState> = {
 
         // Apply filtering if specified
         if (filterProperty && filterValue && entry.value) {
-          const value = entry.value as any;
+          const value = entry.value as Record<string, unknown>;
           const propValue = String(value[filterProperty] || "");
           if (!propValue.toLowerCase().includes(filterValue.toLowerCase())) {
             continue;
@@ -73,7 +73,7 @@ export const handler: Handlers<unknown, AppState> = {
 
         // Collect data
         if (data.length < limit) {
-          const item: any = {
+          const item: Record<string, unknown> = {
             _key: entry.key,
             _versionstamp: entry.versionstamp,
           };

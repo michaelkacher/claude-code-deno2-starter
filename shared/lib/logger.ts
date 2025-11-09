@@ -146,7 +146,7 @@ class LoggerImpl implements Logger {
   }
 
   private sendToErrorTracking(_entry: LogEntry): void {
-    // TODO: Integrate with error tracking service (Sentry, LogTail, etc.)
+    // TODO(@team): Integrate with error tracking service (Sentry, LogTail, etc.)
     // Example:
     // Sentry.captureException(_entry.error, {
     //   tags: { context: _entry.context },

@@ -6,6 +6,7 @@
 import { Handlers } from "$fresh/server.ts";
 import { z } from "zod";
 import { createLogger } from '../../../../shared/lib/logger.ts';
+import { JobStatus } from "../../../../shared/lib/queue.ts";
 import { JobRepository } from "../../../../shared/repositories/index.ts";
 import {
   errorResponse,
@@ -43,7 +44,7 @@ export const handler: Handlers<unknown, AppState> = {
 
       const jobRepo = new JobRepository();
       const result = await jobRepo.listJobs({
-        status: status as any,
+        status: status as JobStatus | undefined,
         limit,
         cursor,
       });
