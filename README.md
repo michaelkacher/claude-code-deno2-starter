@@ -1,6 +1,8 @@
 # Web Project Starter with Claude Code + Deno 2
 
-Go from idea, to mockups, to features that are fully tested--fast! Having AI build yor tests help prevent backward compatibility issues and prevents the AI from drifting from the intent of other features.
+Go from idea, to mockups, to features that are fully tested--fast! Having AI build yor tests help prevent backward compatibility issues and prevents the AI from breaking previously implemented  features.
+
+![Image of the default homepage](docs/assets/homepage.png)
 
 **This is an opinionated starter template** with a pre-selected tech stack so you can focus on building features, not debating technology choices.
 
