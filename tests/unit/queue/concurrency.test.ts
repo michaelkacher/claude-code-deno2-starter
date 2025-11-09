@@ -5,8 +5,8 @@
  * without race conditions.
  */
 
-import { assertEquals, assertExists } from 'jsr:@std/assert';
-import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { assertEquals, assertExists } from '@std/assert';
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { closeKv } from '../../../shared/lib/kv.ts';
 import { JobQueue } from '../../../shared/lib/queue.ts';
 

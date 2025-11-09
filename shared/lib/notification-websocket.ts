@@ -419,7 +419,7 @@ async function sendNotificationUpdate(userId: string, socket: WebSocket) {
 /**
  * Handle incoming messages from client
  */
-function handleClientMessage(userId: string, connectionId: string, data: any) {
+function handleClientMessage(userId: string, connectionId: string, data: unknown) {
   const userConnections = clients.get(userId);
   const client = userConnections?.get(connectionId);
   
@@ -477,7 +477,7 @@ function handleClientMessage(userId: string, connectionId: string, data: any) {
 /**
  * Send message to WebSocket client
  */
-function sendMessage(socket: WebSocket, data: any) {
+function sendMessage(socket: WebSocket, data: unknown) {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(data));
   }
@@ -525,7 +525,7 @@ function startHeartbeat(client: WebSocketClient) {
 /**
  * Broadcast notification to a specific user (all their connections)
  */
-export function notifyUser(userId: string, notification: any) {
+export function notifyUser(userId: string, notification: unknown) {
   const userConnections = clients.get(userId);
   
   logger.debug('notifyUser called', {
@@ -562,7 +562,7 @@ export function notifyUser(userId: string, notification: any) {
  * Send a custom message to a specific user (all their connections)
  * Use this when you need to send a message with a specific type/structure
  */
-export function sendToUser(userId: string, message: any) {
+export function sendToUser(userId: string, message: unknown) {
   const userConnections = clients.get(userId);
   
   logger.debug('sendToUser called', {
@@ -598,7 +598,7 @@ export function sendToUser(userId: string, message: any) {
 /**
  * Broadcast to all connected clients
  */
-export function broadcast(message: any) {
+export function broadcast(message: unknown) {
   clients.forEach((userConnections) => {
     userConnections.forEach((client) => {
       if (client.socket.readyState === WebSocket.OPEN) {
@@ -611,7 +611,7 @@ export function broadcast(message: any) {
 /**
  * Broadcast job update to all connected admin clients
  */
-export function broadcastJobUpdate(jobData: any) {
+export function broadcastJobUpdate(jobData: unknown) {
   const message = {
     type: 'job_update',
     job: jobData,
@@ -631,7 +631,7 @@ export function broadcastJobUpdate(jobData: any) {
 /**
  * Broadcast job stats update to all connected admin clients
  */
-export function broadcastJobStats(stats: any) {
+export function broadcastJobStats(stats: unknown) {
   const message = {
     type: 'job_stats_update',
     stats,

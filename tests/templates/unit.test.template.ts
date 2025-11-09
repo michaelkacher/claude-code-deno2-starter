@@ -4,8 +4,8 @@
  * Replace [FeatureName] and [functionName] with actual values
  */
 
-import { assertEquals, assertThrows } from 'jsr:@std/assert';
-import { describe, it } from 'jsr:@std/testing/bdd';
+import { assertEquals, assertThrows } from '@std/assert';
+import { describe, it } from '@std/testing/bdd';
 
 // TODO(@dev): Import the function/class to test
 // import { functionName } from '../../../shared/lib/[feature].ts';

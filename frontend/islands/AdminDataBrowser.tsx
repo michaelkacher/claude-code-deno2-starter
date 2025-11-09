@@ -6,8 +6,8 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect, useRef } from 'preact/hooks';
 import { useSignal } from '@preact/signals';
+import { useEffect, useRef } from 'preact/hooks';
 import { TokenStorage } from '../lib/storage.ts';
 
 interface Model {
@@ -18,7 +18,7 @@ interface Model {
 interface ModelData {
   model: string;
   properties: string[];
-  items: any[];
+  items: Array<Record<string, unknown>>;
   pagination: {
     page: number;
     limit: number;
@@ -159,7 +159,7 @@ export default function AdminDataBrowser() {
     currentPage.value = 1;
   };
 
-  const renderValue = (value: any): string => {
+  const renderValue = (value: unknown): string => {
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
     if (typeof value === 'boolean') return value.toString();
@@ -182,6 +182,7 @@ export default function AdminDataBrowser() {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {models.value.map((model) => (
               <button
+                type="button"
                 key={model.name}
                 onClick={() => handleModelSelect(model.name)}
                 class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:border-blue-500 hover:shadow-md transition-all text-left"
@@ -200,6 +201,7 @@ export default function AdminDataBrowser() {
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-4">
               <button
+                type="button"
                 onClick={() => selectedModel.value = ''}
                 class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
               >
@@ -248,6 +250,7 @@ export default function AdminDataBrowser() {
 
               <div class="flex gap-2">
                 <button
+                  type="button"
                   onClick={handleFilterApply}
                   disabled={!filterProperty.value || !filterValue.value}
                   class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
@@ -255,6 +258,7 @@ export default function AdminDataBrowser() {
                   Apply
                 </button>
                 <button
+                  type="button"
                   onClick={handleFilterClear}
                   disabled={!filterProperty.value && !filterValue.value}
                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-sm font-medium"
@@ -309,6 +313,7 @@ export default function AdminDataBrowser() {
               {/* Pagination */}
               <div class="mt-4 flex items-center justify-between">
                 <button
+                  type="button"
                   onClick={() => currentPage.value = Math.max(1, currentPage.value - 1)}
                   disabled={currentPage.value === 1}
                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-sm font-medium"
@@ -321,6 +326,7 @@ export default function AdminDataBrowser() {
                 </span>
 
                 <button
+                  type="button"
                   onClick={() => currentPage.value = currentPage.value + 1}
                   disabled={!modelData.value.pagination.hasMore}
                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-sm font-medium"

@@ -17,8 +17,8 @@
  * 6. Delete tests that don't apply (e.g., if no unique field, delete duplicate test)
  */
 
-import { assertEquals, assertRejects } from 'jsr:@std/assert';
-import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { assertEquals, assertRejects } from '@std/assert';
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { setupTestKv } from '../../helpers/kv-test.ts';
 
 // TODO(@dev): Import your service

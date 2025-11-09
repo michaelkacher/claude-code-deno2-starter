@@ -33,7 +33,7 @@ import {
 // Types
 // ============================================================================
 
-type ChannelHandler = (message: any) => void;
+type ChannelHandler = (message: unknown) => void;
 type ChannelName = 'jobs' | 'analytics' | 'chat' | string;
 
 // ============================================================================
@@ -446,7 +446,7 @@ export function subscribeToChannel(channel: ChannelName, handler: ChannelHandler
 /**
  * Dispatch a message to all handlers subscribed to a channel
  */
-function dispatchToChannel(channel: ChannelName, message: any) {
+function dispatchToChannel(channel: ChannelName, message: unknown) {
   const handlers = channelHandlers.get(channel);
   if (handlers) {
     handlers.forEach(handler => {

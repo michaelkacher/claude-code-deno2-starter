@@ -6,17 +6,16 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useSignal, useComputed } from '@preact/signals';
+import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import {
   accessToken,
-  notifications,
-  unreadCount,
   isWsConnected,
-  markNotificationAsRead,
   markAllNotificationsAsRead,
+  markNotificationAsRead,
+  notifications,
   removeNotification,
-  type Notification,
+  unreadCount
 } from '../lib/store.ts';
 
 export default function NotificationBell() {
@@ -219,6 +218,7 @@ export default function NotificationBell() {
     <div class="notification-dropdown relative">
       {/* Bell Icon with Badge */}
       <button
+        type="button"
         onClick={() => isOpen.value = !isOpen.value}
         class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
         aria-label="Notifications"
@@ -261,6 +261,7 @@ export default function NotificationBell() {
             <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
             {notifications.value.length > 0 && unreadCount.value > 0 && (
               <button
+                type="button"
                 onClick={markAllAsRead}
                 disabled={isLoading.value}
                 class="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
@@ -322,6 +323,7 @@ export default function NotificationBell() {
                           {notification.title}
                         </h4>
                         <button
+                          type="button"
                           onClick={() => deleteNotification(notification.id)}
                           class="text-gray-400 hover:text-gray-600 flex-shrink-0"
                           aria-label="Delete notification"
@@ -350,6 +352,7 @@ export default function NotificationBell() {
                         </span>
                         {!notification.read && (
                           <button
+                            type="button"
                             onClick={() => markAsRead(notification.id)}
                             class="text-xs text-blue-600 hover:text-blue-800"
                           >

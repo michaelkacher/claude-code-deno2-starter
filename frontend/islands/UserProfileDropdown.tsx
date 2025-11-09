@@ -280,6 +280,7 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
     <div class="relative" ref={dropdownRef}>
       {/* Profile Button */}
       <button
+        type="button"
         onClick={() => isDropdownOpen.value = !isDropdownOpen.value}
   class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       >
@@ -415,6 +416,7 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
                 👤 Profile Settings
               </a>
               <button
+                type="button"
                 onClick={handleLogout}
                 class="block w-full text-left px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded transition-colors"
               >

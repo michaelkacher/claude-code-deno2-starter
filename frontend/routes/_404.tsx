@@ -65,6 +65,7 @@ export default function Error404() {
             {/* Actions */}
             <div class="flex flex-col sm:flex-row gap-3">
               <button
+                type="button"
                 onClick={() => window.history.back()}
                 class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
               >

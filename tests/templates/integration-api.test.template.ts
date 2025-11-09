@@ -4,8 +4,8 @@
  * Replace [ENDPOINT] and [Feature] with actual values
  */
 
-import { assertEquals } from 'jsr:@std/assert';
-import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { assertEquals } from '@std/assert';
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { createTestClient, TestClient } from '../../helpers/test-client.ts';
 
 // TODO(@dev): Import types

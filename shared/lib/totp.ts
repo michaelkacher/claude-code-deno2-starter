@@ -102,7 +102,8 @@ export async function verifyTOTP(
     const originalNow = Date.now;
     
     // Temporarily override Date.now() for testing different time windows
-    (Date as any).now = () => testTime;
+    // @ts-ignore - Need to override Date.now for time window testing
+    Date.now = () => testTime;
     
     try {
       const expectedCode = await generateTOTP(secret, timeStep, digits);

@@ -16,8 +16,8 @@
  * - Routing (framework concern)
  */
 
-import { assertEquals, assertRejects } from 'jsr:@std/assert';
-import { afterEach, beforeEach, describe, it } from 'jsr:@std/testing/bdd';
+import { assertEquals, assertRejects } from '@std/assert';
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { setupTestKv } from '../../helpers/kv-test.ts';
 
 // TODO(@dev): Import the service to test

@@ -8,13 +8,13 @@ import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useComputed, useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import {
-  accessToken,
-  isWsConnected,
-  markAllNotificationsAsRead as markAllAsReadGlobal,
-  markNotificationAsRead as markAsReadGlobal,
-  notifications,
-  removeNotification as removeNotificationGlobal,
-  unreadCount,
+    accessToken,
+    isWsConnected,
+    markAllNotificationsAsRead as markAllAsReadGlobal,
+    markNotificationAsRead as markAsReadGlobal,
+    notifications,
+    removeNotification as removeNotificationGlobal,
+    unreadCount,
 } from '../lib/store.ts';
 
 export default function NotificationList() {
@@ -244,6 +244,7 @@ export default function NotificationList() {
             </div>
 
             <button
+              type="button"
               onClick={() => filter.value = 'all'}
               class={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter.value === 'all'
@@ -254,6 +255,7 @@ export default function NotificationList() {
               All ({notifications.value.length})
             </button>
             <button
+              type="button"
               onClick={() => filter.value = 'unread'}
               class={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter.value === 'unread'
@@ -267,6 +269,7 @@ export default function NotificationList() {
 
           {unreadCount.value > 0 && (
             <button
+              type="button"
               onClick={markAllAsRead}
               class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
             >
@@ -348,6 +351,7 @@ export default function NotificationList() {
                     <div class="flex items-center gap-2">
                       {!notification.read && (
                         <button
+                          type="button"
                           onClick={() => markAsRead(notification.id)}
                           class="p-2 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-lg transition-colors"
                           title="Mark as read"
@@ -358,6 +362,7 @@ export default function NotificationList() {
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={() => deleteNotification(notification.id)}
                         class="p-2 text-gray-400 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors"
                         title="Delete"

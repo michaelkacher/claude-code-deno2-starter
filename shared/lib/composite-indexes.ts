@@ -50,7 +50,7 @@ export interface User {
   role: 'admin' | 'user';
   emailVerified: boolean;
   createdAt: string;
-  [key: string]: any; // Allow additional fields
+  [key: string]: unknown; // Allow additional fields
 }
 
 export interface UserQueryOptions {
@@ -68,7 +68,7 @@ export interface Notification {
   type: string;
   read: boolean;
   createdAt: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface NotificationQueryOptions {
@@ -86,7 +86,7 @@ export interface Job {
   status: 'pending' | 'running' | 'completed' | 'failed' | 'retrying';
   priority: number;
   createdAt: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface JobQueryOptions {

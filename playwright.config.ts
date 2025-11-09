@@ -7,9 +7,9 @@ export default defineConfig({
  expect: {
    timeout: 5000, // 5 seconds is maximum time to wait for condition
  },
- retries: process.env.CI ? 2 : 0, // Retry failed tests on CI
- forbidOnly: !!process.env.CI, // Fail if 'test.only' is left in the code on CI
- workers: process.env.CI ? 1 : undefined, // Use a single worker on CI
+ retries: Deno.env.get('CI') ? 2 : 0, // Retry failed tests on CI
+ forbidOnly: !!Deno.env.get('CI'), // Fail if 'test.only' is left in the code on CI
+ workers: Deno.env.get('CI') ? 1 : undefined, // Use a single worker on CI
  
  reporter: 'html', // Use HTML reporter for test results
  use: {
@@ -43,7 +43,7 @@ export default defineConfig({
  webServer: {
     command: 'deno task dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !Deno.env.get('CI'),
     timeout: 120 * 1000, // 2 minutes
  },
 });
