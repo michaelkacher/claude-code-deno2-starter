@@ -142,8 +142,8 @@ function getTokenAge(token) {
 
 /**
  * Setup automatic token refresh
- * Refreshes the token every 10 minutes (5 minutes before the 15-minute expiry)
- * Reduces dependency on page visibility and user activity checks
+ * Refreshes the token every 7 minutes (8 minutes before the 15-minute expiry)
+ * Also refreshes on visibility changes and window focus to handle tab sleeping
  */
 export function setupAutoRefresh() {
   let lastActivity = Date.now();
@@ -165,11 +165,26 @@ export function setupAutoRefresh() {
       const token = localStorage.getItem('access_token');
       if (token) {
         const tokenAge = getTokenAge(token);
-        // If token is older than 8 minutes, refresh immediately
-        if (tokenAge > 8 * 60 * 1000) {
-          console.debug('Token age:', Math.floor(tokenAge / 60000), 'minutes - refreshing');
+        // If token is older than 5 minutes, refresh immediately
+        // This catches cases where the tab was asleep/throttled
+        if (tokenAge > 5 * 60 * 1000) {
+          console.debug('Token age:', Math.floor(tokenAge / 60000), 'minutes - refreshing on visibility change');
           refreshAccessToken();
         }
+      }
+    }
+  });
+
+  // Track window focus (in addition to visibility)
+  // This catches more cases where the browser might have throttled timers
+  window.addEventListener('focus', () => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      const tokenAge = getTokenAge(token);
+      // If token is older than 5 minutes, refresh immediately
+      if (tokenAge > 5 * 60 * 1000) {
+        console.debug('Token age:', Math.floor(tokenAge / 60000), 'minutes - refreshing on window focus');
+        refreshAccessToken();
       }
     }
   });
@@ -178,23 +193,25 @@ export function setupAutoRefresh() {
   const token = localStorage.getItem('access_token');
   if (token) {
     const tokenAge = getTokenAge(token);
-    // Only refresh immediately if token is older than 8 minutes
-    if (tokenAge > 8 * 60 * 1000) {
+    // Only refresh immediately if token is older than 5 minutes
+    if (tokenAge > 5 * 60 * 1000) {
       console.debug('Token age on load:', Math.floor(tokenAge / 60000), 'minutes - refreshing');
       refreshAccessToken();
     }
   }
 
-  // Set up periodic refresh (every 10 minutes for better reliability)
+  // Set up periodic refresh (every 7 minutes for better reliability)
+  // Access tokens expire after 15 minutes, so 7 minutes provides an 8-minute buffer
+  // This accounts for browser throttling, tab sleeping, and network delays
   setInterval(() => {
     const currentToken = localStorage.getItem('access_token');
     if (!currentToken) return;
 
     // Refresh regardless of visibility or activity to prevent expiration
     // The server-side refresh token is httpOnly and lasts 30 days
-    console.debug('Periodic token refresh triggered');
+    console.debug('Periodic token refresh triggered (7min interval)');
     refreshAccessToken();
-  }, 10 * 60 * 1000); // 10 minutes (5 minute buffer before 15 min expiry)
+  }, 7 * 60 * 1000); // 7 minutes (8 minute buffer before 15 min expiry)
 }
 
 // Auto-initialize if this script is loaded
