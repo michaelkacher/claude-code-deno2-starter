@@ -18,15 +18,15 @@
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
 import {
-    accessToken,
-    addNotification,
-    clearAuth,
-    isAuthenticated,
-    markNotificationAsRead,
-    notifications,
-    setUnreadCount,
-    setWsConnected,
-    wsConnection,
+  accessToken,
+  addNotification,
+  clearAuth,
+  isAuthenticated,
+  markNotificationAsRead,
+  notifications,
+  setUnreadCount,
+  setWsConnected,
+  wsConnection,
 } from './store.ts';
 
 // ============================================================================
@@ -41,7 +41,7 @@ type ChannelName = 'jobs' | 'analytics' | 'chat' | string;
 // ============================================================================
 
 const RECONNECT_DELAY_MS = 3000;
-const PING_INTERVAL_MS = 30000;
+const PING_INTERVAL_MS = 60000; // Match server heartbeat interval (60s)
 const DEBOUNCE_DELAY_MS = 500; // Debounce auth state changes
 const INITIAL_LOAD_DELAY_MS = 100; // Delay on initial page load to ensure signals are hydrated
 
@@ -88,6 +88,25 @@ function isTokenExpiringSoon(token: string): boolean {
     // Consider token as expiring soon if less than 2 minutes remaining
     const TWO_MINUTES = 2 * 60 * 1000;
     return (exp - now) < TWO_MINUTES;
+  } catch (error) {
+    console.error('[WebSocket] Error checking token expiration:', error);
+    return true; // Assume expired if we can't parse
+  }
+}
+
+/**
+ * Check if token is already expired
+ */
+function isTokenExpired(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    const exp = payload.exp * 1000; // Convert to milliseconds
+    const now = Date.now();
+    
+    return now >= exp;
   } catch (error) {
     console.error('[WebSocket] Error checking token expiration:', error);
     return true; // Assume expired if we can't parse
@@ -217,8 +236,24 @@ export async function connectWebSocket() {
       setWsConnected(false);
       connectionState = ConnectionState.DISCONNECTED;
 
-      // Stop reconnection if no longer authenticated
-      if (!isAuthenticated.value) {
+      // Check if we should attempt to reconnect
+      if (isAuthenticated.value && accessToken.value) {
+        // Validate token before reconnecting
+        const currentToken = accessToken.value;
+        const isExpired = isTokenExpired(currentToken);
+        
+        if (isExpired) {
+          console.log('[WebSocket] Token expired after error, attempting refresh...');
+          refreshToken().then((success) => {
+            if (!success) {
+              console.log('[WebSocket] Token refresh failed, cleaning up...');
+              cleanupWebSocket();
+            }
+            // If refresh succeeded, onclose handler will trigger reconnection
+          });
+        }
+        // Otherwise, let onclose handler manage reconnection
+      } else {
         cleanupWebSocket();
       }
     };
@@ -236,7 +271,25 @@ export async function connectWebSocket() {
 
       // Attempt reconnection if still authenticated
       if (isAuthenticated.value && accessToken.value) {
-        scheduleReconnect();
+        // Validate token is still valid before reconnecting
+        const currentToken = accessToken.value;
+        const isExpired = isTokenExpired(currentToken);
+        
+        if (isExpired) {
+          console.log('[WebSocket] Token expired, attempting refresh before reconnect...');
+          // Try to refresh token, then reconnect
+          refreshToken().then((success) => {
+            if (success) {
+              console.log('[WebSocket] Token refreshed, reconnecting...');
+              scheduleReconnect();
+            } else {
+              console.log('[WebSocket] Token refresh failed, cleaning up...');
+              cleanupWebSocket();
+            }
+          });
+        } else {
+          scheduleReconnect();
+        }
       } else {
         cleanupWebSocket();
       }

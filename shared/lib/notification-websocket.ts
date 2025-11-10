@@ -611,7 +611,7 @@ function startHeartbeat(client: WebSocketClient) {
     // Mark as not alive and send ping
     client.isAlive = false;
     sendMessage(client.socket, { type: 'ping' });
-  }, 30000); // Ping every 30 seconds
+  }, 60000); // Ping every 60 seconds (increased from 30s to handle inactive tabs)
 
   // Store interval reference for cleanup in onClose
   client.heartbeatInterval = interval;
