@@ -151,3 +151,62 @@ This saves ~200 tokens per endpoint by referencing patterns instead of repeating
 - All timestamps are ISO 8601 in UTC
 - All IDs are UUID v4
 - Cursor-based pagination for lists (request 1 extra to detect next page)
+
+## Import Path Calculation for API Routes
+
+**CRITICAL**: Always calculate import paths correctly to avoid "Module not found" errors.
+
+### Rules for `frontend/routes/` files:
+
+1. **Count directory depth** from `routes/` (excluding the filename)
+2. **For `shared/` imports** (workspace root): use `(depth + 1)` parent directory references (`../`)
+3. **For `frontend/lib/` imports**: use `(depth)` parent directory references (`../`)
+
+### Path Calculation Examples:
+
+```typescript
+// File: frontend/routes/api/campaigns/[id]/members/leave.ts
+// Path segments: api/campaigns/[id]/members/leave.ts
+// Depth: 5 directories from routes/
+
+// ✅ CORRECT - shared imports (depth + 1 = 6 levels up)
+import { getKv } from "../../../../../../shared/lib/kv.ts";
+import { CampaignService } from "../../../../../../shared/services/campaign.service.ts";
+
+// ✅ CORRECT - frontend/lib imports (depth = 5 levels up)
+import { requireUser } from "../../../../../lib/fresh-helpers.ts";
+import { BadRequestError } from "../../../../../lib/errors.ts";
+
+// ❌ WRONG - too many ../
+import { getKv } from "../../../../../../../shared/lib/kv.ts"; // 7 levels = wrong!
+
+// ❌ WRONG - too few ../
+import { getKv } from "../../../../../shared/lib/kv.ts"; // 5 levels = wrong!
+```
+
+### Quick Reference Table:
+
+| Route Depth | Example Path | shared/ imports | frontend/lib/ imports |
+|-------------|--------------|-----------------|----------------------|
+| 1 | `api/users.ts` | `../../shared/` | `../lib/` |
+| 2 | `api/users/[id].ts` | `../../../shared/` | `../../lib/` |
+| 3 | `api/users/[id]/posts.ts` | `../../../../shared/` | `../../../lib/` |
+| 4 | `api/campaigns/[id]/members.ts` | `../../../../../shared/` | `../../../../lib/` |
+| 5 | `api/campaigns/[id]/members/leave.ts` | `../../../../../../shared/` | `../../../../../lib/` |
+| 6 | `api/campaigns/[id]/members/[userId]/ban.ts` | `../../../../../../../shared/` | `../../../../../../lib/` |
+
+### Verification:
+
+Always verify paths resolve correctly:
+```bash
+# From workspace root, check if path resolves
+deno check frontend/routes/api/your-new-route.ts
+```
+
+### Common Mistakes to Avoid:
+
+1. ❌ Counting the filename as a level
+2. ❌ Using the same `../` count for both `shared/` and `lib/` imports
+3. ❌ Not accounting for dynamic route segments like `[id]` as directory levels
+4. ❌ Copy-pasting import paths from files at different depths
+

@@ -80,7 +80,7 @@ The app automatically refreshes access tokens to keep users logged in:
 
 - **Access Token:** 15 minutes (stored in cookie + localStorage)
 - **Refresh Token:** 30 days (httpOnly cookie, server-side only)
-- **Auto-refresh:** Every 10 minutes (5-minute buffer before expiry)
+- **Auto-refresh:** Every 7 minutes (8-minute buffer before expiry)
 - **Cookie Settings:** `SameSite=Lax` for both login and refresh
 
 ```typescript
@@ -89,9 +89,14 @@ The app automatically refreshes access tokens to keep users logged in:
 
 // Timeline:
 // 0 min:  Login → tokens issued
-// 10 min: Auto-refresh (5 min before expiry)
-// 20 min: Auto-refresh again
-// ...continues every 10 minutes
+// 7 min:  Auto-refresh (8 min before expiry)
+// 14 min: Auto-refresh again
+// ...continues every 7 minutes
+
+// Additional triggers:
+// - Window gains focus (if token >5 min old)
+// - Page becomes visible (if token >5 min old)
+// - Page load (if token >5 min old)
 ```
 
 **Key Points:**
@@ -99,6 +104,7 @@ The app automatically refreshes access tokens to keep users logged in:
 - Uses BroadcastChannel for cross-tab synchronization
 - If refresh fails (401/403), redirects to login automatically
 - Refresh token is httpOnly and cannot be accessed by JavaScript
+- Multiple safeguards prevent session timeouts due to browser throttling
 
 ### Middleware Flow
 
@@ -349,7 +355,7 @@ deno task kill-ports
 JWT_EXPIRES_IN=15m               # Or increase to 30m/1h
 
 # 2. Open browser console and look for:
-"Periodic token refresh triggered"
+"Periodic token refresh triggered (7min interval)"
 "Access token refreshed successfully"
 
 # 3. Verify cookie settings in DevTools:
@@ -360,7 +366,7 @@ JWT_EXPIRES_IN=15m               # Or increase to 30m/1h
 **Solutions:**
 - Increase token expiry time: `JWT_EXPIRES_IN=30m` or `1h`
 - Verify token refresh script is loaded in browser
-- Check network tab for `/api/auth/refresh` calls every 10 minutes
+- Check network tab for `/api/auth/refresh` calls every 7 minutes
 - Ensure refresh token cookie is not blocked by browser settings
 
 ### "Module not found"
@@ -398,7 +404,7 @@ This is **expected behavior** when there's no auth cookie. The middleware sets `
 ### Key Architecture Points
 
 1. **Single Server:** All code runs on one Fresh server (SSR + API + Islands)
-2. **Token Refresh:** Automatic every 10 minutes with 5-minute buffer
+2. **Token Refresh:** Automatic every 7 minutes with 8-minute buffer (prevents session timeouts from browser throttling)
 3. **Auth Flow:** Cookie → Middleware → State → Props → Islands
 4. **Logging:** Use `createLogger()` for all server-side code, console for client-side debug only
 5. **State Management:** Server state (ctx.state) is separate from client state (signals/localStorage)
@@ -413,7 +419,7 @@ Before reporting issues, verify:
 - [ ] First run created admin@dev.local (check console output)
 - [ ] JWT_SECRET is at least 32 characters in `.env`
 - [ ] Dev server restarted after .env changes
-- [ ] Browser console shows token refresh logs every 10 minutes
+- [ ] Browser console shows token refresh logs every 7 minutes
 - [ ] Cookies are not being blocked by browser/extensions
 - [ ] Fresh cache cleared: `rm -rf frontend/_fresh`
 - [ ] Using latest code with consistent SameSite=Lax cookies
