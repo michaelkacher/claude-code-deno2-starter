@@ -4,6 +4,7 @@
  */
 
 import { UserRepository } from '../repositories/index.ts';
+import { WS_CONNECTION_TIMEOUT_MS } from './config.ts';
 import { verifyToken } from './jwt.ts';
 import { getKv } from './kv.ts';
 import { createLogger } from './logger.ts';
@@ -19,6 +20,7 @@ interface WebSocketClient {
   connectionId: string; // Unique ID for this connection
   connectedAt: number; // Timestamp when connected
   lastActivity: number; // Last time we received a message
+  timeoutMs: number; // Connection timeout in milliseconds (configurable for tests)
 }
 
 /**
@@ -34,6 +36,7 @@ export interface WebSocketDependencies {
   getUnreadCount?: (userId: string) => Promise<number>;
   getUserNotifications?: (userId: string, options?: { limit?: number }) => Promise<unknown[]>;
   getKv?: () => Promise<Deno.Kv>;
+  connectionTimeoutMs?: number; // Override connection timeout for tests
 }
 
 /**
@@ -48,12 +51,13 @@ type ResolvedDependencies = {
   getUnreadCount: (userId: string) => Promise<number>;
   getUserNotifications: (userId: string, options?: { limit?: number }) => Promise<unknown[]>;
   getKv: () => Promise<Deno.Kv>;
+  connectionTimeoutMs: number;
 };
 
 // Configuration
 const MAX_CONNECTIONS_PER_USER = 5; // Allow multiple devices/tabs
 const CLEANUP_INTERVAL_MS = 60000; // Check for dead connections every 60s
-const CONNECTION_TIMEOUT_MS = 300000; // Consider connection dead after 5min of inactivity
+const CONNECTION_TIMEOUT_MS = WS_CONNECTION_TIMEOUT_MS; // Consider connection dead after configured timeout
 const MAX_TOTAL_CONNECTIONS = 1000; // Global limit to prevent abuse
 
 // Track active WebSocket connections by user ID
@@ -85,11 +89,11 @@ export function startPeriodicCleanup() {
         
         // Remove connections that are:
         // 1. Not alive (failed heartbeat)
-        // 2. Inactive for too long
+        // 2. Inactive for too long (using per-connection timeout)
         // 3. Socket not in OPEN state
         if (
           !client.isAlive ||
-          inactiveDuration > CONNECTION_TIMEOUT_MS ||
+          inactiveDuration > client.timeoutMs ||
           client.socket.readyState !== WebSocket.OPEN
         ) {
           logger.warn('Cleaning up stale connection', {
@@ -174,6 +178,7 @@ export function setupWebSocketConnection(deps?: WebSocketDependencies) {
       return NS.getUserNotifications(userId, options);
     }),
     getKv: deps?.getKv || getKv,
+    connectionTimeoutMs: deps?.connectionTimeoutMs ?? WS_CONNECTION_TIMEOUT_MS,
   };
 
   let authenticated = false;
@@ -277,6 +282,7 @@ export function setupWebSocketConnection(deps?: WebSocketDependencies) {
               connectionId,
               connectedAt: now,
               lastActivity: now,
+              timeoutMs: dependencies.connectionTimeoutMs,
             };
             client = authenticatedClient;
 

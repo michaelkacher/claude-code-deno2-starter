@@ -7,10 +7,10 @@ import { Handlers } from "$fresh/server.ts";
 import { JobRepository } from "../../../../../shared/repositories/index.ts";
 import { BadRequestError, NotFoundError } from "../../../../lib/errors.ts";
 import {
-    requireAdmin,
-    successResponse,
-    withErrorHandler,
-    type AppState,
+  requireAdmin,
+  successResponse,
+  withErrorHandler,
+  type AppState,
 } from "../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
@@ -52,9 +52,9 @@ export const handler: Handlers<unknown, AppState> = {
       throw new NotFoundError(undefined, 'Job', jobId);
     }
 
-    // Only allow deletion of completed or failed jobs
-    if (job.status === "pending" || job.status === "running") {
-      throw new BadRequestError("Cannot delete pending or running jobs");
+    // Only prevent deletion of running jobs
+    if (job.status === "running") {
+      throw new BadRequestError("Cannot delete jobs that are currently running");
     }
 
     // Delete job using the queue system

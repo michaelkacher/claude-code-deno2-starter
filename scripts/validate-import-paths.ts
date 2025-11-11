@@ -86,6 +86,25 @@ for await (const entry of walk("frontend/routes", {
         });
       }
     }
+
+    // 3. Check for non-existent common modules
+    const nonExistentModules = [
+      { pattern: /lib\/types\.ts/, correct: "lib/fresh-helpers.ts" },
+      { pattern: /lib\/auth\.ts/, correct: "lib/fresh-helpers.ts" },
+      { pattern: /lib\/error-handler\.ts/, correct: "lib/fresh-helpers.ts" },
+      { pattern: /shared\/lib\/db\.ts/, correct: "shared/lib/kv.ts" },
+    ];
+
+    for (const { pattern, correct } of nonExistentModules) {
+      if (pattern.test(importPath)) {
+        issues.push({
+          file: entry.path,
+          line: index + 1,
+          import: importPath,
+          issue: `Module does not exist. Use "${correct}" instead`,
+        });
+      }
+    }
   });
 }
 

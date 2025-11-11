@@ -150,8 +150,8 @@ describe('JobScheduler', () => {
 
       scheduler.start();
 
-      // Wait for potential execution
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // Wait for potential execution (reduced for faster tests)
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       scheduler.stop();
 

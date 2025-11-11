@@ -24,6 +24,7 @@ deno task dev
 
 # Build feature (recommended)
 /new-feature                     # Handles everything: requirements → tests → implementation
+/edit-feature                    # Modify existing feature safely
 
 # Create UI mockup first
 /mockup                          # Fast visual prototype
@@ -112,7 +113,7 @@ The app automatically refreshes access tokens to keep users logged in:
 // Page middleware (_middleware.ts)
 1. Extract auth_token from cookie
 2. Decode JWT and set ctx.state (userEmail, userRole)
-3. Allow public routes (/, /login, /signup, etc.)
+3. Allow public routes (/login, /signup, /forgot-password, /reset-password)
 4. Verify token signature via /api/auth/verify
 5. Redirect to login if invalid/expired
 6. Pass ctx.state to _app.tsx (server-side only)
@@ -203,6 +204,7 @@ const unread = await CompositeIndexManager.queryNotifications({
 
 ```bash
 /new-feature                     # Creates docs in features/proposed/[name]/
+/edit-feature                    # Modifies existing features (reads only relevant context)
 # vs global docs approach        # 40-50% fewer tokens
 ```
 
@@ -294,6 +296,7 @@ When you have:
 | Command | Use Case | When to Use |
 |---------|----------|-------------|
 | `/new-feature` | Build complete feature | 90% of development |
+| `/edit-feature` | Modify existing feature | Updates, enhancements, fixes |
 | `/mockup` | Visual prototype | UI-heavy features |
 | `/design` | Update design system | Rebrand, customize styling |
 

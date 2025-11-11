@@ -51,16 +51,16 @@ describe('Queue Scheduled Jobs', {
         // Start queue
         await queue.start();
 
-        // Add a job scheduled for 500ms in the future
+        // Add a job scheduled for 300ms in the future (reduced for faster tests)
         const scheduledId = await queue.add(jobName, { type: 'scheduled' }, {
-          delay: 500,
+          delay: 300,
         });
 
         // Add an immediate job
         const immediateId = await queue.add(jobName, { type: 'immediate' });
 
-        // Wait for both to process
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Wait for both to process (reduced for faster tests)
+        await new Promise((resolve) => setTimeout(resolve, 800));
 
         queue.stop();
 
@@ -116,8 +116,8 @@ describe('Queue Scheduled Jobs', {
             maxRetries: 3,
           });
 
-          // Wait for retry (first attempt + exponential backoff ~2s + processing)
-          await new Promise((resolve) => setTimeout(resolve, 5000));
+          // Wait for retry (first attempt + exponential backoff ~2s + processing, reduced for faster tests)
+          await new Promise((resolve) => setTimeout(resolve, 3000));
           
           queue.stop();
           

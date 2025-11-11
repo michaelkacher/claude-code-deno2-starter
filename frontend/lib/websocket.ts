@@ -17,6 +17,7 @@
  */
 
 import { IS_BROWSER } from '$fresh/runtime.ts';
+import { ACCESS_TOKEN_EXPIRY_MS } from '../../shared/lib/config.ts';
 import {
   accessToken,
   addNotification,
@@ -146,7 +147,7 @@ async function refreshToken(): Promise<boolean> {
     accessToken.value = newAccessToken;
 
     // Update the cookie for middleware
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
     document.cookie = `auth_token=${newAccessToken}; expires=${expiresAt.toUTCString()}; path=/; SameSite=Lax`;
 
     console.log('[WebSocket] Token refreshed successfully');

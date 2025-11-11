@@ -23,12 +23,13 @@ This template includes custom slash commands for both Claude Code and GitHub Cop
 | **Claude Code** | `.claude/commands/` | [Claude commands](../.claude/commands/) |
 | **GitHub Copilot** | `.github/copilot-commands.json` | [Copilot commands](../.github/README.md) |
 
-**Available commands**: `/customize`, `/new-feature`, `/feature-complete`, `/mockup`, `/requirements`, `/architect`, `/review`
+**Available commands**: `/customize`, `/new-feature`, `/edit-feature`, `/feature-complete`, `/mockup`, `/requirements`, `/architect`, `/review`
 
 All commands work identically in both tools. Use these commands to:
 - Customize your application branding
 - Create UI mockups for rapid prototyping
 - Build complete features with tests, backend, and frontend
+- Modify existing features safely with regression testing
 - Review code quality and security
 - Finalize and document completed features
 

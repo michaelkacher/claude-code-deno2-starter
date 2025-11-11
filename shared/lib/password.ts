@@ -12,6 +12,10 @@ import { createLogger } from './logger.ts';
 
 const logger = createLogger('Password');
 
+// Use lower cost factor in tests for faster execution
+// Cost 4 = ~3ms, Cost 10 = ~100ms
+const BCRYPT_COST = Deno.env.get('DENO_ENV') === 'test' ? 4 : 10;
+
 /**
  * Hash a password using bcrypt
  * @param password - Plain text password
@@ -20,7 +24,8 @@ const logger = createLogger('Password');
 export async function hashPassword(password: string): Promise<string> {
   // Cost factor of 10 is a good balance between security and performance
   // Each increment doubles the time required
-  return await bcrypt.hash(password);
+  // In tests, use cost 4 for faster execution
+  return await bcrypt.hash(password, await bcrypt.genSalt(BCRYPT_COST));
 }
 
 /**

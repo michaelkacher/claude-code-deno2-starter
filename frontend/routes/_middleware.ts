@@ -12,13 +12,10 @@ const logger = createLogger('PageMiddleware');
 
 // Routes that don't require authentication
 const publicRoutes = [
-  '/',
   '/login',
   '/signup',
   '/forgot-password',
   '/reset-password',
-  '/mockups/',
-  '/design-system',
   '/_frsh/',
   '/api/',
   '/lib/',
@@ -83,10 +80,6 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
 
     // Allow public routes
     const isPublicRoute = publicRoutes.some(route => {
-      // Exact match for home page
-      if (route === '/') {
-        return pathname === '/';
-      }
       // Prefix match for routes ending with /
       if (route.endsWith('/')) {
         return pathname.startsWith(route);
@@ -113,11 +106,8 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
       return await ctx.next();
     }
 
-    logger.debug('Protected route access', { pathname, hasToken: !!authToken });
-
     // If no token, redirect to login
     if (!authToken) {
-      logger.debug('No token, redirecting to login', { pathname });
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
@@ -136,7 +126,6 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
 
     // Verify JWT signature server-side by calling Fresh API
     try {
-      logger.debug('Verifying token', { pathname });
       const verifyUrl = new URL('/api/auth/verify', url.origin).href;
       const verifyResponse = await fetch(verifyUrl, {
         method: 'GET',
@@ -145,21 +134,14 @@ export const handler: MiddlewareHandler = async (req, ctx) => {
         },
       });
 
-      logger.debug('Token verification response', { status: verifyResponse.status });
-
       if (!verifyResponse.ok) {
         // Token verification failed (invalid signature, blacklisted, or other error)
-        logger.debug('Token verification failed, redirecting', { pathname });
         const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=invalid`;
         return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
       }
 
-      // Token verified successfully - update context with verified data
-      const verifiedData = await verifyResponse.json();
-      ctx.state.userEmail = verifiedData.data?.user?.email || null;
-      ctx.state.userRole = verifiedData.data?.user?.role || null;
-      ctx.state.token = authToken;
-      ctx.state.user = verifiedData.data?.user || null;
+      // Token verified successfully - user data is already set from JWT decode above
+      // No need to update ctx.state again since we already have it from the token
     } catch (_error) {
       // Network error or backend unavailable - redirect to login
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=error`;

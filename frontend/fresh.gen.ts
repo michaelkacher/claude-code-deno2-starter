@@ -44,7 +44,6 @@ import * as $api_auth_verify from "./routes/api/auth/verify.ts";
 import * as $api_jobs_id_delete from "./routes/api/jobs/[id]/delete.ts";
 import * as $api_jobs_id_index from "./routes/api/jobs/[id]/index.ts";
 import * as $api_jobs_id_retry from "./routes/api/jobs/[id]/retry.ts";
-import * as $api_jobs_create from "./routes/api/jobs/create.ts";
 import * as $api_jobs_index from "./routes/api/jobs/index.ts";
 import * as $api_jobs_schedules_id_ from "./routes/api/jobs/schedules/[id].ts";
 import * as $api_jobs_schedules_name_delete from "./routes/api/jobs/schedules/[name]/delete.ts";
@@ -145,7 +144,6 @@ const manifest = {
     "./routes/api/jobs/[id]/delete.ts": $api_jobs_id_delete,
     "./routes/api/jobs/[id]/index.ts": $api_jobs_id_index,
     "./routes/api/jobs/[id]/retry.ts": $api_jobs_id_retry,
-    "./routes/api/jobs/create.ts": $api_jobs_create,
     "./routes/api/jobs/index.ts": $api_jobs_index,
     "./routes/api/jobs/schedules/[id].ts": $api_jobs_schedules_id_,
     "./routes/api/jobs/schedules/[name]/delete.ts":

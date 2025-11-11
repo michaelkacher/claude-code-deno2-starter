@@ -210,3 +210,28 @@ deno check frontend/routes/api/your-new-route.ts
 3. ❌ Not accounting for dynamic route segments like `[id]` as directory levels
 4. ❌ Copy-pasting import paths from files at different depths
 
+### Correct Module Names:
+
+**ALWAYS use these exact module names** (checked by `validate-imports` script):
+
+```typescript
+// ✅ CORRECT - These files exist
+import { requireUser, withErrorHandler, type AppState } from "../lib/fresh-helpers.ts";
+import { getKv } from "../../shared/lib/kv.ts";
+
+// ❌ WRONG - These files DO NOT exist
+import { requireUser } from "../lib/auth.ts";           // Use fresh-helpers.ts
+import { withErrorHandler } from "../lib/error-handler.ts"; // Use fresh-helpers.ts
+import { type AppState } from "../lib/types.ts";        // Use fresh-helpers.ts
+import { getKv } from "../../shared/lib/db.ts";         // Use kv.ts, not db.ts
+```
+
+**Why these mistakes happen:**
+- AI may hallucinate common file names like `auth.ts`, `types.ts`, `db.ts`
+- These seem logical but don't match the actual codebase structure
+- This project consolidates helpers in `fresh-helpers.ts` for token efficiency
+
+**Prevention:**
+- Always reference this pattern guide before writing imports
+- Run `deno task validate-imports` to catch errors before runtime
+- Add to CI/CD: `deno task check` includes import validation

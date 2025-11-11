@@ -54,8 +54,8 @@ describe('Queue Concurrency', {
           processingStart.set(job.id, Date.now());
           processedJobs.push(job.id);
 
-          // Simulate work
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          // Simulate work (reduced for faster tests)
+          await new Promise((resolve) => setTimeout(resolve, 50));
         });
 
         // Start queue BEFORE adding jobs to ensure handler is registered
@@ -68,8 +68,8 @@ describe('Queue Concurrency', {
           jobIds.push(id);
         }
 
-        // Wait for jobs to be processed
-        await new Promise((resolve) => setTimeout(resolve, 3500));
+        // Wait for jobs to be processed (reduced for faster tests)
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         //  Verify all jobs were processed (may be less than 10 if timing is tight)
         console.log('Processed jobs:', processedJobs.length);
@@ -144,8 +144,8 @@ describe('Queue Concurrency', {
         jobIds.push(id);
       }
 
-      // Wait for processing (20 jobs * 50ms = 1000ms + overhead)
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      // Wait for processing (20 jobs * 50ms = 1000ms + overhead, reduced for faster tests)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       queue.stop();
 
@@ -186,7 +186,7 @@ describe('Queue Concurrency', {
         currentlyProcessing++;
         maxConcurrent = Math.max(maxConcurrent, currentlyProcessing);
 
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         currentlyProcessing--;
       });
@@ -201,9 +201,9 @@ describe('Queue Concurrency', {
         jobIds.push(id);
       }
 
-      // Wait for processing (10 jobs, max 3 concurrent, 200ms each)
-      // 10 jobs / 3 concurrent = ~4 batches * 200ms = ~800ms + overhead
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Wait for processing (10 jobs, max 3 concurrent, 100ms each, reduced for faster tests)
+      // 10 jobs / 3 concurrent = ~4 batches * 100ms = ~400ms + overhead
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       queue.stop();
 

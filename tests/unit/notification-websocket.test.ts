@@ -99,20 +99,23 @@ const createMockDeps = () => ({
   },
   
   getKv: async () => mockKv as unknown as Deno.Kv,
+  
+  // Use a very short timeout for tests (100ms instead of 5 minutes)
+  connectionTimeoutMs: 100,
 });
 
 // Import the module
 import {
-    broadcastJobStats,
-    broadcastJobUpdate,
-    disconnectAll,
-    disconnectConnection,
-    disconnectUser,
-    getConnectionStats,
-    notifyUser,
-    sendToUser,
-    setupWebSocketConnection,
-    stopPeriodicCleanup,
+  broadcastJobStats,
+  broadcastJobUpdate,
+  disconnectAll,
+  disconnectConnection,
+  disconnectUser,
+  getConnectionStats,
+  notifyUser,
+  sendToUser,
+  setupWebSocketConnection,
+  stopPeriodicCleanup,
 } from '../../shared/lib/notification-websocket.ts';
 
 // Ensure periodic cleanup is stopped before any tests run
@@ -917,7 +920,7 @@ describe('NotificationWebSocket', () => {
   });
 
   describe('Heartbeat System', () => {
-    it('should send ping every 30 seconds', { sanitizeResources: false }, async () => {
+    it('should send ping every 60 seconds', { sanitizeResources: false }, async () => {
       // Arrange
       const time = new FakeTime();
       try {
@@ -933,8 +936,8 @@ describe('NotificationWebSocket', () => {
 
         mockWs.clearMessages();
 
-        // Act - Advance time by 30 seconds
-        await time.tickAsync(30000);
+        // Act - Advance time by 60 seconds (heartbeat interval)
+        await time.tickAsync(60000);
 
         // Assert - Should have received ping
         const pingMsg = mockWs.sentMessages.find((m: unknown) =>
@@ -963,11 +966,11 @@ describe('NotificationWebSocket', () => {
         await connection.onMessage(authMessage, mockWs as unknown as WebSocket);
         await time.tickAsync(100);
 
-        // First ping - don't respond with pong
-        await time.tickAsync(30000);
+        // First ping - don't respond with pong (client.isAlive stays false)
+        await time.tickAsync(60000);
 
-        // Second ping - client didn't respond to first, should be disconnected
-        await time.tickAsync(30000);
+        // Second ping check - client didn't respond to first, should be disconnected
+        await time.tickAsync(60000);
 
         // Assert - Socket should be closed
         assertEquals(mockWs.closed, true);

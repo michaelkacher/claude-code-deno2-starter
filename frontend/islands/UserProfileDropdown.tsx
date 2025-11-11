@@ -47,10 +47,23 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
       });
     }
 
-    // If we have token in localStorage but not in store, set it
-    const storedToken = TokenStorage.getAccessToken();
-    if (storedToken && !accessToken.value) {
-      setAccessToken(storedToken);
+    // Get token from cookie (source of truth for middleware)
+    const cookieToken = document.cookie
+      .split(';')
+      .map(c => c.trim())
+      .find(c => c.startsWith('auth_token='))
+      ?.split('=')[1];
+
+    // Sync cookie token to localStorage and store
+    if (cookieToken) {
+      setAccessToken(cookieToken);
+      TokenStorage.setAccessToken(cookieToken);
+    } else {
+      // If no cookie token but we have localStorage token, check if it's valid
+      const storedToken = TokenStorage.getAccessToken();
+      if (storedToken && !accessToken.value) {
+        setAccessToken(storedToken);
+      }
     }
   }, []);
 
@@ -83,8 +96,12 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
 
     // If user is authenticated, check token validity
     if (token && user.value) {
-      // Check if token is already expired
-      if (isTokenExpired(token)) {
+      // Only do client-side expiry check if we don't have server-validated props
+      // If initialEmail or initialRole exists, the middleware already validated the token
+      const middlewareValidated = !!(initialEmail || initialRole);
+      
+      // Check if token is already expired (only if not middleware-validated)
+      if (!middlewareValidated && isTokenExpired(token)) {
         console.log('🔒 [Auth] Token already expired on mount');
         handleTokenExpiry();
         return;

@@ -1,4 +1,5 @@
 import { create, getNumericDate, verify } from 'https://deno.land/x/djwt@v3.0.2/mod.ts';
+import { TokenConfig } from './config.ts';
 
 export function parseDurationToSeconds(input: string): number {
   const match = input.match(/^(\d+)([smhdw])$/);
@@ -51,19 +52,19 @@ export async function createToken(payload: Record<string, unknown>, customExpiry
 }
 
 /**
- * Create access token (short-lived, 15 minutes)
+ * Create access token (short-lived, configured expiry time)
  */
 export async function createAccessToken(payload: Record<string, unknown>) {
-  return await createToken({ ...payload, type: 'access' }, '15m');
+  return await createToken({ ...payload, type: 'access' }, TokenConfig.getAccessTokenExpiry());
 }
 
 /**
- * Create refresh token (long-lived, 30 days)
+ * Create refresh token (long-lived, configured expiry time)
  */
 export async function createRefreshToken(payload: Record<string, unknown>) {
   const tokenId = crypto.randomUUID();
   return {
-    token: await createToken({ ...payload, type: 'refresh', jti: tokenId }, '30d'),
+    token: await createToken({ ...payload, type: 'refresh', jti: tokenId }, TokenConfig.getRefreshTokenExpiry()),
     tokenId,
   };
 }

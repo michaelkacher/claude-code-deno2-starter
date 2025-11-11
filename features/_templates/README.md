@@ -2,6 +2,40 @@
 
 This folder contains templates for feature-scoped documentation with token efficiency optimizations.
 
+## ⚠️ Critical: Import Path Rules
+
+**ALWAYS verify imports before running code** to prevent "Module not found" errors.
+
+### Correct Module Names
+
+```typescript
+// ✅ CORRECT - Use these exact imports
+import { requireUser, withErrorHandler, type AppState } from "../lib/fresh-helpers.ts";
+import { getKv } from "../../shared/lib/kv.ts";
+
+// ❌ WRONG - These files DO NOT exist
+import { requireUser } from "../lib/auth.ts";           // No! Use fresh-helpers.ts
+import { type AppState } from "../lib/types.ts";        // No! Use fresh-helpers.ts
+import { getKv } from "../../shared/lib/db.ts";         // No! Use kv.ts
+```
+
+### Validation Command
+
+Run this **before starting the server**:
+
+```bash
+deno task validate-imports
+```
+
+This script checks for:
+- Non-existent module names (auth.ts, types.ts, db.ts)
+- Incorrect `../` depth calculations
+- Missing import files
+
+**See `API_PATTERNS.md` → "Import Path Calculation"** for detailed rules and examples.
+
+---
+
 ## Template Files
 
 ### API Specification Templates

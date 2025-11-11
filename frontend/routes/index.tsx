@@ -123,7 +123,7 @@ export default function Home(props: PageProps): JSX.Element {
               <span class="text-3xl mr-3">🔄</span>
               Full Workflow
             </h2>
-            <div class="grid md:grid-cols-5 gap-4">
+            <div class="grid md:grid-cols-3 gap-4">
               <div>
                 <div class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-4 mb-3">
                   <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 text-sm">
@@ -181,9 +181,23 @@ export default function Home(props: PageProps): JSX.Element {
               </div>
 
               <div>
+                <div class="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-4 mb-3">
+                  <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 text-sm">
+                    5. Edit Feature
+                  </h3>
+                  <code class="text-xs bg-orange-100 dark:bg-orange-900 dark:text-orange-200 px-2 py-1 rounded block">
+                    /edit-feature
+                  </code>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs">
+                  Modify existing features safely with regression testing.
+                </p>
+              </div>
+
+              <div>
                 <div class="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-4 mb-3">
                   <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 text-sm">
-                    5. Review
+                    6. Review
                   </h3>
                   <code class="text-xs bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-1 rounded block">
                     /review

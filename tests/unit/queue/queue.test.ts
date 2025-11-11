@@ -109,8 +109,8 @@ describe('JobQueue', {
         // Start processing
         await queue.start();
 
-        // Wait for job to be processed
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Wait for job to be processed (reduced for faster tests)
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         assertEquals(processed, true);
 
@@ -143,8 +143,8 @@ describe('JobQueue', {
       await suppressLogs(async () => {
         await queue.start();
 
-        // Wait for retries
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        // Wait for retries (reduced for faster tests)
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         
         queue.stop();
         

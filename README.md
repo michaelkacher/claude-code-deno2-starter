@@ -235,6 +235,7 @@ deno task test tests/users_test.ts
 │   └── commands/            # Slash command definitions
 │       ├── customize.md              # ⭐ Initial template customization
 │       ├── new-feature.md            # ⭐ Recommended workflow (uses feature-scoped agents)
+│       ├── edit-feature.md           # ⭐ Modify existing features safely
 │       ├── feature-complete.md       # ⭐ Finalize and move to implemented
 │       ├── mockup.md                 # Create UI mockups/prototypes
 │       ├── design.md                 # Update design system and styling
