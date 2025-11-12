@@ -14,6 +14,16 @@ The mockup command allows rapid UI prototyping without backend logic:
 
 ## Workflow
 
+### Step 0: Check for Project Context
+
+**Check if project context exists:**
+
+1. Check if `features/PROJECT_CONTEXT.md` exists
+2. If YES: Read the file content to pass to mockup-agent
+   - This provides context about project vision, users, and goals
+   - Helps create mockups aligned with project needs
+3. If NO: Continue without project context (mockup will use general best practices)
+
 ### Step 1: Determine Mockup Type
 
 Ask the user:
@@ -47,6 +57,12 @@ Let me understand the mockup better:
 
 **Note:** Keep it high-level. We're creating a visual mockup, not a full specification.
 
+**If PROJECT_CONTEXT.md exists**: Reference the project context in your questions:
+```
+Based on your project (building [project description] for [target users]), let me understand this mockup better:
+[questions above]
+```
+
 ### Step 3: Generate Mockup Name
 
 Convert the description to a kebab-case name:
@@ -78,6 +94,19 @@ Pass the mockup details to the agent:
 - Mockup name
 - Purpose/description
 - Key elements
+- Layout type
+- Mock data needed
+- Any specific notes
+- **Project context from `features/PROJECT_CONTEXT.md`** (if exists)
+
+**Example launch:**
+```
+Creating mockup with context:
+- Mockup: {mockup-name}
+- Purpose: {description}
+- Project Context: [content from PROJECT_CONTEXT.md]
+- Target Users: [from project context]
+```
 - Layout type
 - Mock data needed
 - Any specific notes

@@ -23,16 +23,38 @@ This command creates documentation in `features/proposed/{feature-name}/` instea
 
 **Tech Stack Reference**: See `.claude/constants.md` for complete tech stack, architecture, and patterns.
 
-### Step 0: Project Context Setup (Simplified)
+### Step 0: Project Context Setup
 
-**First-time setup** (only if `features/PROJECT_CONTEXT.md` doesn't exist):
+**Check for project context** (only if `features/PROJECT_CONTEXT.md` doesn't exist):
 
 1. Check if `features/PROJECT_CONTEXT.md` exists
 2. If NO:
-   - Ask 3 quick questions: What are you building? Who will use it? What problem does it solve?
-   - Create `features/PROJECT_CONTEXT.md` with answers
-   - Say: "✅ Project context saved! Let's build your first feature."
-3. If YES: Skip to Step 0.5
+   - Show this message:
+   ```
+   ⚠️  No project context found
+   
+   I can help you create features right away, but defining project requirements first will help me generate higher quality, more aligned features.
+   
+   Setting up project context takes about 5-10 minutes and covers:
+   - Your project vision and goals
+   - Target users and their needs
+   - Core features you envision
+   - Success criteria
+   
+   Would you like to gather project requirements now? (Yes/No)
+   
+   If you choose 'No', I'll create the feature with general best practices.
+   ```
+   
+3. **If user says YES**:
+   - Launch `requirements-agent` to gather comprehensive project context
+   - After PROJECT_CONTEXT.md is created, continue to Step 0.5
+   
+4. **If user says NO**:
+   - Continue to Step 0.5 without project context
+   - Features will still be created, just without project-specific alignment
+   
+5. If YES (PROJECT_CONTEXT.md exists): Skip to Step 0.5
 
 **Note**: Architecture is pre-defined. See `.claude/constants.md`.
 
@@ -190,6 +212,11 @@ Run: `./scripts/detect-related-features.sh {feature-name}`
 
 ### Step 3: Requirements & Tests (PARALLEL BY DEFAULT)
 
+**Prepare project context** (if exists):
+1. Check if `features/PROJECT_CONTEXT.md` exists
+2. If YES: Read the file content to pass to requirements-agent-feature
+3. This provides essential context about project vision, users, and goals
+
 **Default: Parallel Execution** (30-40% faster):
 - Launch requirements-agent-feature AND test-writer-agent together
 - Test-writer waits for requirements.md to be created
@@ -197,10 +224,20 @@ Run: `./scripts/detect-related-features.sh {feature-name}`
 
 **Sequential option**: Only if user is first-time or requests it
 
-**Pass to requirements-agent**:
+**Pass to requirements-agent-feature**:
 - Feature name and location
-- Project context from `features/PROJECT_CONTEXT.md` (if exists)
+- **Project context from `features/PROJECT_CONTEXT.md`** (full content if exists)
 - Related feature info from Step 2.5
+- Mockup context (if converting a mockup)
+
+**Example launch:**
+```
+Launching requirements-agent-feature with:
+- Feature: {feature-name}
+- Location: features/proposed/{feature-name}/
+- Project Context: [content from PROJECT_CONTEXT.md]
+- Related Features: [list from detection script]
+```
 
 ### Step 4: Skip Architecture Check
 

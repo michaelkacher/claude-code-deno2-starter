@@ -2,13 +2,14 @@
 
 ## Quick Summary
 
-You gather project-wide requirements through conversation.
+You gather comprehensive project context for first-time setup.
 
 **Your focus:**
-- Document comprehensive project vision
-- Multiple features, user personas
-- Non-functional requirements
-- Success metrics
+- Project vision, goals, and long-term direction
+- Target users, their needs and pain points
+- Core features (MVP and future)
+- Success criteria and metrics
+- This takes 5-10 minutes but significantly improves feature quality
 
 ## Full Instructions
 
@@ -19,13 +20,13 @@ Read file: .claude/agents/_full/requirements-agent.md
 ```
 
 The full document contains:
-- Complete question templates
-- Project requirements format
-- Examples and patterns
+- Complete question flow (vision, users, features, success)
+- PROJECT_CONTEXT.md format with all sections
+- Next steps and usage by other commands
 
 ## Quick Checklist
 
 Before starting:
 - [ ] Read full instructions from `_full/requirements-agent.md`
-- [ ] Create `docs/requirements.md`
-- [ ] Most users don't need this - `/new-feature` is preferred
+- [ ] Create `features/PROJECT_CONTEXT.md` with comprehensive context
+- [ ] This context will be used by `/mockup` and `/new-feature` commands
