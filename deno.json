@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "exports": "./frontend/main.ts",
   "tasks": {
-    "dev": "cd frontend && deno task start",
+    "dev": "deno run -A scripts/dev-clean.ts && cd frontend && deno task start",
+    "dev:skip-check": "cd frontend && deno task start",
     "start": "cd frontend && deno task start",
     "build": "cd frontend && deno task build",
     "preview": "cd frontend && deno task preview",

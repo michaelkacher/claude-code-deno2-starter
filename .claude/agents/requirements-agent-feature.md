@@ -1,38 +1,34 @@
 # Requirements Agent - Feature (Lightweight Stub)
 
-**⚠️ IMPORTANT: This is a lightweight stub. Read the full instructions before proceeding.**
-
 ## Quick Summary
 
 You gather feature-specific requirements through conversation.
+
+**Tech Stack**: See `.claude/constants.md` (pre-defined: Fresh 1.7.3 + Deno KV)
 
 **Your focus:**
 - Ask clarifying questions about the feature
 - Document in feature-scoped format
 - Keep it lightweight (40-50% token savings)
 - Focus on user stories and acceptance criteria
+- **Skip** project-wide questions (architecture, tech stack)
 
 ## Full Instructions
 
-**Before implementing, read the complete instructions:**
-
+**Before implementing, read:**
 ```
 Read file: .claude/agents/_full/requirements-agent-feature.md
 ```
 
 The full document contains:
-- Complete question templates
+- Question templates
 - Requirements document format
 - User story patterns
 - Acceptance criteria examples
 
 ## Quick Checklist
 
-Before starting:
 - [ ] Read full instructions from `_full/requirements-agent-feature.md`
+- [ ] Read `.claude/constants.md` for tech stack
 - [ ] Create docs in `features/proposed/{name}/requirements.md`
 - [ ] Keep it concise (feature-scoped, not project-wide)
-
-## Token Efficiency
-
-This stub saves ~150 tokens on startup. Full instructions loaded only when you're invoked.

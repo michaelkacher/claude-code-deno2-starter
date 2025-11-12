@@ -1,7 +1,5 @@
 # Requirements Agent (Lightweight Stub)
 
-**⚠️ IMPORTANT: This is a lightweight stub. Read the full instructions before proceeding.**
-
 ## Quick Summary
 
 You gather project-wide requirements through conversation.
@@ -31,7 +29,3 @@ Before starting:
 - [ ] Read full instructions from `_full/requirements-agent.md`
 - [ ] Create `docs/requirements.md`
 - [ ] Most users don't need this - `/new-feature` is preferred
-
-## Token Efficiency
-
-This stub saves ~70 tokens on startup. Full instructions loaded only when you're invoked.
