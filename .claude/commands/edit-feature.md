@@ -4,6 +4,13 @@ description: Modify an existing feature by updating tests, business logic, and f
 
 You will guide the user through modifying an existing feature. This workflow discovers current implementation details before making changes, ensuring consistency and preventing regressions.
 
+**Tech Stack Reference**: See `.claude/constants.md` for architecture patterns and tech stack details.
+
+**Available Tools**:
+- `scripts/scaffold-feature.ts` - Auto-generate boilerplate if adding new models
+- `implementation-agent.md` - Unified backend+frontend implementation
+- `backend-agent.md` + `frontend-agent.md` - Separate implementation (legacy approach)
+
 ## Edit Feature Workflow
 
 This command modifies features in `features/proposed/` or `features/implemented/`, updating tests, implementation, and documentation in a safe, systematic way.

@@ -2,20 +2,15 @@
 
 You are a backend development specialist focused on implementing server-side logic with **Deno 2, Fresh 1.7.3, and Deno KV** following TDD principles.
 
+## Prerequisites: Read Tech Stack & Patterns First
+
+**IMPORTANT**: Before proceeding, read `.claude/constants.md` for complete tech stack, architecture patterns, security guidelines, and anti-patterns.
+
+The sections below focus on **backend-specific** implementation details.
+
+---
+
 ## Architecture Overview
-
-**Pure Fresh Single-Server Architecture:**
-- Fresh API routes in `frontend/routes/api/` (file-based routing)
-- Fresh Handlers pattern using `Handlers` from `$fresh/server.ts`
-- **Service Layer**: Business logic in `shared/services/` (orchestration, validation, business rules)
-- **Repository Pattern**: Data access in `shared/repositories/` (never direct KV)
-- Response helpers: `successResponse()` and `errorResponse()` from `frontend/lib/fresh-helpers.ts`
-- Single server at port 3000
-
-**Three-Tier Architecture:**
-```
-Routes (HTTP) → Services (Business Logic) → Repositories (Data Access) → Deno KV
-```
 
 **Fresh Handler Pattern (with Service Layer and Error Handling):**
 ```typescript
@@ -69,6 +64,16 @@ export const handler: Handlers<unknown, AppState> = {
 9. **Leverage Deno 2 features**: built-in TypeScript, Web APIs, security model
 10. **Use Deno KV via repositories** - never direct KV access
 
+## Import Path Rules
+
+**⚠️ CRITICAL: Always use relative imports for local modules**
+
+See the **"Import Path Rules"** section in `.claude/constants.md` for:
+- Quick reference with correct patterns by file location
+- Common import path examples (API routes, services, repositories, tests)
+- Auth helper location (`fresh-helpers.ts`)
+- Test import syntax (`@std/assert`)
+
 ## Error Handling (IMPORTANT - Read First!)
 
 **✅ NEW: Standardized Error Handling System**
@@ -77,94 +82,21 @@ The codebase uses a centralized error handling system with typed error classes a
 
 ### 🔐 Security Best Practices for Authenticated Routes (CRITICAL)
 
-**NEVER trust client-provided user IDs - ALWAYS use auth context!**
+**See the "Security Pattern" section in `.claude/constants.md` for:**
+- Authentication helpers (`requireUser`, `requireAdmin`)
+- User ID field name (`user.sub`, NOT `user.id`)
+- JWT payload structure
+- Golden rule: Never accept userId from client (request body, query params, etc.)
 
+**Quick reminder:**
 ```typescript
-// ❌ BAD - Accepting userId from request body (SECURITY VULNERABILITY!)
-const CreateItemSchema = z.object({
-  userId: z.string(),  // NEVER accept userId from client!
-  name: z.string(),
-});
-
-export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, ctx) => {
-    const data = await parseJsonBody(req, CreateItemSchema);
-    // ⚠️ Client could send ANY userId - impersonate other users!
-    await service.createItem(data);
-  })
-};
-
-// ✅ GOOD - Get userId from authenticated context
-const CreateItemSchema = z.object({
-  // userId NOT in schema - comes from auth context
-  name: z.string(),
-});
-
-export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, ctx) => {
-    // Require authentication and get user from JWT
-    const user = requireUser(ctx);
-    
-    // Parse request body (without userId)
-    const data = await parseJsonBody(req, CreateItemSchema);
-    
-    // Pass userId from auth context (secure!)
-    await service.createItem({
-      ...data,
-      userId: user.sub,  // From JWT payload, cannot be spoofed
-    });
-  })
-};
-```
-
-**Authentication Helpers:**
-```typescript
-import { requireUser, requireAdmin } from "../../../lib/fresh-helpers.ts";
-
-// Require any authenticated user (throws AuthenticationError if not logged in)
+// ✅ Get userId from JWT (secure)
 const user = requireUser(ctx);
-// Returns: { sub: string, email: string, role: string, emailVerified: boolean, iat: number, exp: number }
+const userId = user.sub;  // NOT user.id!
 
-// Require admin role (throws AuthorizationError if not admin)
-requireAdmin(ctx);
+// ❌ NEVER accept from request
+const { userId } = await req.json();  // SECURITY VULNERABILITY!
 ```
-
-**CRITICAL: User ID Field Name**
-
-The user ID is stored in the **`sub`** field (JWT standard "subject" claim), NOT `id`:
-
-```typescript
-// ✅ CORRECT - Use user.sub for user ID
-const user = requireUser(ctx);
-const userId = user.sub;  // This is the user's ID from the database
-
-await service.createItem({
-  ...data,
-  userId: user.sub,  // ✅ Correct field
-});
-
-// ❌ WRONG - user.id does NOT exist
-const userId = user.id;  // undefined! Will cause "userId is required" errors
-```
-
-**JWT Payload Structure (ctx.state.user):**
-```typescript
-{
-  sub: string,           // ✅ USER ID - use this!
-  email: string,         // User's email
-  role: string,          // User's role (e.g., "user", "admin")
-  emailVerified: boolean,
-  iat: number,           // Issued at (timestamp)
-  exp: number            // Expires at (timestamp)
-}
-```
-
-**Golden Rule:** User identity MUST come from `ctx.state.user.sub` (set by JWT middleware), NEVER from:
-- ❌ Request body
-- ❌ Query parameters  
-- ❌ Headers (except Authorization which is verified)
-- ❌ URL parameters
-- ❌ `user.id` (doesn't exist - use `user.sub`!)
 
 ### Error Handling in Services
 
@@ -323,13 +255,6 @@ export const handler: Handlers = {
 };
 ```
 
-**Benefits:**
-- 60-70% less boilerplate code
-- Automatic logging with context
-- Type-safe error codes
-- Consistent error responses
-- Better error messages
-
 ---
 
 ## Three-Tier Architecture Pattern
@@ -400,7 +325,9 @@ async GET(req, ctx) {
 }
 ```
 
-## Token Efficiency: Three-Tier Pattern
+**See "Architecture" section in `.claude/constants.md`** for three-tier pattern overview.
+
+## Three-Tier Architecture
 
 **IMPORTANT**: Follow the three-tier architecture:
 
@@ -460,14 +387,11 @@ return errorResponse("VALIDATION_ERROR", "Invalid input", 400, { errors: zodErro
 - Middleware patterns
 - Response format patterns
 
-This saves ~400-800 tokens by referencing patterns instead of writing from scratch.
-
 ## Finding API Specifications
 
 **For feature development** (recommended):
 - Check `features/proposed/{feature-name}/api-spec.md` and `data-models.md` first
 - Contains API specs and data models for a specific feature only
-- More focused and token-efficient
 
 **For project-wide work**:
 - Use `docs/api-spec.md` for overall project API design
@@ -536,172 +460,8 @@ Follow the Pure Fresh single-server structure:
 ```
 
 **Key Points:**
-- **Single server** at port 3000 (Fresh handles both SSR and API)
-- **API routes** in `frontend/routes/api/` (Fresh Handlers)
-- **Repositories** in `shared/repositories/` (always use these for data access)
-- **No separate backend server** - Fresh is both frontend and API
-- **Shared code** in `shared/` for server-side logic used by API routes
 
-## Deno KV Data Storage
-
-**IMPORTANT: Use Deno KV for all data storage.**
-
-### Why Deno KV?
-- ✅ Zero configuration - no setup required
-- ✅ Built into Deno runtime - no external dependencies
-- ✅ Edge-ready - works seamlessly on Deno Deploy
-- ✅ ACID transactions with atomic operations
-- ✅ Automatic replication and consistency
-- ✅ Simple key-value API
-
-### Deno KV Connection Pattern
-
-```typescript
-// shared/lib/kv.ts
-let kv: Deno.Kv | null = null;
-
-export async function getKv(): Promise<Deno.Kv> {
-  if (!kv) {
-    kv = await Deno.openKv();
-  }
-  return kv;
-}
-```
-
-### Deno KV Key Structure
-
-Use hierarchical keys with prefixes:
-
-```typescript
-// Users
-['users', userId]                    // Single user by ID
-['users_by_email', email]            // User ID lookup by email
-
-// Posts
-['posts', postId]                    // Single post
-['posts_by_user', userId, postId]    // User's posts
-['posts_by_date', date, postId]      // Posts by date
-
-// Sessions
-['sessions', sessionId]              // User session
-['refresh_tokens', token]            // Refresh token
-```
-
-### Basic Deno KV Operations
-
-```typescript
-import { getKv } from '../lib/kv.ts';
-
-export class UserService {
-  async create(user: User): Promise<User> {
-    const kv = await getKv();
-    const userId = crypto.randomUUID();
-    
-    const userWithId = { ...user, id: userId };
-    
-    // Atomic transaction to ensure consistency
-    const result = await kv.atomic()
-      .check({ key: ['users_by_email', user.email], versionstamp: null })
-      .set(['users', userId], userWithId)
-      .set(['users_by_email', user.email], userId)
-      .commit();
-    
-    if (!result.ok) {
-      throw new Error('User with this email already exists');
-    }
-    
-    return userWithId;
-  }
-  
-  async findById(id: string): Promise<User | null> {
-    const kv = await getKv();
-    const entry = await kv.get<User>(['users', id]);
-    return entry.value;
-  }
-  
-  async findByEmail(email: string): Promise<User | null> {
-    const kv = await getKv();
-    const idEntry = await kv.get<string>(['users_by_email', email]);
-    if (!idEntry.value) return null;
-    
-    return this.findById(idEntry.value);
-  }
-  
-  async list(options: { limit?: number; cursor?: string } = {}): Promise<{ users: User[]; cursor?: string }> {
-    const kv = await getKv();
-    const limit = options.limit || 50;
-    
-    const entries = kv.list<User>({ prefix: ['users'] }, { 
-      limit,
-      cursor: options.cursor 
-    });
-    
-    const users: User[] = [];
-    for await (const entry of entries) {
-      users.push(entry.value);
-    }
-    
-    return { users };
-  }
-  
-  async update(id: string, updates: Partial<User>): Promise<User | null> {
-    const kv = await getKv();
-    const entry = await kv.get<User>(['users', id]);
-    
-    if (!entry.value) return null;
-    
-    const updated = { ...entry.value, ...updates };
-    await kv.set(['users', id], updated);
-    
-    return updated;
-  }
-  
-  async delete(id: string): Promise<boolean> {
-    const kv = await getKv();
-    const entry = await kv.get<User>(['users', id]);
-    
-    if (!entry.value) return false;
-    
-    await kv.atomic()
-      .delete(['users', id])
-      .delete(['users_by_email', entry.value.email])
-      .commit();
-    
-    return true;
-  }
-}
-```
-
-### Deno KV Best Practices
-
-1. **Use atomic transactions** for operations affecting multiple keys
-2. **Create secondary indexes** for common lookup patterns (by email, by date, etc.)
-3. **Use prefixes** to organize related data
-4. **List with limits** to prevent memory issues with large datasets
-5. **Check versionstamp** for optimistic concurrency control
-6. **Clean up secondary indexes** when deleting records
-
-### Testing with Deno KV
-
-Tests use in-memory KV automatically:
-
-```typescript
-import { assertEquals } from '@std/assert';
-
-Deno.test('UserService - creates user', async () => {
-  const kv = await Deno.openKv(':memory:'); // In-memory for tests
-  const service = new UserService(kv);
-  
-  const user = await service.create({
-    email: 'test@example.com',
-    name: 'Test User',
-  });
-  
-  assertEquals(user.email, 'test@example.com');
-  
-  await kv.close();
-});
-```
+---
 
 ## Implementation Workflow
 
@@ -1510,110 +1270,20 @@ import { logger } from "../lib/logger.ts";
 
 ## Anti-Patterns to Avoid
 
-- ❌ Missing `.ts` extensions in imports
-- ❌ Using Node.js-specific APIs (unless via npm:)
-- ❌ Hardcoded values instead of env vars
-- ❌ Broad permissions (use minimal required)
-- ❌ Mixing npm and JSR when JSR package exists
+**See "Common Anti-Patterns to Avoid" section in `.claude/constants.md` for comprehensive list.**
+
+**Backend-specific reminders:**
 - ❌ Using `console.log` instead of `logger` from `shared/lib/logger.ts`
 - ❌ Using `any` type - use `unknown`, specific types, or `Record<string, unknown>`
-- ❌ Using `process.env` - use `Deno.env.get()` instead
-- ❌ Unversioned JSR imports like `jsr:@std/assert` - use `@std/assert` (uses import map)
-- ❌ Buttons without explicit `type="button"` or `type="submit"` attribute
-- ❌ Untagged TODOs - use `// TODO[@team]:` or `// TODO[@dev]:` format
+- ❌ Routes calling repositories directly (skip service layer)
+- ❌ Business logic in routes or repositories
+- ❌ Accepting `userId` from request body (security vulnerability)
 
-### TypeScript Strict Mode Rules
-
-This project uses strict TypeScript compiler options:
-- `noUncheckedIndexedAccess: true` - Array/object access may be undefined
-- `noPropertyAccessFromIndexSignature: true` - Use bracket notation for dynamic keys
-- `exactOptionalPropertyTypes: true` - Distinguish between `undefined` and missing properties
-- `noImplicitReturns: true` - All code paths must return a value
-- `noFallthroughCasesInSwitch: true` - Switch cases must break/return
-
-**Examples:**
+**Import logger from:**
 ```typescript
-// ❌ BAD - using any
-function processData(data: any) { }
-
-// ✅ GOOD - using unknown or specific types
-function processData(data: unknown) { }
-function processData(data: Record<string, unknown>) { }
-
-// ❌ BAD - unversioned import
-import { assertEquals } from 'jsr:@std/assert';
-
-// ✅ GOOD - use import map
-import { assertEquals } from '@std/assert';
-
-// ❌ BAD - missing button type
-<button onClick={handleClick}>Click me</button>
-
-// ✅ GOOD - explicit type
-<button type="button" onClick={handleClick}>Click me</button>
-
-// ❌ BAD - untagged TODO
-// TODO: Fix this later
-
-// ✅ GOOD - tagged TODO
-// TODO[@team]: Implement proper error handling for edge cases
+// From routes: "../../../../shared/lib/logger.ts"
+// From services/repos: "../lib/logger.ts"
 ```
-
-## Token Efficiency Best Practices
-
-### 1. Use CRUD Templates for Simple Services
-**BAD** (wastes ~1200 tokens):
-```typescript
-// Writing service and routes from scratch
-// 15+ methods, error handling, validation...
-```
-
-**GOOD** (saves ~1200 tokens):
-```typescript
-// Copy service-crud.template.ts and routes-crud.template.ts
-// Replace [Resource] placeholders
-// Customize validation logic
-```
-
-### 2. Reference Backend Patterns
-**BAD** (wastes ~400 tokens):
-```typescript
-// Manually implement error handling for each route
-// Manually implement pagination logic
-// Manually implement secondary indexes
-```
-
-**GOOD** (saves ~400 tokens):
-```typescript
-// Reference BACKEND_PATTERNS.md for:
-// - ERROR_RESPONSE pattern
-// - PAGINATION pattern
-// - SECONDARY_INDEX pattern
-```
-
-### 3. Import Zod Schemas from Data Models
-**BAD** (wastes ~200 tokens):
-```typescript
-// Redefine validation schemas in service
-const userSchema = z.object({ ... });
-```
-
-**GOOD** (saves ~200 tokens):
-```typescript
-// Import from feature data models
-import { UserSchema, CreateUserSchema } from '../types/user.ts';
-```
-
-### Summary of Token Savings
-
-| Optimization | Tokens Saved | When to Use |
-|--------------|--------------|-------------|
-| Service layer templates | ~800-1000/feature | Complex business logic |
-| CRUD service template | ~600-800/service | Simple CRUD services |
-| CRUD routes template | ~400-600/service | Standard REST endpoints |
-| Pattern references | ~200-400/service | Complex services |
-| Zod schema imports | ~100-200/service | All services |
-| **Total potential** | **~2100-3000/feature** | **Always apply** |
 
 ## Real-World Architecture Examples
 

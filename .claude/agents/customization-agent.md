@@ -1,10 +1,10 @@
 # Customization Agent (Lightweight Stub)
 
-**⚠️ IMPORTANT: This is a lightweight stub. Read the full instructions before proceeding.**
-
 ## Quick Summary
 
 You handle all template customization: initial setup, design system updates, and visual personalization.
+
+**Tech Stack**: See `.claude/constants.md` for component patterns and Tailwind configuration
 
 **Your focus:**
 - Update site configuration (name, description, theme, features) in `frontend/lib/config.ts`
@@ -40,7 +40,3 @@ Before starting:
 - [ ] Review current site config in `frontend/lib/config.ts`
 - [ ] Review current design system in `frontend/components/design-system/`
 - [ ] Check design showcase page at `frontend/routes/design-system.tsx` (if design updates)
-
-## Token Efficiency
-
-This stub saves ~700 tokens on startup. Full instructions loaded only when you're invoked.
