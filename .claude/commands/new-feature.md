@@ -267,20 +267,34 @@ After requirements are complete, launch **test-writer-agent** with environment h
 Now I'll write tests for this feature (TDD Red phase).
 This will create test files in tests/ directory.
 
-Note: Tests will use --no-check flag to avoid pre-existing type errors.
+Note: Tests will use --unstable-kv flag for Deno KV support and --no-check flag to avoid pre-existing type errors.
 ```
 
-**Pass these instructions to test-writer-agent:**
+**🚨 CRITICAL - Pass these instructions to test-writer-agent:**
 ```
-IMPORTANT - Test Environment Handling:
+BEFORE WRITING TESTS - Check Existing Code:
 
-1. Use --no-check flag when running tests to avoid type errors
-2. If Deno.openKv(':memory:') is not available, use mock KV implementation
-3. Tests may fail with environment issues - this doesn't mean implementation is wrong
-4. Focus on functional correctness over type perfection
+1. **Repository Check**: Run `file_search` for `shared/repositories/{feature}.repository.ts`
+   - IF EXISTS: Only test service layer, skip repository tests
+   - IF NEW: Check if it extends BaseRepository (most do), then only test custom methods
+   
+2. **Read Actual Code**: Use `read_file` to see what methods exist
+   - DO NOT assume methods exist
+   - DO NOT write tests for non-existent methods
+   - Test only the public API that actually exists
+
+3. **ID Generation Pattern**: 
+   - Check if repository.create() returns an object with `id` field
+   - If YES: Service must use returned ID, never generate its own UUID
+   - Pattern: `const created = await repo.create(data); return { ...data, id: created.id }`
+
+4. **Focus on Service Layer**:
+   - 90% of tests should be service tests (business logic)
+   - Only write repository tests if creating new repository with custom methods
+   - Never test BaseRepository methods (already tested)
 
 Example test command:
-deno test --no-check tests/unit/services/feature.service.test.ts -A
+deno test --no-check tests/unit/services/feature.service.test.ts -A --unstable-kv
 ```
 
 ### Step 5: Ask About Architecture Changes

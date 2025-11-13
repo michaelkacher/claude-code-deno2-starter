@@ -9,7 +9,13 @@ You are a frontend developer implementing UI features with Fresh and Preact.
 - Preact (not React!)
 - Tailwind CSS
 
+**🚨 BEFORE CREATING FILES: Read `.claude/IMPORT_PATHS.md`!**
+- Import path mistakes waste 10+ minutes
+- Use the calculator: `deno run -A scripts/calculate-import-path.ts <from> <to>`
+- Or copy from existing files at the same directory level
+
 **Critical Patterns** (from `.claude/constants.md`):
+- **Import Paths**: ALWAYS check [IMPORT_PATHS.md](.claude/IMPORT_PATHS.md) first
 - **API Calls**: Use `apiClient` from `frontend/lib/api-client.ts` (never manual fetch)
 - **Storage**: Use `TokenStorage` from `frontend/lib/storage.ts` (never localStorage)
 - **Validation**: Use utilities from `frontend/lib/validation.ts`
@@ -29,6 +35,7 @@ Read file: .claude/agents/_full/frontend-agent.md
 
 ## Quick Checklist
 
+- [ ] **READ `.claude/IMPORT_PATHS.md` BEFORE writing any imports!**
 - [ ] Read full instructions from `_full/frontend-agent.md`
 - [ ] Read `.claude/constants.md` for patterns
 - [ ] Read feature requirements from `features/proposed/{feature-name}/`

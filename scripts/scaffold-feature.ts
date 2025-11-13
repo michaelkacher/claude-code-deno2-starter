@@ -38,73 +38,51 @@ function toCamelCase(kebab: string): string {
 function generateServiceTemplate(opts: ScaffoldOptions): string {
   const { featureName, modelName } = opts;
   const serviceName = toPascalCase(featureName);
-  
-  return `import { ${modelName} } from "../types/${featureName}.types.ts";
-import { ${modelName}Repository } from "../repositories/${modelName.toLowerCase()}.repository.ts";
+  const camel = modelName.toLowerCase();
+
+  return `import { ${modelName} } from "@/types/${featureName}.types.ts";
+import { ${modelName}Repository } from "@/repositories/${modelName.toLowerCase()}.repository.ts";
+// import { buildError } from "@/constants/errors.ts"; // Uncomment & add feature-specific error codes
 
 /**
  * ${serviceName}Service
- * 
- * Business logic for ${featureName} feature
+ * Business logic for ${featureName} feature.
+ * Follows repository pattern (lazy KV, centralized CRUD) to avoid common missteps.
  */
 export class ${serviceName}Service {
   private repository: ${modelName}Repository;
 
   constructor(kv: Deno.Kv) {
-    this.repository = new ${modelName}Repository(kv);
+    // Pass kv via options for testability & lazy reuse in repository
+    this.repository = new ${modelName}Repository({ kv });
   }
 
-  /**
-   * Create a new ${modelName.toLowerCase()}
-   */
+  /** Create a new ${camel} */
   async create(data: Omit<${modelName}, "id" | "createdAt" | "updatedAt">, userId: string): Promise<${modelName}> {
-    const ${modelName.toLowerCase()} = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    await this.repository.create(${modelName.toLowerCase()}, userId);
-    return ${modelName.toLowerCase()};
+    return await this.repository.create(data, userId);
   }
 
-  /**
-   * Get ${modelName.toLowerCase()} by ID
-   */
+  /** Get a ${camel} by id (scoped to user) */
   async getById(id: string, userId: string): Promise<${modelName} | null> {
-    return await this.repository.getById(id, userId);
+    return await this.repository.findByIdForUser(id, userId);
   }
 
-  /**
-   * Update ${modelName.toLowerCase()}
-   */
-  async update(id: string, data: Partial<${modelName}>, userId: string): Promise<${modelName} | null> {
-    const existing = await this.repository.getById(id, userId);
-    if (!existing) {
-      return null;
+  /** Update an existing ${camel}. Returns updated entity or throws if not found. */
+  async update(id: string, data: Partial<Omit<${modelName}, "id" | "createdAt">>, userId: string): Promise<${modelName}> {
+    const updated = await this.repository.updateForUser(id, data, userId);
+    if (!updated) {
+      // Replace with buildError('YOUR_ERROR_CODE') when you add error constants
+      throw new Error('${modelName} not found');
     }
-
-    const updated = {
-      ...existing,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await this.repository.update(id, updated, userId);
     return updated;
   }
 
-  /**
-   * Delete ${modelName.toLowerCase()}
-   */
+  /** Delete a ${camel}. Returns true if deleted. */
   async delete(id: string, userId: string): Promise<boolean> {
-    return await this.repository.delete(id, userId);
+    return await this.repository.deleteForUser(id, userId);
   }
 
-  /**
-   * List ${modelName.toLowerCase()}s for user
-   */
+  /** List all ${camel}s for a user */
   async listByUser(userId: string): Promise<${modelName}[]> {
     return await this.repository.listByUser(userId);
   }
@@ -113,78 +91,78 @@ export class ${serviceName}Service {
 }
 
 function generateRepositoryTemplate(opts: ScaffoldOptions): string {
-  const { modelName } = opts;
-  const resourceName = modelName.toLowerCase();
-  
-  return `import { ${modelName} } from "../types/${opts.featureName}.types.ts";
+  const { modelName, featureName } = opts;
+  const camel = modelName.toLowerCase();
+  const pluralKey = `${camel}s`;
+
+  return `import { BaseRepository } from "@/repositories/base-repository.ts";
+import { ${modelName} } from "@/types/${featureName}.types.ts";
 
 /**
  * ${modelName}Repository
- * 
- * Data access layer for ${modelName} resources
+ * Data access layer for ${modelName} entities.
+ * Extends BaseRepository to leverage lazy KV init, logging & helpers.
  */
-export class ${modelName}Repository {
-  constructor(private kv: Deno.Kv) {}
-
-  /**
-   * Create ${resourceName}
-   */
-  async create(${resourceName}: ${modelName}, userId: string): Promise<void> {
-    const batch = this.kv.atomic()
-      .set(["${resourceName}", ${resourceName}.id], ${resourceName})
-      .set(["${resourceName}_by_user", userId, ${resourceName}.id], ${resourceName});
-    
-    await batch.commit();
+export class ${modelName}Repository extends BaseRepository<${modelName}> {
+  constructor(options: { kv: Deno.Kv }) {
+    super('${pluralKey}', options);
   }
 
-  /**
-   * Get ${resourceName} by ID
-   */
-  async getById(id: string, userId: string): Promise<${modelName} | null> {
-    const result = await this.kv.get<${modelName}>(["${resourceName}_by_user", userId, id]);
-    return result.value;
+  /** Create a new ${camel} (assigns id & timestamps) */
+  async create(data: Omit<${modelName}, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Promise<${modelName}> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const entity: ${modelName} = { id, ...data, createdAt: now, updatedAt: now };
+
+    // Primary entity key
+    await this.set(['${pluralKey}', id], entity);
+    // User-scoped index key (pattern: plural_by_user)
+    await this.set(['${pluralKey}_by_user', userId, id], entity);
+    return entity;
   }
 
-  /**
-   * Update ${resourceName}
-   */
-  async update(id: string, ${resourceName}: ${modelName}, userId: string): Promise<void> {
-    const batch = this.kv.atomic()
-      .set(["${resourceName}", id], ${resourceName})
-      .set(["${resourceName}_by_user", userId, id], ${resourceName});
-    
-    await batch.commit();
+  /** Find by id (global) */
+  async findById(id: string): Promise<${modelName} | null> {
+    return await this.get(['${pluralKey}', id]);
   }
 
-  /**
-   * Delete ${resourceName}
-   */
-  async delete(id: string, userId: string): Promise<boolean> {
-    const existing = await this.getById(id, userId);
-    if (!existing) {
-      return false;
-    }
+  /** Find by id scoped to a user */
+  async findByIdForUser(id: string, userId: string): Promise<${modelName} | null> {
+    return await this.get(['${pluralKey}_by_user', userId, id]);
+  }
 
-    const batch = this.kv.atomic()
-      .delete(["${resourceName}", id])
-      .delete(["${resourceName}_by_user", userId, id]);
-    
-    await batch.commit();
+  /** Update entity (global) */
+  async update(id: string, updates: Partial<Omit<${modelName}, 'id' | 'createdAt'>>): Promise<${modelName} | null> {
+    const existing = await this.findById(id);
+    if (!existing) return null;
+    const updated: ${modelName} = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await this.set(['${pluralKey}', id], updated);
+    return updated;
+  }
+
+  /** Update entity scoped to user (keeps user index in sync) */
+  async updateForUser(id: string, updates: Partial<Omit<${modelName}, 'id' | 'createdAt'>>, userId: string): Promise<${modelName} | null> {
+    const existing = await this.findByIdForUser(id, userId);
+    if (!existing) return null;
+    const updated: ${modelName} = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await this.set(['${pluralKey}', id], updated);
+    await this.set(['${pluralKey}_by_user', userId, id], updated);
+    return updated;
+  }
+
+  /** Delete entity scoped to user */
+  async deleteForUser(id: string, userId: string): Promise<boolean> {
+    const existing = await this.findByIdForUser(id, userId);
+    if (!existing) return false;
+    await this.delete(['${pluralKey}', id]);
+    await this.delete(['${pluralKey}_by_user', userId, id]);
     return true;
   }
 
-  /**
-   * List ${resourceName}s for user
-   */
+  /** List all entities for a user */
   async listByUser(userId: string): Promise<${modelName}[]> {
-    const items: ${modelName}[] = [];
-    const iter = this.kv.list<${modelName}>({ prefix: ["${resourceName}_by_user", userId] });
-    
-    for await (const entry of iter) {
-      items.push(entry.value);
-    }
-    
-    return items;
+    const res = await this.list(['${pluralKey}_by_user', userId]);
+    return res.items;
   }
 }
 `;
@@ -221,12 +199,13 @@ function generateApiRouteTemplate(opts: ScaffoldOptions): string {
   const { featureName, modelName, resourceName } = opts;
   const serviceName = toPascalCase(featureName);
   const apiPath = resourceName || featureName;
-  
+  const camel = modelName.toLowerCase();
+
   return `import { FreshContext } from "$fresh/server.ts";
 import { z } from "zod";
-import { ${serviceName}Service } from "../../../../shared/services/${featureName}.service.ts";
+import { ${serviceName}Service } from "@/services/${featureName}.service.ts";
+import { getKv } from "@/lib/kv.ts";
 import { requireUser } from "../../../lib/fresh-helpers.ts";
-import { getKv } from "../../../../shared/lib/kv.ts";
 
 // Validation schemas
 const create${modelName}Schema = z.object({
@@ -239,69 +218,34 @@ const update${modelName}Schema = z.object({
   description: z.string().max(500).optional(),
 });
 
-/**
- * POST /api/${apiPath}
- * Create new ${modelName.toLowerCase()}
- */
+/** POST /api/${apiPath} - create new ${camel} */
 export async function POST(req: Request, ctx: FreshContext) {
   try {
-    // Authenticate
     const user = await requireUser(ctx);
-    const userId = user.sub;
-
-    // Validate input
     const body = await req.json();
     const data = create${modelName}Schema.parse(body);
-
-    // Create ${modelName.toLowerCase()}
-    const kv = await getKv();
-    const service = new ${serviceName}Service(kv);
-    const ${modelName.toLowerCase()} = await service.create(data, userId);
-
-    return new Response(JSON.stringify(${modelName.toLowerCase()}), {
-      status: 201,
-      headers: { "Content-Type": "application/json" },
-    });
+    const service = new ${serviceName}Service(await getKv());
+    const ${camel} = await service.create(data, user.sub);
+    return new Response(JSON.stringify(${camel}), { status: 201, headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return new Response(
-        JSON.stringify({ error: "Validation failed", details: error.errors }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'Validation failed', details: error.errors }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
-
-    console.error("Error creating ${modelName.toLowerCase()}:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to create ${modelName.toLowerCase()}" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error('Error creating ${camel}:', error);
+    return new Response(JSON.stringify({ error: 'Failed to create ${camel}' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
 
-/**
- * GET /api/${apiPath}
- * List ${modelName.toLowerCase()}s for current user
- */
+/** GET /api/${apiPath} - list ${camel}s */
 export async function GET(_req: Request, ctx: FreshContext) {
   try {
-    // Authenticate
     const user = await requireUser(ctx);
-    const userId = user.sub;
-
-    // List ${modelName.toLowerCase()}s
-    const kv = await getKv();
-    const service = new ${serviceName}Service(kv);
-    const items = await service.listByUser(userId);
-
-    return new Response(JSON.stringify(items), {
-      headers: { "Content-Type": "application/json" },
-    });
+    const service = new ${serviceName}Service(await getKv());
+    const items = await service.listByUser(user.sub);
+    return new Response(JSON.stringify(items), { headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
-    console.error("Error listing ${modelName.toLowerCase()}s:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to list ${modelName.toLowerCase()}s" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error('Error listing ${camel}s:', error);
+    return new Response(JSON.stringify({ error: 'Failed to list ${camel}s' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
 `;
@@ -311,122 +255,73 @@ function generateApiRouteIdTemplate(opts: ScaffoldOptions): string {
   const { featureName, modelName, resourceName } = opts;
   const serviceName = toPascalCase(featureName);
   const apiPath = resourceName || featureName;
-  
+  const camel = modelName.toLowerCase();
+
   return `import { FreshContext } from "$fresh/server.ts";
 import { z } from "zod";
-import { ${serviceName}Service } from "../../../../shared/services/${featureName}.service.ts";
+import { ${serviceName}Service } from "@/services/${featureName}.service.ts";
+import { getKv } from "@/lib/kv.ts";
 import { requireUser } from "../../../lib/fresh-helpers.ts";
-import { getKv } from "../../../../shared/lib/kv.ts";
 
 const update${modelName}Schema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
 });
 
-/**
- * GET /api/${apiPath}/:id
- * Get ${modelName.toLowerCase()} by ID
- */
+/** GET /api/${apiPath}/:id - fetch ${camel} */
 export async function GET(_req: Request, ctx: FreshContext) {
   try {
     const user = await requireUser(ctx);
-    const userId = user.sub;
     const id = ctx.params.id;
-
-    const kv = await getKv();
-    const service = new ${serviceName}Service(kv);
-    const ${modelName.toLowerCase()} = await service.getById(id, userId);
-
-    if (!${modelName.toLowerCase()}) {
-      return new Response(
-        JSON.stringify({ error: "${modelName} not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+    const service = new ${serviceName}Service(await getKv());
+    const ${camel} = await service.getById(id, user.sub);
+    if (!${camel}) {
+      return new Response(JSON.stringify({ error: '${modelName} not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     }
-
-    return new Response(JSON.stringify(${modelName.toLowerCase()}), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify(${camel}), { headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
-    console.error("Error getting ${modelName.toLowerCase()}:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to get ${modelName.toLowerCase()}" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error('Error getting ${camel}:', error);
+    return new Response(JSON.stringify({ error: 'Failed to get ${camel}' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
 
-/**
- * PUT /api/${featureName}/:id
- * Update ${modelName.toLowerCase()}
- */
+/** PUT /api/${apiPath}/:id - update ${camel} */
 export async function PUT(req: Request, ctx: FreshContext) {
   try {
     const user = await requireUser(ctx);
-    const userId = user.sub;
     const id = ctx.params.id;
-
     const body = await req.json();
     const data = update${modelName}Schema.parse(body);
-
-    const kv = await getKv();
-    const service = new ${serviceName}Service(kv);
-    const ${modelName.toLowerCase()} = await service.update(id, data, userId);
-
-    if (!${modelName.toLowerCase()}) {
-      return new Response(
-        JSON.stringify({ error: "${modelName} not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+    const service = new ${serviceName}Service(await getKv());
+    try {
+      const updated = await service.update(id, data, user.sub);
+      return new Response(JSON.stringify(updated), { headers: { 'Content-Type': 'application/json' } });
+    } catch (_nf) {
+      return new Response(JSON.stringify({ error: '${modelName} not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     }
-
-    return new Response(JSON.stringify(${modelName.toLowerCase()}), {
-      headers: { "Content-Type": "application/json" },
-    });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return new Response(
-        JSON.stringify({ error: "Validation failed", details: error.errors }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'Validation failed', details: error.errors }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
-
-    console.error("Error updating ${modelName.toLowerCase()}:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to update ${modelName.toLowerCase()}" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error('Error updating ${camel}:', error);
+    return new Response(JSON.stringify({ error: 'Failed to update ${camel}' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
 
-/**
- * DELETE /api/${featureName}/:id
- * Delete ${modelName.toLowerCase()}
- */
+/** DELETE /api/${apiPath}/:id - delete ${camel} */
 export async function DELETE(_req: Request, ctx: FreshContext) {
   try {
     const user = await requireUser(ctx);
-    const userId = user.sub;
     const id = ctx.params.id;
-
-    const kv = await getKv();
-    const service = new ${serviceName}Service(kv);
-    const deleted = await service.delete(id, userId);
-
+    const service = new ${serviceName}Service(await getKv());
+    const deleted = await service.delete(id, user.sub);
     if (!deleted) {
-      return new Response(
-        JSON.stringify({ error: "${modelName} not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: '${modelName} not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     }
-
     return new Response(null, { status: 204 });
   } catch (error) {
-    console.error("Error deleting ${modelName.toLowerCase()}:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to delete ${modelName.toLowerCase()}" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error('Error deleting ${camel}:', error);
+    return new Response(JSON.stringify({ error: 'Failed to delete ${camel}' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
 `;
@@ -435,89 +330,66 @@ export async function DELETE(_req: Request, ctx: FreshContext) {
 function generateTestTemplate(opts: ScaffoldOptions): string {
   const { featureName, modelName } = opts;
   const serviceName = toPascalCase(featureName);
-  
+  const camel = modelName.toLowerCase();
+
   return `import { assertEquals, assertExists } from "@std/assert";
-import { ${serviceName}Service } from "../../../shared/services/${featureName}.service.ts";
+import { ${serviceName}Service } from "@/services/${featureName}.service.ts";
+import { withTestKv } from "../../helpers/kv.ts";
 
-const TEST_USER_ID = "test-user-123";
+const TEST_USER_ID = 'test-user-123';
 
-Deno.test("${serviceName}Service - create ${modelName.toLowerCase()}", async () => {
-  const kv = await Deno.openKv(":memory:");
-  const service = new ${serviceName}Service(kv);
-
-  const data = {
-    name: "Test ${modelName}",
-    description: "Test description",
-  };
-
-  const ${modelName.toLowerCase()} = await service.create(data, TEST_USER_ID);
-
-  assertExists(${modelName.toLowerCase()}.id);
-  assertEquals(${modelName.toLowerCase()}.name, "Test ${modelName}");
-  assertEquals(${modelName.toLowerCase()}.description, "Test description");
-  assertExists(${modelName.toLowerCase()}.createdAt);
-  assertExists(${modelName.toLowerCase()}.updatedAt);
-
-  await kv.close();
+Deno.test('${serviceName}Service - create ${camel}', async () => {
+  await withTestKv(async (kv) => {
+    const service = new ${serviceName}Service(kv);
+    const data = { name: 'Test ${modelName}', description: 'Test description' };
+    const entity = await service.create(data, TEST_USER_ID);
+    assertExists(entity.id);
+    assertEquals(entity.name, 'Test ${modelName}');
+    assertEquals(entity.description, 'Test description');
+    assertExists(entity.createdAt);
+    assertExists(entity.updatedAt);
+  });
 });
 
-Deno.test("${serviceName}Service - getById", async () => {
-  const kv = await Deno.openKv(":memory:");
-  const service = new ${serviceName}Service(kv);
-
-  const created = await service.create({ name: "Test ${modelName}" }, TEST_USER_ID);
-  const retrieved = await service.getById(created.id, TEST_USER_ID);
-
-  assertExists(retrieved);
-  assertEquals(retrieved.id, created.id);
-  assertEquals(retrieved.name, "Test ${modelName}");
-
-  await kv.close();
+Deno.test('${serviceName}Service - getById', async () => {
+  await withTestKv(async (kv) => {
+    const service = new ${serviceName}Service(kv);
+    const created = await service.create({ name: 'Test ${modelName}' }, TEST_USER_ID);
+    const retrieved = await service.getById(created.id, TEST_USER_ID);
+    assertExists(retrieved);
+    assertEquals(retrieved!.id, created.id);
+  });
 });
 
-Deno.test("${serviceName}Service - update", async () => {
-  const kv = await Deno.openKv(":memory:");
-  const service = new ${serviceName}Service(kv);
-
-  const created = await service.create({ name: "Original" }, TEST_USER_ID);
-  const updated = await service.update(created.id, { name: "Updated" }, TEST_USER_ID);
-
-  assertExists(updated);
-  assertEquals(updated.name, "Updated");
-  assertEquals(updated.id, created.id);
-
-  await kv.close();
+Deno.test('${serviceName}Service - update', async () => {
+  await withTestKv(async (kv) => {
+    const service = new ${serviceName}Service(kv);
+    const created = await service.create({ name: 'Original' }, TEST_USER_ID);
+    const updated = await service.update(created.id, { name: 'Updated' }, TEST_USER_ID);
+    assertEquals(updated.name, 'Updated');
+    assertEquals(updated.id, created.id);
+  });
 });
 
-Deno.test("${serviceName}Service - delete", async () => {
-  const kv = await Deno.openKv(":memory:");
-  const service = new ${serviceName}Service(kv);
-
-  const created = await service.create({ name: "Test" }, TEST_USER_ID);
-  const deleted = await service.delete(created.id, TEST_USER_ID);
-
-  assertEquals(deleted, true);
-
-  const retrieved = await service.getById(created.id, TEST_USER_ID);
-  assertEquals(retrieved, null);
-
-  await kv.close();
+Deno.test('${serviceName}Service - delete', async () => {
+  await withTestKv(async (kv) => {
+    const service = new ${serviceName}Service(kv);
+    const created = await service.create({ name: 'Test' }, TEST_USER_ID);
+    const deleted = await service.delete(created.id, TEST_USER_ID);
+    assertEquals(deleted, true);
+    const retrieved = await service.getById(created.id, TEST_USER_ID);
+    assertEquals(retrieved, null);
+  });
 });
 
-Deno.test("${serviceName}Service - listByUser", async () => {
-  const kv = await Deno.openKv(":memory:");
-  const service = new ${serviceName}Service(kv);
-
-  await service.create({ name: "${modelName} 1" }, TEST_USER_ID);
-  await service.create({ name: "${modelName} 2" }, TEST_USER_ID);
-
-  const list = await service.listByUser(TEST_USER_ID);
-
-  assertEquals(list.length, 2);
-  assertEquals(list[0].name, "${modelName} 1");
-  assertEquals(list[1].name, "${modelName} 2");
-
-  await kv.close();
+Deno.test('${serviceName}Service - listByUser', async () => {
+  await withTestKv(async (kv) => {
+    const service = new ${serviceName}Service(kv);
+    await service.create({ name: '${modelName} 1' }, TEST_USER_ID);
+    await service.create({ name: '${modelName} 2' }, TEST_USER_ID);
+    const list = await service.listByUser(TEST_USER_ID);
+    assertEquals(list.length, 2);
+  });
 });
 `;
 }

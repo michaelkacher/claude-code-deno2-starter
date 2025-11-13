@@ -179,8 +179,8 @@ export function getKvStats() {
   return manager.getStats();
 }
 
-// Set up graceful shutdown handlers
-if (typeof Deno !== 'undefined') {
+// Set up graceful shutdown handlers (skip in test environment to avoid leak warnings)
+if (typeof Deno !== 'undefined' && Deno.env.get('DENO_ENV') !== 'test') {
   const isWindows = Deno.build.os === 'windows';
   
   // Handle SIGINT (Ctrl+C) - supported on all platforms

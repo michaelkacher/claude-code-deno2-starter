@@ -64,7 +64,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "lib": ["deno.window", "dom", "dom.iterable"],
+  "lib": ["deno.window", "dom", "dom.iterable", "deno.unstable"],
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

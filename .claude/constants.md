@@ -4,20 +4,33 @@ This file contains the canonical definitions for the project's tech stack, archi
 
 ---
 
-## 📋 Table of Contents
+## � BEFORE YOU CREATE FILES
+
+**⚠️ IMPORT PATHS: Read `.claude/IMPORT_PATHS.md` FIRST!**
+
+Common mistakes cost 10+ minutes of debugging. The import path guide has:
+- Copy-paste ready patterns for every file type
+- Calculator script: `deno run -A scripts/calculate-import-path.ts <from> <to>`
+- Visual examples of correct vs incorrect paths
+
+**When creating ANY new file that imports local modules, check IMPORT_PATHS.md first!**
+
+---
+
+## �📋 Table of Contents
 
 **Quick Reference:**
 - [Tech Stack](#tech-stack) - Framework, runtime, database, styling
 - [Architecture](#architecture) - Three-tier pattern, layer responsibilities
 - [Standard Patterns](#standard-patterns) - Security, auth, testing, errors
 - [File Locations](#file-locations) - Where to create files
-- [Import Path Rules](#import-path-rules) - CRITICAL: Relative imports required
+- [Import Path Rules](#import-path-rules) - See IMPORT_PATHS.md for details
 - [Common Guidelines](#common-guidelines) - API client, storage, validation
 - [Detailed Patterns](#detailed-architecture-patterns) - Service, repository, route, island examples
 - [Anti-Patterns](#common-anti-patterns-to-avoid) - What NOT to do
 
-**Most Used Sections:**
-- [Import Path Rules](#import-path-rules) - How to import local modules correctly
+**Most Critical Sections:**
+- **[IMPORT_PATHS.md](.claude/IMPORT_PATHS.md)** - ALWAYS check before writing imports!
 - [Security Pattern](#security-pattern) - Authentication and user ID handling
 - [Deno KV Keys](#deno-kv-key-structure) - Key naming conventions
 - [Testing Pattern](#testing-pattern) - In-memory KV setup
@@ -184,37 +197,40 @@ frontend/routes/api/campaign/index.ts      → POST /api/campaign
 
 ## Import Path Rules
 
-**⚠️ CRITICAL: Always use relative imports, NEVER absolute paths**
+**🚨 STOP! Read [IMPORT_PATHS.md](.claude/IMPORT_PATHS.md) before writing ANY imports!**
 
-Deno requires relative imports for local modules. Use these patterns:
+### Why This Matters
 
-### Quick Reference
+Import path mistakes cause immediate runtime errors that waste 10+ minutes debugging. The dedicated guide has:
+
+1. **Calculator Script** - Get exact paths automatically
+   ```bash
+   deno run -A scripts/calculate-import-path.ts <from-file> <to-file>
+   ```
+
+2. **Copy-Paste Tables** - Common patterns for every file type
+3. **Visual Examples** - How to count directory levels
+4. **Troubleshooting** - Fix "Module not found" errors
+
+### Rule: Always Use Relative Imports
 
 ```typescript
-// ✅ From API routes (frontend/routes/api/{feature}/)
+// ✅ CORRECT - Relative paths
 import { Service } from "../../../../shared/services/feature.service.ts";
-import { requireUser } from "../../../lib/fresh-helpers.ts";
+import { Button } from "../../components/design-system/Button.tsx";
 
-// ✅ From services (shared/services/)
-import { Repository } from "../repositories/feature.repository.ts";
-import type { Type } from "../types/feature.types.ts";
-
-// ✅ From islands (frontend/islands/)
-import { Button } from "../components/design-system/Button.tsx";
-import { apiClient } from "../lib/api-client.ts";
-
-// ✅ From tests
-import { assertEquals } from "@std/assert";  // Uses import map
-
-// ❌ WRONG - Absolute paths don't work
+// ❌ WRONG - Absolute paths don't work in Deno
 import { Service } from "/shared/services/feature.service.ts";
-import { requireUser } from "/shared/lib/auth.ts";  // Also wrong file!
 ```
 
-**Auth helpers**: `frontend/lib/fresh-helpers.ts` (NOT `auth.ts`)  
-**Test imports**: `@std/assert` from JSR via import map
+### Before Creating Any New File:
 
-**See full import path reference**: `.claude/agents/_full/backend-agent.md` and `.claude/agents/_full/frontend-agent.md`
+1. ✅ Check [IMPORT_PATHS.md](.claude/IMPORT_PATHS.md) for the correct pattern
+2. ✅ OR run `calculate-import-path.ts` script
+3. ✅ OR copy from an existing file at the same directory level
+4. ❌ DON'T guess the number of `../` levels
+
+**See [IMPORT_PATHS.md](.claude/IMPORT_PATHS.md) for complete reference with examples**
 
 ---
 
@@ -428,20 +444,24 @@ Deno.test("POST /api/feature - requires auth", async () => {
 
 ## Test Flags
 
-**Type checking**: Use `--no-check` to avoid pre-existing type errors
+**CRITICAL**: Always add `--unstable-kv` flag when tests use Deno KV
+
+**Unit tests** (services/repositories using KV):
 ```bash
-deno test --no-check tests/unit/services/feature.service.test.ts -A
+deno test --no-check tests/unit/services/feature.service.test.ts -A --unstable-kv
 ```
 
-**Permissions**: Always use `-A` (allow all) for tests
+**All tests**:
 ```bash
-deno test -A
+deno test -A --unstable-kv
 ```
 
-**API Tests**: Add `--unstable-kv` flag
+**Integration/API tests**:
 ```bash
 deno test --no-check tests/integration/api/feature.api.test.ts -A --unstable-kv
 ```
+
+**Why**: `Deno.openKv()` requires `--unstable-kv` flag or tests will fail with "Deno.openKv is not a function"
 
 ---
 

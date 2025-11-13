@@ -32,16 +32,39 @@ The sections below focus on **testing-specific** implementation details.
 For each feature, write tests at these layers:
 
 ### 1. Unit Tests (REQUIRED)
-- **Repository Tests** (if new data model)
-  - CRUD operations
-  - Index queries
-  - Data integrity
-  
-- **Service Tests** (REQUIRED)
+
+**🚨 CRITICAL - Repository Testing Decision:**
+
+**BEFORE writing repository tests, check if repository already exists:**
+
+```bash
+# Check if repository exists
+ls shared/repositories/{feature}.repository.ts
+```
+
+**IF REPOSITORY EXISTS (most common):**
+- ✅ **ONLY test the service layer** - Repository is already tested
+- ✅ Service tests will use existing repository methods
+- ❌ **DO NOT write repository tests** - Avoid testing code you didn't write
+- ❌ **DO NOT test methods that don't exist** - Read the actual repository file first
+
+**IF CREATING NEW REPOSITORY:**
+- ✅ Write repository tests for CRUD operations
+- ✅ Test index queries and data integrity
+- ⚠️ **CRITICAL**: Check `shared/repositories/base-repository.ts` - if repository extends BaseRepository, many methods are already implemented!
+
+**Common Mistake**: Writing tests for repository methods that don't exist or testing BaseRepository methods.
+
+**Rule**: Always `grep_search` or `read_file` the actual repository to see what methods exist before writing tests.
+
+---
+
+- **Service Tests** (REQUIRED - YOUR PRIMARY FOCUS)
   - Business logic validation
   - Error handling
   - Edge cases
   - All exported functions
+  - **⚠️ ID Generation**: If service calls `repository.create()`, use the ID returned from repository, don't generate your own UUID
 
 ### 2. Integration Tests (REQUIRED)
 - **API Route Tests** - See `.claude/constants.md` for patterns
@@ -753,7 +776,139 @@ The `test` task in `deno.json` includes required flags:
 - `--allow-env` - Access environment variables
 - `--allow-net` - Network access for HTTP tests
 - `--allow-write` - Write to test database
-- `--unstable-kv` - Deno KV support
+- `--unstable-kv` - Deno KV support (REQUIRED for any test using Deno.openKv())
+
+---
+
+## Anti-Patterns: Common Test Failures & How to Avoid Them
+
+### ❌ Anti-Pattern #1: Testing Non-Existent Repository Methods
+
+**Problem**: Writing tests for repository methods that don't exist or aren't exposed.
+
+**Example of WRONG approach**:
+```typescript
+// Writing tests for methods that don't exist
+describe('TaskRepository', () => {
+  it('should get by ID and user', async () => {
+    const result = await repository.getById(id, userId); // Method doesn't exist!
+  });
+  
+  it('should list by user', async () => {
+    const result = await repository.listByUser(userId); // Method doesn't exist!
+  });
+});
+```
+
+**Why it fails**: You assumed methods exist without checking the actual repository code.
+
+**✅ CORRECT approach**:
+```typescript
+// Step 1: Check what methods actually exist
+// Read file: shared/repositories/task.repository.ts
+// Found methods: findById(id), findAll(), create(), update(), delete()
+
+// Step 2: Test only the service layer (which uses the repository)
+describe('TaskCreationService', () => {
+  it('should get task by ID (user-scoped)', async () => {
+    const task = await service.createTask(data, userId);
+    const result = await service.getTaskById(task.id, userId); // Service method exists!
+    assertExists(result);
+  });
+});
+```
+
+**Rule**: Before writing repository tests, run `read_file` on the actual repository to see what methods exist.
+
+### ❌ Anti-Pattern #2: Duplicate ID Generation
+
+**Problem**: Service generates UUID but repository also generates its own UUID, causing ID mismatch.
+
+**Example of WRONG approach**:
+```typescript
+async createTask(data: CreateTaskData, userId: string): Promise<Task> {
+  const id = crypto.randomUUID(); // Generated ID #1
+  
+  const task: Task = { id, ...data, createdBy: userId };
+  
+  await this.repository.create(task); // Repository generates ID #2 - different!
+  
+  return task; // Returns ID #1, but ID #2 is in database
+}
+
+// Later tests fail:
+const created = await service.createTask(data, userId);
+const retrieved = await service.getTaskById(created.id, userId); // Returns null! IDs don't match
+```
+
+**Why it fails**: Repository's `create()` method generates a new UUID, ignoring the one you passed in.
+
+**✅ CORRECT approach**:
+```typescript
+async createTask(data: CreateTaskData, userId: string): Promise<Task> {
+  // Let repository generate the ID
+  const repoTask = await this.repository.create({
+    ...data,
+    createdBy: userId,
+  });
+  
+  // Return task with repository's ID
+  return {
+    id: repoTask.id, // Use repository's ID
+    ...data,
+    createdBy: userId,
+    createdAt: repoTask.createdAt.toISOString(),
+    updatedAt: repoTask.updatedAt.toISOString(),
+  };
+}
+```
+
+**Rule**: If repository.create() returns an ID, always use that ID. Never generate your own UUID if the repository also generates one.
+
+### ❌ Anti-Pattern #3: Over-Testing the Repository Layer
+
+**Problem**: Writing extensive repository tests when using an existing, already-tested repository.
+
+**Example of WRONG approach**:
+```typescript
+// Writing 20+ repository tests for BaseRepository methods
+describe('TaskRepository', () => {
+  // Testing BaseRepository.create() - already tested in base-repository.test.ts
+  it('should create task', async () => { ... });
+  
+  // Testing BaseRepository.findById() - already tested
+  it('should find by ID', async () => { ... });
+  
+  // Testing BaseRepository.update() - already tested
+  it('should update task', async () => { ... });
+});
+```
+
+**Why it's wrong**: You're testing framework code, not your business logic.
+
+**✅ CORRECT approach**:
+```typescript
+// Only test service layer - it provides business logic on top of repository
+describe('TaskCreationService', () => {
+  it('should validate required fields before creating', async () => {
+    await assertRejects(
+      () => service.createTask({ title: '' }, userId),
+      Error,
+      'Title is required'
+    );
+  });
+  
+  it('should scope tasks by user', async () => {
+    const task = await service.createTask(data, 'user1');
+    const result = await service.getTaskById(task.id, 'user2'); // Different user
+    assertEquals(result, null); // Business logic: user isolation
+  });
+});
+```
+
+**Rule**: If repository extends BaseRepository or you're using an existing repository, skip repository tests and focus on service layer.
+
+---
 
 ### Running Specific Tests
 

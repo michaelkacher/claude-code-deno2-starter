@@ -8,8 +8,8 @@
  */
 
 const DEV_SERVER_URL = 'http://localhost:3000';
-const TEST_USER_EMAIL = 'test@example.com';
-const TEST_USER_PASSWORD = 'password123';
+const TEST_USER_EMAIL = 'admin@dev.local';
+const TEST_USER_PASSWORD = 'admin123';
 
 console.log('🔐 Logging in as', TEST_USER_EMAIL, '...\n');
 
