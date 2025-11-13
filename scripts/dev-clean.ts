@@ -98,7 +98,6 @@ console.log("\n📁 Checking file structure...");
 
 const requiredFiles = [
   "deno.json",
-  "dev.ts",
   "frontend/routes/_app.tsx",
   "shared/lib/kv.ts",
 ];
