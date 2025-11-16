@@ -2,49 +2,72 @@
  * Dark Mode Toggle Island
  * Client-side component for toggling between light and dark themes
  *
- * MIGRATED TO PREACT SIGNALS - uses global theme store
+ * SSR-safe: Uses plain DOM manipulation, no signals during SSR
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
-import { useEffect } from 'preact/hooks';
-import { ThemeStorage } from '../lib/storage.ts';
-import { isDarkMode, setTheme, theme, toggleTheme } from '../lib/store.ts';
+import { IS_BROWSER } from 'fresh/runtime';
+import { useEffect, useState } from 'preact/hooks';
 
 interface DarkModeToggleProps {
   initialTheme?: 'light' | 'dark' | null;
 }
 
 export default function DarkModeToggle({ initialTheme }: DarkModeToggleProps) {
-  // Initialize theme from props if provided
+  // Simple useState - SSR safe
+  const [isDark, setIsDark] = useState(initialTheme === 'dark');
+
+  // Initialize on client
   useEffect(() => {
     if (!IS_BROWSER) return;
 
-    if (initialTheme && theme.value !== initialTheme) {
-      setTheme(initialTheme);
-    }
-
-    // Sync state with current dark mode from DOM
+    // Get actual theme from DOM
     const currentIsDark = document.documentElement.classList.contains('dark');
-    if (currentIsDark !== isDarkMode.value) {
-      setTheme(currentIsDark ? 'dark' : 'light');
-    }
+    setIsDark(currentIsDark);
 
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Only auto-switch if user hasn't set a preference
-      if (!ThemeStorage.getTheme()) {
-        setTheme(e.matches ? 'dark' : 'light');
+    // Listen for theme changes from other sources
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'theme') {
+        setIsDark(e.newValue === 'dark');
       }
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      const stored = localStorage.getItem('theme');
+      if (!stored) {
+        // No user preference, follow system
+        setIsDark(e.matches);
+        document.documentElement.classList.toggle('dark', e.matches);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      mediaQuery.removeEventListener('change', handleMediaChange);
+    };
   }, []);
 
   const handleToggle = () => {
     if (!IS_BROWSER) return;
-    toggleTheme();
+
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+
+    // Update DOM immediately
+    document.documentElement.classList.toggle('dark', newIsDark);
+
+    // Persist preference
+    const newTheme = newIsDark ? 'dark' : 'light';
+    localStorage.setItem('theme', newTheme);
+
+    // Dispatch custom event for other components
+    window.dispatchEvent(new CustomEvent('themechange', { 
+      detail: { theme: newTheme } 
+    }));
   };
 
   return (
@@ -52,10 +75,10 @@ export default function DarkModeToggle({ initialTheme }: DarkModeToggleProps) {
       type="button"
       onClick={handleToggle}
       class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-      title={isDarkMode.value ? 'Switch to light mode' : 'Switch to dark mode'}
-      aria-label={isDarkMode.value ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {isDarkMode.value ? (
+      {isDark ? (
         // Sun icon for light mode
         <svg
           class="w-5 h-5 text-gray-700 dark:text-gray-300"

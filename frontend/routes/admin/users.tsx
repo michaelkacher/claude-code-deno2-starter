@@ -3,20 +3,20 @@
  * Displays all registered users with management capabilities
  */
 
-import { Handlers, PageProps } from '$fresh/server.ts';
+import { Handlers, PageProps } from 'fresh';
 import {
-  ContentContainer,
-  PageContainer,
-  PageHeader,
-  StatCard
+    ContentContainer,
+    PageContainer,
+    PageHeader,
+    StatCard
 } from '../../components/common/index.ts';
 import AdminHeaderActions from '../../islands/AdminHeaderActions.tsx';
 import AdminUserTable from '../../islands/AdminUserTable.tsx';
 import {
-  handleApiFetch,
-  hasRole,
-  logError,
-  withErrorHandler,
+    handleApiFetch,
+    hasRole,
+    logError,
+    withErrorHandler,
 } from '../../lib/error-handler.ts';
 import { AuthorizationError, getUserMessage } from '../../lib/errors.ts';
 
@@ -77,7 +77,8 @@ const defaultData: AdminUsersData = {
 };
 
 export const handler: Handlers<AdminUsersData> = {
-  GET: withErrorHandler(async (req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // User data is injected by middleware - guaranteed to be admin
     const currentUser = ctx.state.user as User;
     const token = ctx.state.token as string;

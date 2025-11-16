@@ -4,8 +4,8 @@
  * MIGRATED TO PREACT SIGNALS
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
 
 interface MobileMenuToggleProps {
   children: preact.ComponentChildren;

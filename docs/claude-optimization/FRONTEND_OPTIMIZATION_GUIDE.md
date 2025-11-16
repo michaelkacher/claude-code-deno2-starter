@@ -97,12 +97,18 @@ import { Button, Card, Input } from "@/components/design-system/...";
 ✅ **Use design system** - Import from `components/design-system/`
 ✅ **Reference patterns** - Use FRONTEND_PATTERNS.md for forms, API client
 ✅ **Server-render first** - Use Fresh routes, add islands only when needed
-✅ **Signals for state** - Use Preact Signals, not React hooks
+✅ **useState in islands** - Use `useState` for island-local state (SSR-safe)
+✅ **Global signals** - Define in `lib/store.ts`, sync via useState + useEffect
+✅ **Fresh 2 handlers** - Single `(ctx)` argument, access request via `ctx.req`
+✅ **IS_BROWSER guards** - For localStorage, DOM access in initialization
 
 ❌ **Don't write from scratch** - Use templates
 ❌ **Don't create custom components** - Use design system
 ❌ **Don't repeat patterns** - Reference FRONTEND_PATTERNS.md
 ❌ **Don't use React** - This is Fresh/Preact, different API
+❌ **Don't use old handler signature** - `(req, ctx)` is Fresh 1, use `(ctx)` for Fresh 2
+❌ **Don't call signal() in islands** - Causes SSR errors, use useState instead
+❌ **Don't access signal.value in render** - Only in JSX, event handlers, useEffect
 
 ## Reference Files
 

@@ -3,17 +3,17 @@
  * Get job queue statistics
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { JobRepository } from "../../../../shared/repositories/index.ts";
 import {
-  requireAdmin,
-  successResponse,
-  withErrorHandler,
-  type AppState,
+    requireAdmin,
+    successResponse,
+    withErrorHandler,
+    type AppState,
 } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (_req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

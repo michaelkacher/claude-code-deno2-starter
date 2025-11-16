@@ -3,18 +3,18 @@
  * Get current authenticated user
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { UserRepository } from "../../../../shared/repositories/index.ts";
-import {
-  requireUser,
-  successResponse,
-  withErrorHandler,
-  type AppState,
-} from "../../../lib/fresh-helpers.ts";
 import { NotFoundError } from "../../../lib/errors.ts";
+import {
+    requireUser,
+    successResponse,
+    withErrorHandler,
+    type AppState,
+} from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (_req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
     // Get user from auth middleware (throws AuthenticationError if not authenticated)
     const authUser = requireUser(ctx);
     const userRepo = new UserRepository();

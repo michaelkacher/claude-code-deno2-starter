@@ -6,8 +6,8 @@
  * REFACTORED: Uses centralized validation utilities
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
 import { useEffect } from 'preact/hooks';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.tsx';
 import { authApi } from '../lib/api-client.ts';

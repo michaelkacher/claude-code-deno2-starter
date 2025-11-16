@@ -4,16 +4,16 @@
  * Utilities for Fresh API route handlers with consistent patterns
  */
 
-import type { FreshContext } from "$fresh/server.ts";
+import type { FreshContext } from "fresh";
+import { ZodError } from "zod";
+import { ErrorCode, ErrorMessages, ErrorStatusCodes } from "../../shared/lib/error-codes.ts";
 import { createLogger } from "../../shared/lib/logger.ts";
 import {
   AppError,
-  ValidationError,
   AuthenticationError,
   AuthorizationError,
+  ValidationError,
 } from "./errors.ts";
-import { ErrorCode, ErrorMessages, ErrorStatusCodes } from "../../shared/lib/error-codes.ts";
-import { ZodError } from "zod";
 
 const logger = createLogger('APIHandler');
 
@@ -285,11 +285,11 @@ export function handleError(error: unknown): Response {
  * ```
  */
 export function withErrorHandler<T extends AppState>(
-  handler: (req: Request, ctx: FreshContext<T>) => Promise<Response> | Response
+  handler: (ctx: FreshContext<T>) => Promise<Response> | Response
 ) {
-  return async (req: Request, ctx: FreshContext<T>): Promise<Response> => {
+  return async (ctx: FreshContext<T>): Promise<Response> => {
     try {
-      return await handler(req, ctx);
+      return await handler(ctx);
     } catch (error) {
       return handleError(error);
     }

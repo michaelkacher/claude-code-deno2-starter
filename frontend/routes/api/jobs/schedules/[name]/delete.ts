@@ -3,7 +3,7 @@
  * Delete a scheduled job
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { scheduler } from "../../../../../../shared/lib/scheduler.ts";
 import { BadRequestError, NotFoundError } from "../../../../../lib/errors.ts";
 import {
@@ -14,7 +14,7 @@ import {
 } from "../../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  DELETE: withErrorHandler(async (_req, ctx) => {
+  DELETE: withErrorHandler(async (ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

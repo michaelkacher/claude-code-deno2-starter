@@ -3,20 +3,21 @@
  * User logout endpoint - revokes refresh token and blacklists access token
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-  deleteCookie,
-  getCookie,
-  requireUser,
-  withErrorHandler,
-  type AppState
+    deleteCookie,
+    getCookie,
+    requireUser,
+    withErrorHandler,
+    type AppState
 } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, _ctx) => {
+  POST: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Get user from auth middleware (throws AuthenticationError if not authenticated)
-    const user = requireUser(_ctx);
+    const user = requireUser(ctx);
     const authService = new AuthService();
 
     // Get refresh token from cookie

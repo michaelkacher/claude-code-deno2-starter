@@ -5,7 +5,7 @@
  * REFACTORED: Uses UserManagementService and withErrorHandler pattern
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { UserManagementService } from "../../../../../../shared/services/index.ts";
 import { BadRequestError } from "../../../../../lib/errors.ts";
@@ -22,7 +22,8 @@ const UpdateRoleSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  PATCH: withErrorHandler(async (req, ctx) => {
+  PATCH: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Require admin access (throws AuthorizationError if not admin)
     const admin = requireAdmin(ctx);
     const userId = ctx.params["id"];

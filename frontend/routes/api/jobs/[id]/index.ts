@@ -3,18 +3,18 @@
  * DELETE /api/jobs/:id - Delete a job (only if completed or failed)
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { JobRepository } from "../../../../../shared/repositories/index.ts";
 import { BadRequestError, NotFoundError } from "../../../../lib/errors.ts";
 import {
-  requireAdmin,
-  successResponse,
-  withErrorHandler,
-  type AppState,
+    requireAdmin,
+    successResponse,
+    withErrorHandler,
+    type AppState,
 } from "../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (_req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 
@@ -34,7 +34,7 @@ export const handler: Handlers<unknown, AppState> = {
     return successResponse(job);
   }),
 
-  DELETE: withErrorHandler(async (_req, ctx) => {
+  DELETE: withErrorHandler(async (ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

@@ -3,7 +3,7 @@
  * Create a notification (admin only)
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { notifyUser } from "../../../../shared/lib/notification-websocket.ts";
 import { NotificationRepository } from "../../../../shared/repositories/index.ts";
@@ -23,7 +23,8 @@ const CreateNotificationSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Require admin role
     requireAdmin(ctx);
 

@@ -9,7 +9,7 @@
  * 4. Injects user data into context for page handlers
  */
 
-import { MiddlewareHandlerContext } from '$fresh/server.ts';
+import { FreshContext } from 'fresh';
 import { createLogger } from '../../../shared/lib/logger.ts';
 
 const logger = createLogger('AdminMiddleware');
@@ -22,7 +22,8 @@ interface User {
   emailVerified: boolean;
 }
 
-export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
+export async function handler(ctx: FreshContext) {
+  const req = ctx.req;
   const url = new URL(req.url);
   logger.debug('Admin route access', { pathname: url.pathname });
   
@@ -32,9 +33,9 @@ export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
     .find((c) => c.startsWith('auth_token='))
     ?.split('=')[1];
 
-  if (!token) {
+    if (!token) {
     // Not logged in - redirect to login with return URL
-    const url = new URL(req.url);
+    const url = new URL(ctx.req.url);
     logger.debug('No token found, redirecting to login', { pathname: url.pathname });
     return new Response(null, {
       status: 302,
@@ -46,7 +47,7 @@ export async function handler(req: Request, ctx: MiddlewareHandlerContext) {
 
   try {
     // Verify token and get user data (using internal Fresh API route)
-    const apiUrl = new URL('/api/auth/me', req.url).href;
+    const apiUrl = new URL('/api/auth/me', ctx.req.url).href;
     logger.debug('Calling auth verification', { apiUrl });
     const userResponse = await fetch(apiUrl, {
       headers: {

@@ -4,17 +4,17 @@
  * MIGRATED TO PREACT SIGNALS - uses global state store
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useComputed, useSignal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
 import { useEffect } from 'preact/hooks';
 import {
-    accessToken,
-    isWsConnected,
-    markAllNotificationsAsRead as markAllAsReadGlobal,
-    markNotificationAsRead as markAsReadGlobal,
-    notifications,
-    removeNotification as removeNotificationGlobal,
-    unreadCount,
+  accessToken,
+  isWsConnected,
+  markAllNotificationsAsRead as markAllAsReadGlobal,
+  markNotificationAsRead as markAsReadGlobal,
+  notifications,
+  removeNotification as removeNotificationGlobal,
+  unreadCount,
 } from '../lib/store.ts';
 
 export default function NotificationList() {

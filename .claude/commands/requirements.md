@@ -43,4 +43,4 @@ Consider running:
 - `/mockup` - Create visual mockups aligned with your project vision
 - `/new-feature` - Build your first feature with full project context
 
-**Note:** The template ships with a pre-defined architecture (Fresh 1.7.3 + Deno KV). This command focuses on business requirements, not technical architecture.
+**Note:** The template uses Fresh 2.x + Vite + Deno KV architecture. This command focuses on business requirements, not technical architecture.

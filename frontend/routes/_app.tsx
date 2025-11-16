@@ -1,5 +1,5 @@
-import { Partial } from "$fresh/runtime.ts";
-import { type PageProps } from "$fresh/server.ts";
+import { type PageProps } from "fresh";
+import { Partial } from "fresh/runtime";
 import ErrorBoundary from "../components/ErrorBoundary.tsx";
 import ThemeProvider from "../components/ThemeProvider.tsx";
 import EmailVerificationBanner from "../islands/EmailVerificationBanner.tsx";
@@ -30,7 +30,6 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{siteName}</title>
-        <link rel="stylesheet" href="/styles.css" />
         <ThemeProvider />
         {/* Token refresh script - automatically refreshes access tokens */}
         <script type="module" src="/lib/token-refresh"></script>

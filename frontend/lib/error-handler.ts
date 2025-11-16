@@ -3,14 +3,14 @@
  * Provides consistent error handling and user-friendly error responses
  */
 
-import { HandlerContext } from '$fresh/server.ts';
+import { FreshContext } from 'fresh';
 import {
-    AppError,
-    AuthenticationError,
-    AuthorizationError,
-    logAppError,
-    NetworkError,
-    toAppError
+  AppError,
+  AuthenticationError,
+  AuthorizationError,
+  logAppError,
+  NetworkError,
+  toAppError
 } from './errors.ts';
 
 export interface ErrorResponse {
@@ -200,11 +200,12 @@ export async function handleApiFetch<T>(
  * Catches errors and converts them to AppError instances
  */
 export function withErrorHandler<T>(
-  handler: (req: Request, ctx: HandlerContext<T>) => Promise<Response>
+  handler: (ctx: FreshContext<T>) => Promise<Response>
 ) {
-  return async (req: Request, ctx: HandlerContext<T>): Promise<Response> => {
+  return async (ctx: FreshContext<T>): Promise<Response> => {
+    const req = ctx.req;
     try {
-      return await handler(req, ctx);
+      return await handler(ctx);
     } catch (error) {
       // Convert to AppError if not already
       const appError = toAppError(error);

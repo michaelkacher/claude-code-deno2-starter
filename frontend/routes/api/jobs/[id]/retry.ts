@@ -3,18 +3,18 @@
  * Retry a failed job
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { JobRepository } from "../../../../../shared/repositories/index.ts";
+import { BadRequestError, NotFoundError } from "../../../../lib/errors.ts";
 import {
-  requireAdmin,
-  successResponse,
-  withErrorHandler,
-  type AppState,
+    requireAdmin,
+    successResponse,
+    withErrorHandler,
+    type AppState,
 } from "../../../../lib/fresh-helpers.ts";
-import { NotFoundError, BadRequestError } from "../../../../lib/errors.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (_req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

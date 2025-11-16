@@ -1,4 +1,4 @@
-import { PageProps } from "$fresh/server.ts";
+import { PageProps } from "fresh";
 import ProfileSettings from "../islands/ProfileSettings.tsx";
 
 export default function Profile(_props: PageProps) {

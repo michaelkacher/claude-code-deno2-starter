@@ -5,7 +5,7 @@
  * REFACTORED: Uses TwoFactorService with new error handling pattern
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
     requireUser,
@@ -15,7 +15,7 @@ import {
 } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (_req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
     const user = requireUser(ctx);
     const twoFactorService = new TwoFactorService();
 

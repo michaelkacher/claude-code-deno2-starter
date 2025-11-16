@@ -214,10 +214,8 @@ const userService = new UserService(kv);
 Close KV connection on app shutdown:
 
 ```typescript
-// frontend/main.ts (Fresh application)
-import { start } from "$fresh/server.ts";
-import manifest from "./fresh.gen.ts";
-import config from "./fresh.config.ts";
+// frontend/main.ts (Fresh 2 application)
+import { App } from "fresh";
 import { getKv, closeKv } from "../shared/lib/kv.ts";
 
 // Initialize KV once at startup
@@ -229,7 +227,9 @@ globalThis.addEventListener('unload', async () => {
   await closeKv();
 });
 
-await start(manifest, config);
+// Fresh 2: Export app, Vite handles server
+export const app = new App();
+app.use(/* routes */);
 ```
 
 ### 6. Development vs Production Differences
@@ -276,13 +276,15 @@ sqlite> .quit
 
 ```typescript
 // frontend/routes/api/admin/kv/all.ts (dev only!)
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
+import type { FreshContext } from "fresh";
 import { getKv } from "../../../../../shared/lib/kv.ts";
 import { successResponse, requireAuth, requireRole, type AppState } from "../../../../lib/fresh-helpers.ts";
 
+// Fresh 2: Single (ctx) argument
 export const handler: Handlers<unknown, AppState> = {
   // ⚠️ Only enable in development!
-  async GET(req, ctx) {
+  async GET(ctx: FreshContext) {
     // Require admin role
     const user = requireAuth(ctx);
     requireRole(user, ['admin']);

@@ -56,99 +56,118 @@ This is an **opinionated starter template** designed for building modern web app
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Why Pure Fresh (Single Server)?**
-- ✅ Simpler deployment (one server, one port)
-- ✅ No CORS complexity (same origin)
-- ✅ Faster development (no context switching)
-- ✅ Perfect for Deno Deploy edge deployment
-- ✅ Fresh handles both pages AND APIs natively
-- ✅ Reduced operational complexity
 
----
-
-## Technology Stack
-
+### Framework: Fresh 2.1.x
 ### Runtime: Deno 2
-
-**Why Deno?**
+**Framework:** [Fresh](https://fresh.deno.dev/) 2.x 
 - ✅ TypeScript-native (no build step)
-- ✅ Secure by default (explicit permissions)
-- ✅ Built-in tooling (test, fmt, lint)
-- ✅ Modern web APIs (fetch, crypto)
-- ✅ Fast module resolution
-- ✅ Built-in Deno KV database
-
-### Framework: Fresh 1.7.3
-
-**Framework:** [Fresh](https://fresh.deno.dev/) 1.7+
-**UI Library:** [Preact](https://preactjs.com/) 10+
-**State:** [Preact Signals](https://preactjs.com/guide/v10/signals/)
-
-**Why Fresh?**
-- ✅ Deno-native (no Node.js needed)
-- ✅ Islands architecture (minimal JS)
-- ✅ Server-side rendering (SSR)
-- ✅ Handles both pages AND API endpoints
+**Why Fresh 2?**
+ - ✅ Vite integration (plugin architecture, access to Vite ecosystem)
+ - ✅ True HMR for islands & client assets
+ - ✅ Unified middleware/handler/component signatures (`(ctx) =>`)
+ - ✅ Simplified App builder API (no `fresh.config.ts` / `fresh.gen.ts`)
+ - ✅ Built-in OpenTelemetry hooks (optional; can instrument latency)
+ - ✅ Unified `_error.tsx` template (replaces `_404.tsx` & `_500.tsx`)
+ - ✅ Trailing slash behavior moved to explicit middleware (opt-in)
+ - ✅ Improved build pipeline via Vite (static asset processing & CSS HMR)
 - ✅ File-based routing
-- ✅ Zero config required
-- ✅ Zero-config (no webpack)
-- ✅ File-based routing
-- ✅ Edge-ready
 
 **Why Preact?**
 - ✅ Tiny (3KB gzipped)
 - ✅ React-compatible API
-- ✅ Fast performance
-- ✅ Great DX with Signals
+    _middleware.ts     # Middleware (update signature to (ctx) form)
+    _error.tsx         # Unified error page (Fresh 2)
 
 **Structure:**
-```
-frontend/
-├── routes/              # File-based routes
+  client.ts            # Client entry for CSS & HMR
+  vite.config.ts       # Vite + Fresh plugin configuration
 │   ├── index.tsx        # Homepage (SSR page)
 │   ├── _app.tsx         # Root layout
 │   ├── _middleware.ts   # Page auth middleware
 │   └── api/             # API endpoints
 │       ├── auth/        # Auth endpoints
-│       ├── admin/       # Admin endpoints
 │       ├── jobs/        # Job management
-│       └── _middleware.ts  # API middleware
-├── islands/             # Interactive components
+### Deployment: Deno Deploy
 │   ├── LoginForm.tsx    # Client-side islands
-│   ├── Navigation.tsx   # Persistent navigation
-│   ├── admin/           # Admin-specific islands
+**Development Workflow (Updated)**
 │   └── mockups/         # UI mockup islands
 ├── components/          # Shared components (SSR)
-│   ├── common/          # Reusable UI components
+deno task dev
 │   └── design-system/   # Design system components
-├── lib/                 # Frontend utilities
-│   ├── config.ts        # Site configuration
-│   ├── storage.ts       # Storage abstraction
-│   ├── fresh-helpers.ts # Fresh utilities (response helpers)
-│   ├── jwt.ts           # JWT client utilities
-│   ├── websocket.ts     # WebSocket client
-│   ├── error-handler.ts # Error handling
-│   └── store.ts         # Client state management
-├── templates/           # Code templates for new features
-└── static/              # Static assets
+```bash
+# Start dev (Vite + Fresh plugin)
+deno task dev
 
-shared/
-├── lib/                 # Server-side utilities
-│   ├── jwt.ts          # JWT handling
-│   ├── kv.ts           # Deno KV wrapper
-│   ├── queue.ts        # Background job queue
-│   ├── scheduler.ts    # Job scheduler
-│   ├── logger.ts       # Structured logging
-│   ├── totp.ts         # 2FA TOTP
-│   ├── password.ts     # Password hashing
-│   ├── api.ts          # API client (server-side)
-│   ├── email.ts        # Email utilities
-│   ├── storage.ts      # File storage
+# Build production assets
+deno task build
+
+# Preview production build
+deno task preview  # serves _fresh/server.js
+
+# Run tests (unchanged)
+deno task test
+
+# Type checking
+deno task typecheck
+
+# Linting & formatting
+deno lint
+deno fmt
+```
+
+
+**Frontend:**
+- Optional: adopt additional Vite plugins (PWA, compression, bundle analysis)
+- Optional: enable CSP & custom security headers middleware for stricter security posture
+- Optional: OpenTelemetry instrumentation hooking into Deno Deploy traces
+
+## Fresh 2 Migration Summary
+
+**Date:** 2025-11-13
+**From Version:** 1.7.3
+**To Version:** 2.1.x
+
+**Key Changes Applied:**
+- Replaced legacy startup (`start(manifest, config)`) with `new App().use(...).fsRoutes().listen()`
+- Removed `dev.ts`, `fresh.config.ts`, `fresh.gen.ts`
+- Added `vite.config.ts`, `client.ts`, unified `_error.tsx`
+- Updated tasks (`dev`, `build`, `preview`) and import map (`fresh`, `@fresh/plugin-vite`, `vite`)
+- Architecture doc updated to reflect Vite integration & new middleware signature requirements
+
+**Pending Follow-up (Not yet executed):**
+- Update all route & middleware signatures to Fresh 2 `(ctx)` form (currently still legacy in some files)
+- Evaluate adding CSP & headers middleware
+- Instrument OpenTelemetry traces for key routes
+- Consolidate error handling into `_error.tsx` logic with richer diagnostics
+
+**Risk Assessment:**
+- Low: Static code adjustments; major runtime API preserved via update script semantics
+- Medium: Unupdated handlers may rely on old signatures (need staged refactor)
+- Low: Removal of generated manifest reduces maintenance overhead
+
+**Mitigation Plan:**
+- Incrementally refactor handlers/middleware; add lint rule to detect old signatures
+- Add integration tests around critical routes before signature migration
+
+---
+
+## Architecture Decision Records
+
+Added ADR documenting Fresh 2 migration in `docs/adr/2025-11-13-fresh-2-migration.md`.
+
+---
+
+## Summary
 │   └── composite-indexes.ts  # KV composite indexes
-├── repositories/        # Data access layer
-│   ├── base-repository.ts    # Base repository pattern
+✅ **Use this template if you want:**
+- Deno 2 runtime
+- Fresh 2.x (SSR + Islands + Vite + HMR)
+- Deno KV database
+- Deno Deploy deployment
+- Fast development & iteration
+- Edge deployment
 │   ├── user-repository.ts
-│   ├── job-repository.ts
+**Questions?** Use `/architect` to propose further architectural changes (e.g., DB migration, microservice split).
 │   ├── token-repository.ts
 │   └── notification-repository.ts
 ├── services/            # Business logic layer

@@ -3,16 +3,16 @@
  * POST /api/jobs - Create a new background job
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { JobStatus } from "../../../../shared/lib/queue.ts";
 import { JobRepository } from "../../../../shared/repositories/index.ts";
 import {
-  parseJsonBody,
-  requireAdmin,
-  successResponse,
-  withErrorHandler,
-  type AppState,
+    parseJsonBody,
+    requireAdmin,
+    successResponse,
+    withErrorHandler,
+    type AppState,
 } from "../../../lib/fresh-helpers.ts";
 
 const CreateJobSchema = z.object({
@@ -28,9 +28,10 @@ const CreateJobSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (req, _ctx) => {
+  GET: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Require admin role (throws AuthorizationError if not admin)
-    requireAdmin(_ctx);
+    requireAdmin(ctx);
 
     // Parse query parameters
     const url = new URL(req.url);
@@ -52,7 +53,8 @@ export const handler: Handlers<unknown, AppState> = {
     });
   }),
 
-  POST: withErrorHandler(async (req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

@@ -3,7 +3,7 @@
  * PATCH /api/jobs/schedules/:id - Update a scheduled job (enable/disable)
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { scheduler } from "../../../../../shared/lib/scheduler.ts";
 import { NotFoundError } from "../../../../lib/errors.ts";
@@ -20,7 +20,7 @@ const UpdateScheduleSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  DELETE: withErrorHandler(async (_req, ctx) => {
+  DELETE: withErrorHandler(async (ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 
@@ -40,7 +40,8 @@ export const handler: Handlers<unknown, AppState> = {
     });
   }),
 
-  PATCH: withErrorHandler(async (req, ctx) => {
+  PATCH: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

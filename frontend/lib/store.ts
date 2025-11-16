@@ -8,8 +8,8 @@
  * - Theme (light/dark mode)
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
 import { computed, signal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
 
 // ============================================================================
 // Types

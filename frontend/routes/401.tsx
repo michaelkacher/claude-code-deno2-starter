@@ -3,8 +3,8 @@
  * Displays when authentication is required but not provided
  */
 
-import { Head } from "$fresh/runtime.ts";
-import { PageProps } from "$fresh/server.ts";
+import { PageProps } from "fresh";
+import { Head } from "fresh/runtime";
 import { siteConfig } from "../lib/config.ts";
 
 export default function Error401(props: PageProps) {

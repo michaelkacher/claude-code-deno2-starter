@@ -3,16 +3,17 @@
  * Allows users to enable 2FA on their account
  */
 
-import { Handlers, PageProps } from "$fresh/server.ts";
 import { getCookies } from "@std/http/cookie";
+import { Handlers, PageProps } from "fresh";
 import TwoFactorSetup from "../../islands/TwoFactorSetup.tsx";
 
 interface TwoFactorPageData {
   isAuthenticated: boolean;
 }
 
-export const handler: Handlers<TwoFactorPageData> = {
-  GET(req, ctx) {
+export const handler: Handlers<TwoFactorSetupData> = {
+  GET(ctx) {
+    const req = ctx.req;
     // Check if user is authenticated
     const cookies = getCookies(req.headers);
     const authToken = cookies.auth_token;

@@ -3,6 +3,8 @@
  * Minimal client-side JWT helpers (no verification, just decoding and validation)
  */
 
+import { decodeBase64 } from '@std/encoding/base64';
+
 export interface JwtPayload {
   sub: string;
   email: string;
@@ -21,7 +23,7 @@ export function isValidJwtStructure(token: string): boolean {
 }
 
 /**
- * Decode JWT payload without verification (client-side only)
+ * Decode JWT payload without verification (works in both browser and server)
  */
 export function decodeJwt(token: string): JwtPayload {
   if (!isValidJwtStructure(token)) {
@@ -30,10 +32,19 @@ export function decodeJwt(token: string): JwtPayload {
 
   try {
     const parts = token.split('.');
-    const payload = JSON.parse(atob(parts[1]));
-    return payload;
+    // JWT uses base64url encoding, replace characters
+    let payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    
+    // Add padding if needed
+    while (payload.length % 4 !== 0) {
+      payload += '=';
+    }
+    
+    // Decode using Deno's std library (works in both browser and server)
+    const decoded = new TextDecoder().decode(decodeBase64(payload));
+    return JSON.parse(decoded);
   } catch (error) {
-    throw new Error('Failed to decode JWT payload');
+    throw new Error(`Failed to decode JWT payload: ${error}`);
   }
 }
 

@@ -5,7 +5,7 @@
  * REFACTORED: Uses TwoFactorService with new error handling pattern
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { TwoFactorService } from "../../../../shared/services/index.ts";
 import { ValidationError } from "../../../lib/errors.ts";
@@ -22,7 +22,8 @@ const Verify2FASchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     const user = requireUser(ctx);
     const { code } = await parseJsonBody(req, Verify2FASchema);
 

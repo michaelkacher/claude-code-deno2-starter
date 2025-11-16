@@ -3,18 +3,18 @@
  * Manually trigger a scheduled job
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { scheduler } from "../../../../../../shared/lib/scheduler.ts";
-import {
-  requireAdmin,
-  successResponse,
-  withErrorHandler,
-  type AppState,
-} from "../../../../../lib/fresh-helpers.ts";
 import { BadRequestError, NotFoundError } from "../../../../../lib/errors.ts";
+import {
+    requireAdmin,
+    successResponse,
+    withErrorHandler,
+    type AppState,
+} from "../../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (_req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

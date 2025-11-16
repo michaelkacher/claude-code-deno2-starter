@@ -4,8 +4,8 @@
  * Form for creating new scheduled jobs
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
 import { TokenStorage } from '../../lib/storage.ts';
 
 interface CreateScheduleModalProps {

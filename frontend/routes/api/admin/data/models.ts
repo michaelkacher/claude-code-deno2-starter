@@ -5,7 +5,7 @@
  * REFACTORED: Uses withErrorHandler pattern
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { getKv } from "../../../../../shared/lib/kv.ts";
 import {
     requireAdmin,
@@ -27,7 +27,7 @@ const MODEL_PREFIXES = [
 ];
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (_req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
     // Require admin access (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

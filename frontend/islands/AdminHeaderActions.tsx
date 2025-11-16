@@ -3,7 +3,7 @@
  * Dynamic admin navigation and logout functionality
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
+import { IS_BROWSER } from 'fresh/runtime';
 import { TokenStorage } from '../lib/storage.ts';
 
 interface AdminHeaderActionsProps {

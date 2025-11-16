@@ -3,7 +3,7 @@
  * Displays when a page is not found
  */
 
-import { Head } from "$fresh/runtime.ts";
+import { Head } from 'fresh/runtime';
 import { siteConfig } from "../lib/config.ts";
 
 export default function Error404() {

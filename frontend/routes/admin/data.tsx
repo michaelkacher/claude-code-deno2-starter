@@ -3,11 +3,11 @@
  * Protected route for viewing Deno KV storage models
  */
 
-import { PageProps } from '$fresh/server.ts';
+import { PageProps } from 'fresh';
 import {
-  ContentContainer,
-  PageContainer,
-  PageHeader
+    ContentContainer,
+    PageContainer,
+    PageHeader
 } from '../../components/common/index.ts';
 import AdminDataBrowser from '../../islands/AdminDataBrowser.tsx';
 import AdminHeaderActions from '../../islands/AdminHeaderActions.tsx';

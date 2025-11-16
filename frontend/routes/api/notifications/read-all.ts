@@ -3,7 +3,7 @@
  * Mark all notifications as read for the current user
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
     requireUser,
@@ -13,7 +13,7 @@ import {
 } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (_req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
     // Require authentication
     const user = requireUser(ctx);
 

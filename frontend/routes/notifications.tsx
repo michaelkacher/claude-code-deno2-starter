@@ -3,8 +3,8 @@
  * View and manage all user notifications
  */
 
-import { Head } from '$fresh/runtime.ts';
-import { PageProps } from '$fresh/server.ts';
+import { PageProps } from 'fresh';
+import { Head } from 'fresh/runtime';
 import NotificationList from '../islands/NotificationList.tsx';
 
 export default function NotificationsPage(props: PageProps) {

@@ -3,7 +3,7 @@
  * List user notifications with pagination
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { NotificationRepository } from "../../../../shared/repositories/index.ts";
 import {
     requireUser,
@@ -13,7 +13,8 @@ import {
 } from "../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Require authentication
     const user = requireUser(ctx);
 

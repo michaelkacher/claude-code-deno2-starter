@@ -3,8 +3,8 @@
  * Displays user-friendly error messages for general errors
  */
 
-import { Head } from '$fresh/runtime.ts';
-import { PageProps } from '$fresh/server.ts';
+import { PageProps } from 'fresh';
+import { Head } from 'fresh/runtime';
 import { siteConfig } from '../lib/config.ts';
 
 export default function ErrorPage(props: PageProps) {

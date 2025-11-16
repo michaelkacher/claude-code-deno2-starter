@@ -5,8 +5,8 @@
  * MIGRATED TO PREACT SIGNALS
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
 import { useEffect } from 'preact/hooks';
 import { TokenStorage } from '../lib/storage.ts';
 

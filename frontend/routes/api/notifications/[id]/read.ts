@@ -3,18 +3,18 @@
  * Mark a notification as read
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { NotificationRepository } from "../../../../../shared/repositories/index.ts";
-import {
-  requireUser,
-  successResponse,
-  withErrorHandler,
-  type AppState,
-} from "../../../../lib/fresh-helpers.ts";
 import { BadRequestError, NotFoundError } from "../../../../lib/errors.ts";
+import {
+    requireUser,
+    successResponse,
+    withErrorHandler,
+    type AppState,
+} from "../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  PATCH: withErrorHandler(async (_req, ctx) => {
+  PATCH: withErrorHandler(async (ctx) => {
     // Require authentication
     const user = requireUser(ctx);
 

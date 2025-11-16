@@ -3,8 +3,8 @@
  * User registration form
  */
 
-import { Head } from '$fresh/runtime.ts';
-import { Handlers, PageProps } from '$fresh/server.ts';
+import type { Handlers, PageProps } from 'fresh';
+import { Head } from 'fresh/runtime';
 import SignupForm from '../islands/SignupForm.tsx';
 
 interface SignupData {
@@ -12,9 +12,9 @@ interface SignupData {
 }
 
 export const handler: Handlers<SignupData> = {
-  GET(req, ctx) {
+  GET(ctx) {
     // Get redirect URL from query params
-    const url = new URL(req.url);
+    const url = new URL(ctx.req.url);
     const redirectTo = url.searchParams.get('redirect') || '/';
     
     return ctx.render({ redirectTo });
@@ -22,6 +22,7 @@ export const handler: Handlers<SignupData> = {
 };
 
 export default function Signup({ data }: PageProps<SignupData>) {
+  const { redirectTo } = data;
   return (
     <>
       <Head>
@@ -39,7 +40,7 @@ export default function Signup({ data }: PageProps<SignupData>) {
           </div>
           
           <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
-            <SignupForm redirectTo={data.redirectTo} />
+            <SignupForm redirectTo={redirectTo} />
           </div>
           
           <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">

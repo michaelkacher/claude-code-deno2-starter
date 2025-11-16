@@ -5,15 +5,15 @@
  * REFACTORED: Uses TwoFactorService with new error handling pattern
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { TwoFactorService } from "../../../../shared/services/index.ts";
 import {
-  parseJsonBody,
-  requireUser,
-  successResponse,
-  withErrorHandler,
-  type AppState,
+    parseJsonBody,
+    requireUser,
+    successResponse,
+    withErrorHandler,
+    type AppState,
 } from "../../../lib/fresh-helpers.ts";
 
 const RegenerateCodesSchema = z.object({
@@ -22,7 +22,8 @@ const RegenerateCodesSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     const user = requireUser(ctx);
     const { password, code } = await parseJsonBody(req, RegenerateCodesSchema);
 

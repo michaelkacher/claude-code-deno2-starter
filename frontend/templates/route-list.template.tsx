@@ -11,7 +11,8 @@
  * 5. Add filters/search if needed
  */
 
-import { Handlers, PageProps } from "$fresh/server.ts";
+import { Handlers, PageProps } from 'fresh';
+import type { FreshContext } from 'fresh';
 
 // TODO: Import types from feature data models
 // import type { Resource } from "@/types/index.ts";
@@ -33,11 +34,12 @@ interface Data {
 
 const API_BASE = "/api";
 
+// Fresh 2: Handler takes single (ctx) argument
 export const handler: Handlers<Data> = {
-  async GET(req, ctx) {
+  async GET(ctx: FreshContext) {
     try {
       // Get pagination cursor from query params
-      const url = new URL(req.url);
+      const url = new URL(ctx.req.url);
       const cursor = url.searchParams.get("cursor");
       const limit = url.searchParams.get("limit") || "10";
 

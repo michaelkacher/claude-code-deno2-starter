@@ -3,7 +3,7 @@
  * Automatically lists all available UI mockups by scanning directory
  */
 
-import { Handlers, PageProps } from '$fresh/server.ts';
+import { Handlers, PageProps } from 'fresh';
 
 interface Mockup {
   name: string;
@@ -15,7 +15,7 @@ interface Mockup {
 
 // Handler to dynamically discover mockups
 export const handler: Handlers<{ mockups: Mockup[] }> = {
-  async GET(_req, ctx) {
+  async GET(ctx) {
     const mockups: Mockup[] = [];
 
     try {

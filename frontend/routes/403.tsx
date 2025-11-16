@@ -3,8 +3,8 @@
  * Displays when user doesn't have permission to access a resource
  */
 
-import { Head } from "$fresh/runtime.ts";
-import { PageProps } from "$fresh/server.ts";
+import { PageProps } from "fresh";
+import { Head } from 'fresh/runtime';
 import { siteConfig } from "../lib/config.ts";
 
 export default function Error403(props: PageProps) {

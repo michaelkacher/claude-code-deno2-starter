@@ -3,13 +3,13 @@
  * Request password reset - sends reset email
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-  parseJsonBody,
-  withErrorHandler,
-  type AppState,
+    parseJsonBody,
+    withErrorHandler,
+    type AppState,
 } from "../../../lib/fresh-helpers.ts";
 
 const ForgotPasswordSchema = z.object({
@@ -17,7 +17,8 @@ const ForgotPasswordSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, _ctx) => {
+  POST: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Parse and validate request body (Zod errors automatically handled)
     const { email } = await parseJsonBody(req, ForgotPasswordSchema);
 

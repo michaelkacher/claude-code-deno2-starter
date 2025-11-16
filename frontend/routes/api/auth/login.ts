@@ -3,14 +3,14 @@
  * User login endpoint
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { AuthService } from "../../../../shared/services/index.ts";
 import {
-  parseJsonBody,
-  setCookie,
-  withErrorHandler,
-  type AppState
+    parseJsonBody,
+    setCookie,
+    withErrorHandler,
+    type AppState
 } from "../../../lib/fresh-helpers.ts";
 
 const LoginSchema = z.object({
@@ -19,7 +19,8 @@ const LoginSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (req, _ctx) => {
+  POST: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Parse and validate request body (Zod errors automatically handled)
     const { email, password } = await parseJsonBody(req, LoginSchema);
 

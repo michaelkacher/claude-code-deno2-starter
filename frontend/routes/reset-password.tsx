@@ -3,7 +3,7 @@
  * Handles password reset with token from email link
  */
 
-import { Handlers, PageProps } from "$fresh/server.ts";
+import { Handlers, PageProps } from "fresh";
 import ResetPasswordForm from "../islands/ResetPasswordForm.tsx";
 
 interface ResetData {
@@ -13,8 +13,8 @@ interface ResetData {
 }
 
 export const handler: Handlers<ResetData> = {
-  async GET(req, ctx) {
-    const url = new URL(req.url);
+  async GET(ctx) {
+    const url = new URL(ctx.req.url);
     const token = url.searchParams.get('token');
 
     if (!token) {
@@ -22,7 +22,7 @@ export const handler: Handlers<ResetData> = {
     }
 
     try {
-      const baseUrl = new URL(req.url).origin;
+      const baseUrl = new URL(ctx.req.url).origin;
       const response = await fetch(`${baseUrl}/api/auth/validate-reset-token?token=${token}`);
       const data = await response.json();
 

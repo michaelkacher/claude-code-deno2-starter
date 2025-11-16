@@ -1,20 +1,23 @@
 {
-    "name": "claude-code-deno2-starter",
-    "version": "1.0.0",
-    "description": "A starter project for Deno with backend and frontend setup.",
-    "type": "module",
-    "scripts": {
-        "test:e2e": "playwright test",
-        "test:e2e:headed": "playwright test --headed",
-        "test:e2e:report": "playwright show-report",
-        "test:e2e:ui": "playwright test --ui",
-        "test:e2e:debug": "playwright test --debug",
-        "test:e2e:chromium": "playwright test --project=chromium",
-        "test:e2e:firefox": "playwright test --project=firefox",
-        "test:e2e:webkit": "playwright test --project=webkit"
-    },
-    "devDependencies": {
-        "@playwright/test": "^1.48.0"
-    }
-
+  "name": "claude-code-deno2-starter",
+  "version": "1.0.0",
+  "description": "A starter project for Deno with backend and frontend setup.",
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:firefox": "playwright test --project=firefox",
+    "test:e2e:webkit": "playwright test --project=webkit"
+  },
+  "dependencies": {
+    "autoprefixer": "10.4.20",
+    "tailwindcss": "3.4.14"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
 }

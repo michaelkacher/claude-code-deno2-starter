@@ -3,7 +3,7 @@
  * Handles the verification token from email link
  */
 
-import { Handlers, PageProps } from "$fresh/server.ts";
+import { Handlers, PageProps } from "fresh";
 
 interface VerificationData {
   success: boolean;
@@ -11,9 +11,9 @@ interface VerificationData {
   error?: string;
 }
 
-export const handler: Handlers<VerificationData> = {
-  async GET(req, ctx) {
-    const url = new URL(req.url);
+export const handler: Handlers<VerifyEmailData> = {
+  async GET(ctx) {
+    const url = new URL(ctx.req.url);
     const token = url.searchParams.get('token');
 
     if (!token) {

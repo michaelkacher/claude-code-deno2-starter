@@ -11,7 +11,7 @@
  * - Rate limit handling
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
+import { IS_BROWSER } from 'fresh/runtime';
 import { TokenStorage } from './storage.ts';
 
 // ============================================================================

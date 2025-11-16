@@ -4,7 +4,7 @@
  * Verifies JWT tokens and attaches user to context state
  */
 
-import type { FreshContext } from "$fresh/server.ts";
+import type { FreshContext } from "fresh";
 import { verifyToken } from "../../../shared/lib/jwt.ts";
 import { createLogger } from "../../../shared/lib/logger.ts";
 import type { AppState } from "../../lib/fresh-helpers.ts";
@@ -16,9 +16,9 @@ const logger = createLogger('APIMiddleware');
  * Checks Authorization header and verifies JWT
  */
 export async function handler(
-  req: Request,
   ctx: FreshContext<AppState>
 ): Promise<Response> {
+  const req = ctx.req;
   // Get token from Authorization header
   const authHeader = req.headers.get("Authorization");
   // [API Middleware] Auth header received (value not logged for security)

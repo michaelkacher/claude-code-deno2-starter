@@ -3,8 +3,8 @@
  * Provides navigation to design system and mockups (dev only)
  */
 
-import { Head } from '$fresh/runtime.ts';
-import { PageProps } from '$fresh/server.ts';
+import { PageProps } from 'fresh';
+import { Head } from 'fresh/runtime';
 import { JSX } from 'preact';
 import { ContentContainer, FeatureCard } from '../components/common/index.ts';
 

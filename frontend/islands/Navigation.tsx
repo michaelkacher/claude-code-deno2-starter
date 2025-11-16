@@ -1,16 +1,3 @@
-/**
- * Navigation Island
- * 
- * Converted from component to island to preserve state across page navigations.
- * This prevents the header from re-rendering and flickering when navigating between pages.
- * 
- * Benefits:
- * - Preserves island state (UserProfileDropdown, DarkModeToggle)
- * - Prevents re-initialization of WebSocket connections
- * - Smoother navigation experience
- * - No visible refresh/flicker in the header
- */
-
 import { getFeatures, getMobileNavigationItems, getNavigationItems, getSiteName } from '../lib/config.ts';
 import DarkModeToggle from './DarkModeToggle.tsx';
 import MobileMenuToggle from './MobileMenuToggle.tsx';
@@ -22,7 +9,7 @@ interface NavigationProps {
   initialTheme?: 'light' | 'dark' | null;
 }
 
-function Navigation(props: NavigationProps) {
+export default function Navigation(props: NavigationProps) {
   // Config functions now work in both server and browser
   // The config.ts file checks for Deno availability internally
   const siteName = getSiteName();
@@ -93,5 +80,3 @@ function Navigation(props: NavigationProps) {
     </nav>
   );
 }
-
-export default Navigation;

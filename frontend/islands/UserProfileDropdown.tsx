@@ -5,8 +5,8 @@
  * MIGRATED TO PREACT SIGNALS - uses global state store
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useComputed, useSignal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
 import { useEffect, useRef } from 'preact/hooks';
 import { isTokenExpired } from '../lib/jwt.ts';
 import { TokenStorage } from '../lib/storage.ts';

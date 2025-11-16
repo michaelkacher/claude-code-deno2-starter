@@ -6,7 +6,7 @@
  * This runs in the dev server process so WebSocket broadcasts work properly
  */
 
-import { Handlers } from '$fresh/server.ts';
+import { Handlers } from 'fresh';
 import { createLogger } from '../../../../shared/lib/logger.ts';
 import { NotificationService } from '../../../../shared/services/notifications.ts';
 import {
@@ -19,7 +19,7 @@ import {
 const logger = createLogger('NotificationsTestAPI');
 
 export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (_req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
     // Require authentication
     const user = requireUser(ctx);
     const userId = user.sub;

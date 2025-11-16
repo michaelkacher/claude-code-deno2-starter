@@ -5,8 +5,8 @@
  * MIGRATED TO API CLIENT
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
 import { useSignal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
 import { twoFactorApi } from '../lib/api-client.ts';
 
 interface TwoFactorSetupProps {

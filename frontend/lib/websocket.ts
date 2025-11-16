@@ -16,18 +16,18 @@
  * - Authentication state is validated before each connection attempt
  */
 
-import { IS_BROWSER } from '$fresh/runtime.ts';
+import { IS_BROWSER } from 'fresh/runtime';
 import { ACCESS_TOKEN_EXPIRY_MS } from '../../shared/lib/config.ts';
 import {
-  accessToken,
-  addNotification,
-  clearAuth,
-  isAuthenticated,
-  markNotificationAsRead,
-  notifications,
-  setUnreadCount,
-  setWsConnected,
-  wsConnection,
+    accessToken,
+    addNotification,
+    clearAuth,
+    isAuthenticated,
+    markNotificationAsRead,
+    notifications,
+    setUnreadCount,
+    setWsConnected,
+    wsConnection,
 } from './store.ts';
 
 // ============================================================================

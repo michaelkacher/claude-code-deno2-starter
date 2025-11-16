@@ -3,18 +3,18 @@
  * Delete a notification
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { NotificationRepository } from "../../../../../shared/repositories/index.ts";
+import { AuthorizationError, BadRequestError, NotFoundError } from "../../../../lib/errors.ts";
 import {
-  requireUser,
-  successResponse,
-  withErrorHandler,
-  type AppState,
+    requireUser,
+    successResponse,
+    withErrorHandler,
+    type AppState,
 } from "../../../../lib/fresh-helpers.ts";
-import { BadRequestError, NotFoundError, AuthorizationError } from "../../../../lib/errors.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  DELETE: withErrorHandler(async (_req, ctx) => {
+  DELETE: withErrorHandler(async (ctx) => {
     // Require authentication
     const user = requireUser(ctx);
 

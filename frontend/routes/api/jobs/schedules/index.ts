@@ -3,7 +3,7 @@
  * POST /api/jobs/schedules - Create a new scheduled job
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { z } from "zod";
 import { createLogger } from '../../../../../shared/lib/logger.ts';
 import { queue } from "../../../../../shared/lib/queue.ts";
@@ -27,7 +27,7 @@ const CreateScheduleSchema = z.object({
 });
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler((_req, ctx) => {
+  GET: withErrorHandler((ctx) => {
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 
@@ -46,7 +46,8 @@ export const handler: Handlers<unknown, AppState> = {
     });
   }),
 
-  POST: withErrorHandler(async (req, ctx) => {
+  POST: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Require admin role (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

@@ -17,20 +17,22 @@ Standard Fresh + Preact patterns for token-efficient frontend implementation.
 
 List page with server-side data fetching and pagination.
 
-**Structure**:
+**Structure** (Fresh 2):
 ```typescript
 // frontend/routes/resources/index.tsx
-import { Handlers, PageProps } from "$fresh/server.ts";
+import { Handlers, PageProps } from "fresh";
+import type { FreshContext } from "fresh";
 
 interface Data {
   resources: Resource[];
   cursor: string | null;
 }
 
+// Fresh 2: Single argument (ctx), access request via ctx.req
 export const handler: Handlers<Data> = {
-  async GET(req, ctx) {
+  async GET(ctx: FreshContext) {
     // Fetch from backend
-    const url = new URL(req.url);
+    const url = new URL(ctx.req.url);
     const cursor = url.searchParams.get("cursor");
 
     const res = await fetch(`${API_BASE}/resources?cursor=${cursor || ""}`);
@@ -57,17 +59,19 @@ export default function ResourcesPage({ data }: PageProps<Data>) {
 
 Detail page for viewing single resource.
 
-**Structure**:
+**Structure** (Fresh 2):
 ```typescript
 // frontend/routes/resources/[id].tsx
-import { Handlers, PageProps } from "$fresh/server.ts";
+import { Handlers, PageProps } from "fresh";
+import type { FreshContext } from "fresh";
 
 interface Data {
   resource: Resource | null;
 }
 
+// Fresh 2: Single argument (ctx)
 export const handler: Handlers<Data> = {
-  async GET(req, ctx) {
+  async GET(ctx: FreshContext) {
     const { id } = ctx.params;
 
     const res = await fetch(`${API_BASE}/resources/${id}`);
@@ -98,7 +102,7 @@ export default function ResourceDetailPage({ data }: PageProps<Data>) {
 
 Interactive form with validation and API integration.
 
-**Structure**:
+**Structure** (Preact Signals - SSR Safe):
 ```typescript
 // frontend/islands/ResourceForm.tsx
 import { useSignal } from "@preact/signals";
@@ -130,7 +134,17 @@ export default function ResourceForm({ initialData, onSuccess }) {
     }
   };
 
-  return <form onSubmit={handleSubmit}>{ /* ... */ }</form>;
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* ✅ Pass signal directly in JSX - Preact handles subscription */}
+      <input value={name} onInput={(e) => name.value = e.currentTarget.value} />
+      
+      {/* ✅ Conditional rendering with signal.value in JSX is safe */}
+      {error.value && <div class="error">{error}</div>}
+      
+      <button disabled={isSubmitting.value}>Submit</button>
+    </form>
+  );
 }
 ```
 
@@ -143,6 +157,7 @@ Global state with Preact Signals.
 ```typescript
 // frontend/lib/store.ts
 import { signal, computed } from "@preact/signals";
+import { IS_BROWSER } from "fresh/runtime";
 
 export const user = signal<User | null>(null);
 export const token = signal<string | null>(null);
@@ -157,9 +172,98 @@ export async function login(email: string, password: string) {
   const data = await res.json();
   user.value = data.user;
   token.value = data.token;
-  localStorage.setItem("token", data.token);
+  
+  // Guard browser-only APIs
+  if (IS_BROWSER) {
+    localStorage.setItem("token", data.token);
+  }
 }
 ```
+
+---
+
+### Pattern: `SIGNALS_SSR_SAFE`
+
+**CRITICAL**: Proper signal usage for SSR compatibility.
+
+**⚠️ IMPORTANT: Cannot Create Signals Inside Islands During SSR**
+
+The `signal()` function itself is treated as a hook and will break SSR when called inside island components:
+
+```typescript
+// ❌ ERROR: "Hook can only be invoked from render methods"
+export default function MyIsland() {
+  const count = signal(0); // BREAKS SSR - signal() is a hook!
+  return <div>{count}</div>;
+}
+```
+
+**✅ SOLUTION 1: Use useState for Island-Local State (Recommended)**
+```typescript
+import { useState } from "preact/hooks";
+
+export default function MyIsland({ initialValue = 0 }) {
+  // ✅ useState is SSR-safe in islands
+  const [count, setCount] = useState(initialValue);
+  
+  return (
+    <div>
+      <p>{count}</p>
+      <button onClick={() => setCount(count + 1)}>+1</button>
+    </div>
+  );
+}
+```
+
+**✅ SOLUTION 2: Define Signals Globally (For Shared State)**
+```typescript
+// lib/store.ts - Define once at module level
+import { signal } from "@preact/signals";
+
+export const theme = signal<'light' | 'dark'>('light');
+
+// islands/ThemeToggle.tsx - Use useState, sync with global signal
+import { useState, useEffect } from "preact/hooks";
+import { theme, setTheme } from "@/lib/store.ts";
+
+export default function ThemeToggle() {
+  const [isDark, setIsDark] = useState(false);
+  
+  // Sync with global signal on client
+  useEffect(() => {
+    setIsDark(theme.value === 'dark');
+    return theme.subscribe(t => setIsDark(t === 'dark'));
+  }, []);
+  
+  const toggle = () => {
+    setTheme(isDark ? 'light' : 'dark');
+    setIsDark(!isDark);
+  };
+  
+  return <button onClick={toggle}>{isDark ? '🌙' : '☀️'}</button>;
+}
+```
+
+**❌ WRONG - Accessing global signal .value in render body**:
+```typescript
+import { theme } from "@/lib/store.ts";
+
+export default function MyIsland() {
+  // ❌ ERROR: Accessing .value during SSR
+  const isDark = theme.value; // DON'T DO THIS
+  
+  return <div>{isDark ? 'dark' : 'light'}</div>; // WILL BREAK SSR
+}
+```
+
+**Key Rules for Signals in Fresh 2**:
+1. **Never call `signal()` inside islands** - use `useState` instead
+2. **Define global signals at module level** - in separate store files
+3. **Sync global signals via useState + useEffect** - for islands that need them
+4. **Access .value only in JSX or event handlers** - not in render body
+5. **Use useState for island-local state** - it's SSR-safe
+4. **Never access .value in render body**: Before return statement
+5. **Don't mix useState with signals**: Use signals only
 
 ---
 
@@ -316,9 +420,15 @@ import { Modal } from "@/components/design-system/Modal.tsx";
 ✅ **Server-render first** - Use routes, add islands only when needed
 ✅ **Reference API spec** - Match backend data structures
 ✅ **Signals for state** - Not useState (Fresh/Preact, not React)
+✅ **Fresh 2 handlers** - Single `(ctx)` argument, access `ctx.req` for request
+✅ **Signals in JSX** - Pass directly `{signal}`, access `.value` only in expressions
+✅ **Guard browser APIs** - Use `IS_BROWSER` for localStorage/sessionStorage
 ✅ **Accessibility** - ARIA labels, semantic HTML, keyboard nav
 
 ❌ **Don't use React hooks** - Use Preact Signals
+❌ **Don't use old handlers** - `(req, ctx)` is Fresh 1, use `(ctx)` for Fresh 2
+❌ **Don't access signal.value in render** - Causes SSR errors, use in JSX instead
+❌ **Don't mix useState with signals** - Anti-pattern, use signals only
 ❌ **Don't make everything an island** - Server-render when possible
 ❌ **Don't duplicate API client** - Reuse api.ts
 ❌ **Don't skip design system** - Use existing components

@@ -3,7 +3,7 @@
  * Interactive examples of all design system components
  */
 
-import { Head } from '$fresh/runtime.ts';
+import { Head } from 'fresh/runtime';
 import { ContentContainer } from '../components/common/index.ts';
 import DesignSystemShowcase from '../islands/DesignSystemShowcase.tsx';
 

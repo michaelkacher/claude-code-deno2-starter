@@ -5,7 +5,7 @@
  * REFACTORED: Uses UserManagementService and withErrorHandler pattern
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { createLogger } from "../../../../../shared/lib/logger.ts";
 import { UserManagementService } from "../../../../../shared/services/index.ts";
 import {
@@ -18,7 +18,8 @@ import {
 const logger = createLogger('AdminListUsersAPI');
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
+    const req = ctx.req;
     // Require admin access (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 

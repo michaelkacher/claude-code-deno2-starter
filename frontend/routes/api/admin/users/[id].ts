@@ -5,7 +5,7 @@
  * REFACTORED: Uses UserManagementService and withErrorHandler pattern
  */
 
-import { Handlers } from "$fresh/server.ts";
+import { Handlers } from "fresh";
 import { UserManagementService } from "../../../../../shared/services/index.ts";
 import { BadRequestError } from "../../../../lib/errors.ts";
 import {
@@ -16,7 +16,7 @@ import {
 } from "../../../../lib/fresh-helpers.ts";
 
 export const handler: Handlers<unknown, AppState> = {
-  GET: withErrorHandler(async (_req, ctx) => {
+  GET: withErrorHandler(async (ctx) => {
     // Require admin access (throws AuthorizationError if not admin)
     requireAdmin(ctx);
 
