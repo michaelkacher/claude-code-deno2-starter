@@ -3,7 +3,7 @@
   "lock": false,
   "tasks": {
     "check": "deno fmt --check && deno lint && deno check **/*.ts && deno check **/*.tsx",
-    "dev": "deno run -A npm:vite",
+    "dev": "deno run -A --unstable-kv npm:vite",
     "build": "deno run -A npm:vite build",
     "preview": "deno run -A npm:vite preview",
     "update": "deno run -A -r jsr:@fresh/update",
@@ -43,6 +43,7 @@
     "@std/path": "jsr:@std/path@^1.0.0",
     "@std/http": "jsr:@std/http@^1.0.0",
     "@std/encoding": "jsr:@std/encoding@^1.0.0",
+    "bcryptjs": "npm:bcryptjs@^2.4.3",
     "zod": "npm:zod@^3.24.1"
   },
   "compilerOptions": {

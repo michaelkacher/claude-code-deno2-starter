@@ -39,6 +39,15 @@ export const handler: Handlers<unknown, AppState> = {
       path: "/",
     });
 
+    // Also set auth_token cookie for server-side middleware (15 minutes expiry)
+    setCookie(headers, "auth_token", loginResult.accessToken, {
+      httpOnly: false, // Allow client-side access for API calls
+      secure: Deno.env.get("DENO_ENV") === "production",
+      sameSite: "Lax",
+      maxAge: 15 * 60, // 15 minutes
+      path: "/",
+    });
+
     // Return access token in response
     return new Response(
       JSON.stringify({

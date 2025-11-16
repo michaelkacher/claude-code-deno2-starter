@@ -1,27 +1,28 @@
 /**
- * Seed Script - Test User for Authentication
- * Creates a test user for login testing
+ * Seed Script - Admin User for Authentication
+ * Creates an admin user for login testing
  */
 
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+import { hashPassword } from "../shared/lib/password.ts";
 
 const kv = await Deno.openKv('./data/local.db');
 
-// Create test user
+// Create admin user
 const userId = crypto.randomUUID();
-const email = 'test@example.com';
-const password = 'password123';
+const email = 'admin@dev.local';
+const password = 'admin123';
 
-// Hash password using bcrypt
+// Hash password using PBKDF2
 console.log('🔐 Hashing password...');
-const hashedPassword = await bcrypt.hash(password);
+const hashedPassword = await hashPassword(password);
 
 const user = {
   id: userId,
   email,
   password: hashedPassword,
-  name: 'Test User',
-  role: 'user',
+  name: 'Admin User',
+  role: 'admin',
+  emailVerified: true,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -34,12 +35,13 @@ const result = await kv
   .commit();
 
 if (result.ok) {
-  console.log('✅ Test user created successfully!');
+  console.log('✅ Admin user created successfully!');
   console.log('📧 Email:', email);
   console.log('🔑 Password:', password);
   console.log('👤 User ID:', userId);
+  console.log('👑 Role: admin');
 } else {
-  console.error('❌ Failed to create test user');
+  console.error('❌ Failed to create admin user');
 }
 
 kv.close();

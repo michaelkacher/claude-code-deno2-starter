@@ -7,4 +7,16 @@ export default defineConfig({
     fresh(),
     tailwindcss(),
   ],
+  resolve: {
+    alias: {
+      "preact/debug": "preact/debug",
+      "preact/jsx-runtime": "preact/jsx-runtime",
+      "preact/jsx-dev-runtime": "preact/jsx-dev-runtime",
+      "preact/hooks": "preact/hooks",
+      "preact": "preact",
+    },
+  },
+  ssr: {
+    noExternal: ["preact", "@preact/signals", "@preact/signals-core"],
+  },
 });

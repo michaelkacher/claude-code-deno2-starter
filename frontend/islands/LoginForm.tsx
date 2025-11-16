@@ -70,11 +70,12 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         });
         setAccessToken(data.accessToken);
 
-        // Also set access token in cookie for server-side auth check (15 minutes expiry)
-        const expiryDate = new Date();
-        expiryDate.setMinutes(expiryDate.getMinutes() + 15);
-        document.cookie = `auth_token=${data.accessToken}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
-
+        // Set auth_token cookie client-side (server Set-Cookie doesn't work with fetch)
+        // The cookie expires in 15 minutes to match the access token lifetime
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+        document.cookie = `auth_token=${data.accessToken}; path=/; expires=${expiresAt.toUTCString()}; SameSite=Lax`;
+        
         // Redirect to intended page or home
         window.location.href = redirectTo;
       }
