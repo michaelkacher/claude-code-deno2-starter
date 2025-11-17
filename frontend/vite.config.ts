@@ -4,19 +4,15 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [
-    fresh(),
+    fresh({
+      // Fresh plugin should handle WebSocket routes during dev
+      dev: true,
+    }),
     tailwindcss(),
   ],
-  resolve: {
-    alias: {
-      "preact/debug": "preact/debug",
-      "preact/jsx-runtime": "preact/jsx-runtime",
-      "preact/jsx-dev-runtime": "preact/jsx-dev-runtime",
-      "preact/hooks": "preact/hooks",
-      "preact": "preact",
+  server: {
+    hmr: {
+      clientPort: 5173,
     },
-  },
-  ssr: {
-    noExternal: ["preact", "@preact/signals", "@preact/signals-core"],
   },
 });

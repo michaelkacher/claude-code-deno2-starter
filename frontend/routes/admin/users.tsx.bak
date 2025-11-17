@@ -1,26 +1,30 @@
-﻿/**
+/**
  * Admin Users Page
  * Displays all registered users with management capabilities
  */
 
-import { page } from "fresh";
+import { Handlers, PageProps } from 'fresh';
 import {
-  ContentContainer,
-  PageContainer,
-  PageHeader,
-  StatCard,
-} from "../../components/common/index.ts";
-import AdminHeaderActions from "../../islands/AdminHeaderActions.tsx";
-import AdminUserTable from "../../islands/AdminUserTable.tsx";
-import { handleApiFetch, hasRole, logError } from "../../lib/error-handler.ts";
-import { AuthorizationError, getUserMessage } from "../../lib/errors.ts";
-import { define } from "../../utils.ts";
+    ContentContainer,
+    PageContainer,
+    PageHeader,
+    StatCard
+} from '../../components/common/index.ts';
+import AdminHeaderActions from '../../islands/AdminHeaderActions.tsx';
+import AdminUserTable from '../../islands/AdminUserTable.tsx';
+import {
+    handleApiFetch,
+    hasRole,
+    logError,
+    withErrorHandler,
+} from '../../lib/error-handler.ts';
+import { AuthorizationError, getUserMessage } from '../../lib/errors.ts';
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "user";
+  role: 'admin' | 'user';
   emailVerified: boolean;
   emailVerifiedAt?: string;
   createdAt: string;
@@ -72,25 +76,22 @@ const defaultData: AdminUsersData = {
   currentUser: {} as User,
 };
 
-export const handler = define.handlers({
-  async GET(ctx) {
+export const handler: Handlers<AdminUsersData> = {
+  GET: withErrorHandler(async (ctx) => {
     const req = ctx.req;
     // User data is injected by middleware - guaranteed to be admin
     const currentUser = ctx.state.user as User;
     const token = ctx.state.token as string;
-
-    console.log(
-      "👤 [Admin Users] currentUser:",
-      currentUser ? `${currentUser.email} (${currentUser.role})` : "null"
-    );
+    
+    console.log("👤 [Admin Users] currentUser:", currentUser ? `${currentUser.email} (${currentUser.role})` : "null");
     console.log("🔑 [Admin Users] token:", token ? "present" : "null");
 
     // Double-check admin role
-    if (!hasRole(currentUser?.role, "admin")) {
-      // Throw AuthorizationError
+    if (!hasRole(currentUser?.role, 'admin')) {
+      // Throw AuthorizationError - withErrorHandler will handle redirect
       throw new AuthorizationError(
-        "Admin access required",
-        "admin",
+        'Admin access required',
+        'admin',
         currentUser?.role,
         {
           userId: currentUser?.id,
@@ -102,51 +103,55 @@ export const handler = define.handlers({
 
     // Get query params for filtering/pagination
     const url = new URL(req.url);
-    const queryPage = url.searchParams.get("page") || "1";
-    const limit = url.searchParams.get("limit") || "50";
-    const search = url.searchParams.get("search") || "";
-    const role = url.searchParams.get("role") || "";
-    const verified = url.searchParams.get("verified") || "";
+    const page = url.searchParams.get('page') || '1';
+    const limit = url.searchParams.get('limit') || '50';
+    const search = url.searchParams.get('search') || '';
+    const role = url.searchParams.get('role') || '';
+    const verified = url.searchParams.get('verified') || '';
 
     // Build query string
     const queryParams = new URLSearchParams({
-      page: queryPage,
+      page,
       limit,
       ...(search && { search }),
       ...(role && { role }),
       ...(verified && { verified }),
     });
 
-    // Fetch users list and stats in parallel
+    // Fetch users list and stats in parallel with error handling
+    // Convert relative URLs to absolute for server-side fetch
     const baseUrl = new URL(req.url).origin;
     const [usersResult, statsResult] = await Promise.all([
-      handleApiFetch<{
-        users: User[];
-        pagination: AdminUsersData["pagination"];
-      }>(`${baseUrl}/api/admin/users?${queryParams}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      handleApiFetch<AdminUsersData["stats"]>(`${baseUrl}/api/admin/stats`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
+      handleApiFetch<{ users: User[]; pagination: AdminUsersData['pagination'] }>(
+        `${baseUrl}/api/admin/users?${queryParams}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      ),
+      handleApiFetch<AdminUsersData['stats']>(
+        `${baseUrl}/api/admin/stats`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      ),
     ]);
 
     // Check for errors
     if (usersResult.error || statsResult.error) {
       const error = usersResult.error || statsResult.error;
-
+      
       if (error) {
         logError(error, {
-          context: "admin_users_page",
+          context: 'admin_users_page',
           usersError: usersResult.error?.message,
           statsError: statsResult.error?.message,
         });
 
-        return page({
+        return ctx.render({
           ...defaultData,
           currentUser,
           error: getUserMessage(error),
@@ -155,23 +160,21 @@ export const handler = define.handlers({
     }
 
     // Success - return data
-    return page({
+    return ctx.render({
       users: usersResult.data?.users || [],
       pagination: usersResult.data?.pagination || defaultData.pagination,
       stats: statsResult.data || defaultData.stats,
       currentUser,
     });
-  },
-});
+  }),
+};
 
-export default define.page<AdminUsersData>(function AdminUsersPage({ data }) {
+export default function AdminUsersPage({ data }: PageProps<AdminUsersData>) {
   if (data.error) {
     return (
       <div class="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 dark:from-purple-900 dark:to-blue-900 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-md w-full">
-          <h1 class="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">
-            Error
-          </h1>
+          <h1 class="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Error</h1>
           <p class="text-gray-700 dark:text-gray-300 mb-6">{data.error}</p>
           <a
             href="/"
@@ -197,7 +200,10 @@ export default define.page<AdminUsersData>(function AdminUsersPage({ data }) {
       <ContentContainer>
         {/* Stats Dashboard */}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard label="Total Users" value={stats.totalUsers} />
+          <StatCard
+            label="Total Users"
+            value={stats.totalUsers}
+          />
           <StatCard
             label="Verified"
             value={stats.verifiedUsers}
@@ -227,4 +233,4 @@ export default define.page<AdminUsersData>(function AdminUsersPage({ data }) {
       </ContentContainer>
     </PageContainer>
   );
-});
+}

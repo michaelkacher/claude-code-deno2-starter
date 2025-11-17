@@ -7,7 +7,7 @@
 
 import '@std/dotenv/load';
 
-const API_URL = Deno.env.get('API_URL') || 'http://localhost:3000/api';
+const API_URL = Deno.env.get('API_URL') || 'http://localhost:5173/api';
 
 // Sample user ID (replace with an actual user ID from your system)
 const TEST_USER_ID = 'test-user-id';
@@ -108,7 +108,7 @@ async function main() {
   if (successCount > 0) {
     console.log('Test the notification bell in the frontend:');
     console.log('1. Start the dev server: deno task dev');
-    console.log('2. Open http://localhost:3000 in your browser');
+    console.log('2. Open http://localhost:5173 in your browser');
     console.log('3. Click the bell icon in the navigation to see notifications');
     console.log('\nNote: Make sure you have a valid access token in localStorage');
   }

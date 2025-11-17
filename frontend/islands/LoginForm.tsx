@@ -77,7 +77,11 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         document.cookie = `auth_token=${data.accessToken}; path=/; expires=${expiresAt.toUTCString()}; SameSite=Lax`;
         
         // Redirect to intended page or home
-        window.location.href = redirectTo;
+        // Use setTimeout to ensure cookie is set before navigation
+        console.log('[LoginForm] Redirecting to:', redirectTo);
+        setTimeout(() => {
+          window.location.href = redirectTo;
+        }, 100);
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Login failed';

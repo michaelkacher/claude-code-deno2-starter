@@ -23,11 +23,13 @@ import {
     addNotification,
     clearAuth,
     isAuthenticated,
+    isPendingUpdate,
     markNotificationAsRead,
     notifications,
+    removePendingUpdate,
     setUnreadCount,
     setWsConnected,
-    wsConnection,
+    wsConnection
 } from './store.ts';
 
 // ============================================================================
@@ -183,7 +185,9 @@ export async function connectWebSocket() {
 
   // Check if token is expiring soon and refresh if needed
   const currentToken = accessToken.value;
-  if (isTokenExpiringSoon(currentToken)) {
+  // Temporarily disable token refresh check to debug WebSocket connection
+  const skipRefresh = true;
+  if (!skipRefresh && isTokenExpiringSoon(currentToken)) {
     console.log('[WebSocket] Token expiring soon, refreshing before connection...');
     const refreshed = await refreshToken();
     if (!refreshed) {
@@ -215,9 +219,13 @@ export async function connectWebSocket() {
 
   try {
     const token = accessToken.value;
-    const wsUrl = window.location.origin
-      .replace('http://', 'ws://')
-      .replace('https://', 'wss://');
+    
+    // WebSocket URL - use same origin, Vite will proxy /api/notifications/ws to Fresh on port 8000
+    const wsUrl = window.location.origin.replace('http://', 'ws://').replace('https://', 'wss://');
+
+    console.log('[WebSocket] Connecting to:', `${wsUrl}/api/notifications/ws`);
+    console.log('[WebSocket] Token present:', !!token);
+    console.log('[WebSocket] Token length:', token?.length || 0);
 
     const ws = new WebSocket(`${wsUrl}/api/notifications/ws?token=${encodeURIComponent(token || '')}`);
     authSent = false;
@@ -225,6 +233,7 @@ export async function connectWebSocket() {
     ws.onopen = () => {
       console.log('[WebSocket] Connection opened, waiting for auth prompt...');
       console.log('[WebSocket] readyState:', ws.readyState);
+      console.log('[WebSocket] URL:', ws.url);
     };
 
     ws.onmessage = (event) => {
@@ -259,8 +268,12 @@ export async function connectWebSocket() {
       }
     };
 
-    ws.onclose = () => {
-      console.log('[WebSocket] Disconnected');
+    ws.onclose = (event) => {
+      console.log('[WebSocket] Disconnected', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean
+      });
       setWsConnected(false);
       connectionState = ConnectionState.DISCONNECTED;
 
@@ -319,11 +332,13 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
           break;
         }
         console.log('[WebSocket] Auth required, sending token...');
+        console.log('[WebSocket] Token for auth:', token ? `${token.substring(0, 20)}...` : 'null');
         authSent = true;
         ws.send(JSON.stringify({
           type: 'auth',
           token: token,
         }));
+        console.log('[WebSocket] Auth message sent');
         break;
 
       case 'connected':
@@ -391,23 +406,38 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
 
       case 'notification_read':
         if (data.notificationId) {
-          markNotificationAsRead(data.notificationId);
+          // Skip if we already optimistically updated this
+          if (!isPendingUpdate(`read:${data.notificationId}`)) {
+            markNotificationAsRead(data.notificationId);
+          } else {
+            removePendingUpdate(`read:${data.notificationId}`);
+          }
         }
         break;
 
       case 'notification_deleted':
         if (data.notificationId) {
-          notifications.value = notifications.value.filter(n => n.id !== data.notificationId);
-          // Recalculate unread count
-          const unread = notifications.value.filter(n => !n.read).length;
-          setUnreadCount(unread);
+          // Skip if we already optimistically updated this
+          if (!isPendingUpdate(`delete:${data.notificationId}`)) {
+            notifications.value = notifications.value.filter(n => n.id !== data.notificationId);
+            // Recalculate unread count
+            const unread = notifications.value.filter(n => !n.read).length;
+            setUnreadCount(unread);
+          } else {
+            removePendingUpdate(`delete:${data.notificationId}`);
+          }
         }
         break;
 
       case 'notifications_cleared':
         // All notifications marked as read
-        notifications.value = notifications.value.map(n => ({ ...n, read: true }));
-        setUnreadCount(0);
+        // Skip if we already optimistically updated this
+        if (!isPendingUpdate('clear:all')) {
+          notifications.value = notifications.value.map(n => ({ ...n, read: true }));
+          setUnreadCount(0);
+        } else {
+          removePendingUpdate('clear:all');
+        }
         break;
 
       case 'ping':

@@ -8,7 +8,7 @@
  * - Theme (light/dark mode)
  */
 
-import { computed, signal } from '@preact/signals';
+import { batch, computed, signal } from '@preact/signals';
 import { IS_BROWSER } from 'fresh/runtime';
 
 // ============================================================================
@@ -160,6 +160,34 @@ export const unreadCount = signal<number>(
 );
 
 /**
+ * Track pending optimistic updates to prevent WebSocket echo
+ */
+const pendingUpdates = new Set<string>();
+
+/**
+ * Add a pending update (to prevent WebSocket echo)
+ */
+export function addPendingUpdate(id: string) {
+  pendingUpdates.add(id);
+  // Auto-remove after 2 seconds to prevent stale entries
+  setTimeout(() => pendingUpdates.delete(id), 2000);
+}
+
+/**
+ * Check if an update is pending
+ */
+export function isPendingUpdate(id: string): boolean {
+  return pendingUpdates.has(id);
+}
+
+/**
+ * Remove a pending update
+ */
+export function removePendingUpdate(id: string) {
+  pendingUpdates.delete(id);
+}
+
+/**
  * Update unread count and persist to sessionStorage
  */
 export function setUnreadCount(count: number) {
@@ -195,30 +223,64 @@ export function addNotification(notification: Notification) {
  * Mark notification as read
  */
 export function markNotificationAsRead(notificationId: string) {
-  notifications.value = notifications.value.map(n =>
-    n.id === notificationId ? { ...n, read: true } : n
-  );
-  setUnreadCount(Math.max(0, unreadCount.value - 1));
+  const currentNotifications = notifications.value;
+  const targetIndex = currentNotifications.findIndex(n => n.id === notificationId);
+  
+  // Only update if notification exists and is unread
+  if (targetIndex === -1 || currentNotifications[targetIndex].read) {
+    return;
+  }
+  
+  // Batch updates to trigger only one re-render
+  batch(() => {
+    // Create new array with only the changed notification being a new object
+    const newNotifications = [...currentNotifications];
+    newNotifications[targetIndex] = { ...currentNotifications[targetIndex], read: true };
+    
+    notifications.value = newNotifications;
+    setUnreadCount(Math.max(0, unreadCount.value - 1));
+  });
 }
 
 /**
  * Mark all notifications as read
  */
 export function markAllNotificationsAsRead() {
-  notifications.value = notifications.value.map(n => ({ ...n, read: true }));
-  setUnreadCount(0);
+  const currentNotifications = notifications.value;
+  
+  // Check if there are any unread notifications
+  const hasUnread = currentNotifications.some(n => !n.read);
+  if (!hasUnread) {
+    return; // Nothing to do
+  }
+  
+  // Batch updates to trigger only one re-render
+  batch(() => {
+    notifications.value = currentNotifications.map(n => ({ ...n, read: true }));
+    setUnreadCount(0);
+  });
 }
 
 /**
  * Remove notification from list
  */
 export function removeNotification(notificationId: string) {
-  const notification = notifications.value.find(n => n.id === notificationId);
-  notifications.value = notifications.value.filter(n => n.id !== notificationId);
-
-  if (notification && !notification.read) {
-    setUnreadCount(Math.max(0, unreadCount.value - 1));
+  const currentNotifications = notifications.value;
+  const notification = currentNotifications.find(n => n.id === notificationId);
+  
+  // Only update if notification exists
+  if (!notification) {
+    return;
   }
+  
+  // Batch updates to trigger only one re-render
+  batch(() => {
+    notifications.value = currentNotifications.filter(n => n.id !== notificationId);
+
+    if (!notification.read) {
+      setUnreadCount(Math.max(0, unreadCount.value - 1));
+    }
+  });
 }
 
 // ============================================================================

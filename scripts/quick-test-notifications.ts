@@ -7,7 +7,7 @@
  * which ensures WebSocket broadcasts work properly.
  */
 
-const DEV_SERVER_URL = 'http://localhost:3000';
+const DEV_SERVER_URL = 'http://localhost:5173';
 const TEST_USER_EMAIL = 'admin@dev.local';
 const TEST_USER_PASSWORD = 'admin123';
 

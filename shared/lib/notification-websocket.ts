@@ -201,17 +201,25 @@ export function setupWebSocketConnection(deps?: WebSocketDependencies) {
       
       logger.debug('Connection opened, waiting for auth');
       
+      // Log connection details
+      logger.info('New WebSocket connection', {
+        totalConnections: totalConnections + 1, // +1 because we haven't added it yet
+        timestamp: new Date().toISOString(),
+      });
+      
       // Request authentication
       sendMessage(ws, {
         type: 'auth_required',
         message: 'Please send authentication token',
       });
+      
+      logger.debug('Auth required message sent');
     },
 
     async onMessage(event: MessageEvent, ws: WebSocket) {
       try {
         const data = JSON.parse(event.data as string);
-        logger.debug('Received message', { type: data.type, authenticated });
+        logger.debug('Received message', { type: data.type, authenticated, dataKeys: Object.keys(data) });
 
         // Handle authentication message
         if (data.type === 'auth') {
@@ -222,7 +230,11 @@ export function setupWebSocketConnection(deps?: WebSocketDependencies) {
           }
 
           try {
-            logger.debug('Verifying token', { tokenLength: data.token?.length });
+            logger.debug('Verifying token', { 
+              tokenLength: data.token?.length,
+              tokenPresent: !!data.token,
+              tokenStart: data.token ? data.token.substring(0, 20) : 'none',
+            });
             const payload = await dependencies.verifyToken(data.token);
             logger.debug('Token verified', { payload });
             const authenticatedUserId = payload['sub'] as string;
