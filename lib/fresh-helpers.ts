@@ -8,6 +8,7 @@ import type { FreshContext } from "fresh";
 import { ZodError } from "zod";
 import { ErrorCode, ErrorMessages, ErrorStatusCodes } from '@/lib/error-codes.ts';
 import { createLogger } from '@/lib/logger.ts';
+import { AppError, ValidationError } from '@/lib/errors.ts';
 
 const logger = createLogger('APIHandler');
 
