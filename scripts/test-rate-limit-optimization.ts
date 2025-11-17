@@ -7,8 +7,8 @@
  *   deno run --allow-all --unstable-kv scripts/test-rate-limit-optimization.ts
  */
 
-import { getKv } from '../shared/lib/kv.ts';
-import { createRateLimiter } from '../shared/lib/rate-limit.ts';
+import { getKv } from '@/lib/kv.ts';
+import { createRateLimiter } from '@/lib/rate-limit.ts';
 
 console.log('🧪 Testing Rate Limit Optimization\n');
 

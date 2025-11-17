@@ -5,7 +5,7 @@
  * It creates multiple jobs and measures the time to list them by name.
  */
 
-import { JobQueue } from '../shared/lib/queue.ts';
+import { JobQueue } from '@/lib/queue.ts';
 
 // Color codes for terminal output
 const colors = {

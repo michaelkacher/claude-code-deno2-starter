@@ -6,7 +6,7 @@
  */
 
 import '@std/dotenv/load';
-import { getKv } from '../shared/lib/kv.ts';
+import { getKv } from '@/lib/kv.ts';
 
 const email = Deno.args[0];
 

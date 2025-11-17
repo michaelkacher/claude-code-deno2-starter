@@ -4,7 +4,7 @@
  * Useful during development when you hit rate limits
  */
 
-import { getKv } from '../shared/lib/kv.ts';
+import { getKv } from '@/lib/kv.ts';
 
 console.log('🧹 Clearing rate limiter data from Deno KV...');
 
