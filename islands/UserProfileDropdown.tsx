@@ -9,7 +9,6 @@ import { useComputed, useSignal } from '@preact/signals';
 import { IS_BROWSER } from 'fresh/runtime';
 import { useEffect, useRef } from 'preact/hooks';
 import { isTokenExpired } from '../lib/jwt.ts';
-import { TokenStorage } from '../lib/token-storage.ts';
 import {
   accessToken,
   clearAuth,
@@ -21,6 +20,7 @@ import {
   unreadCount,
   user
 } from '../lib/store.ts';
+import { TokenStorage } from '../lib/token-storage.ts';
 import { cleanupWebSocket } from '../lib/websocket.ts';
 
 interface UserProfileDropdownProps {
