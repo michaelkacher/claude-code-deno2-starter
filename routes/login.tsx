@@ -70,5 +70,3 @@ export default function Login({ data }: PageProps<LoginData>) {
     </>
   );
 }
-  );
-}
