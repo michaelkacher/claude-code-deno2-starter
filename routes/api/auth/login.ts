@@ -16,9 +16,11 @@ const LoginSchema = z.object({
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {
+    console.log('[Login API] Received login request');
     const req = ctx.req;
     // Parse and validate request body (Zod errors automatically handled)
     const { email, password } = await parseJsonBody(req, LoginSchema);
+    console.log('[Login API] Login attempt for:', email);
 
     const authService = new AuthService();
 
