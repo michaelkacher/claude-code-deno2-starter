@@ -200,7 +200,17 @@ export class ApiClient {
         body: body ? JSON.stringify(body) : undefined,
       });
 
-      const data = await response.json() as ApiResponse<T>;
+      let data: ApiResponse<T>;
+      try {
+        data = await response.json() as ApiResponse<T>;
+      } catch (jsonError) {
+        console.error('[ApiClient] JSON parse error:', jsonError);
+        console.error('[ApiClient] Response status:', response.status);
+        console.error('[ApiClient] Response headers:', Object.fromEntries(response.headers.entries()));
+        const text = await response.text();
+        console.error('[ApiClient] Response text (first 500 chars):', text.substring(0, 500));
+        throw new Error(`Failed to parse response as JSON: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}`);
+      }
 
       if (!response.ok && !skipErrorHandling) {
         this.handleError(response, data);
@@ -210,6 +220,7 @@ export class ApiClient {
     } catch (error) {
       // Network errors
       if (error instanceof TypeError) {
+        console.error('[ApiClient] TypeError caught:', error);
         throw new Error('Network error. Please try again.');
       }
       throw error;
