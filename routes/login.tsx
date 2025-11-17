@@ -4,10 +4,21 @@
  */
 
 import { type PageProps } from "fresh";
+import { defineRoute } from "fresh";
 import LoginForm from "../islands/LoginForm.tsx";
 
-export default function Login(props: PageProps) {
-  const url = new URL(props.url);
+export default defineRoute((req, ctx) => {
+  // If user is already authenticated, redirect to home
+  if (ctx.state.user) {
+    const url = new URL(req.url);
+    const redirectTo = url.searchParams.get('redirect') || '/';
+    return new Response(null, {
+      status: 302,
+      headers: { Location: redirectTo },
+    });
+  }
+
+  const url = new URL(req.url);
   const redirectTo = url.searchParams.get('redirect') || '/';
   
   return (

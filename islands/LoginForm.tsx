@@ -83,12 +83,12 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         console.log('[LoginForm] Access token stored in localStorage');
         
         // Redirect to intended page or home
-        // Wait longer to ensure cookie is fully set
+        // Use window.location.replace for a full page reload to ensure cookies are sent
         console.log('[LoginForm] Redirecting to:', redirectTo);
-        setTimeout(() => {
-          console.log('[LoginForm] Executing redirect, cookies:', document.cookie);
-          window.location.href = redirectTo;
-        }, 500);
+        
+        // Use replace instead of href to avoid adding to history
+        // Also ensures a full page reload so cookies are sent with the request
+        window.location.replace(redirectTo);
       }
     } catch (err) {
       console.error('[LoginForm] Login error:', err);
