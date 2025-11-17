@@ -68,7 +68,10 @@
     "tailwindcss/": "npm:tailwindcss@^4.0.0/",
     "tailwindcss/plugin": "npm:tailwindcss@^4.0.0/plugin.js",
     "bcryptjs": "npm:bcryptjs@^2.4.3",
-    "zod": "npm:zod@^3.24.1"
+    "zod": "npm:zod@^3.24.1",
+    "@aws-sdk/client-s3": "npm:@aws-sdk/client-s3@^3.0.0",
+    "@aws-sdk/lib-storage": "npm:@aws-sdk/lib-storage@^3.0.0",
+    "@aws-sdk/s3-request-presigner": "npm:@aws-sdk/s3-request-presigner@^3.0.0"
   },
   "compilerOptions": {
     "jsx": "precompile",
