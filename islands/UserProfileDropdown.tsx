@@ -84,8 +84,12 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
     // Clear global state
     clearAuth();
 
-    // Redirect to login with reason
-    window.location.href = '/login?reason=expired';
+    // Dispatch session expired event instead of direct redirect
+    // This allows centralized handling in store.ts
+    const event = new CustomEvent('auth:session-expired', {
+      detail: { reason: 'token_expired' }
+    });
+    window.dispatchEvent(event);
   };
 
   // Check authentication status and setup periodic token check
@@ -229,29 +233,31 @@ export default function UserProfileDropdown({ initialEmail, initialRole }: UserP
   const handleLogout = async () => {
     if (!IS_BROWSER) return;
 
-    // Clean up WebSocket connections immediately
+    console.log('🚪 [Logout] Starting logout process...');
+
+    // Clean up WebSocket connections immediately and synchronously
     cleanupWebSocket();
 
-    try {
-      await fetch(`/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-
-    // Clear auth data
-    TokenStorage.clearAuth();
-
-    // Clear cookie
-    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
-
-    // Clear global state
+    // Clear all auth state synchronously (includes setting isLoggingOut flag)
+    // This also clears cookies and localStorage
     clearAuth();
+    
+    console.log('🧹 [Logout] Auth state cleared');
 
-    // Redirect to home
-    window.location.href = '/';
+    // Call logout API in background (don't wait for it)
+    // The important thing is client state is already cleared
+    fetch(`/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    }).catch((error) => {
+      // Ignore errors - we're logging out anyway
+      console.warn('[Logout] API call failed (non-critical):', error);
+    });
+
+    // Force full page reload to home page
+    // This ensures all modules are reloaded with clean state
+    console.log('🔄 [Logout] Redirecting to home...');
+    window.location.replace('/');
   };
 
   // Format time ago

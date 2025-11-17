@@ -71,11 +71,19 @@ export async function refreshAccessToken() {
 
     if (!response.ok) {
       console.error('Token refresh failed:', response.status);
-      // If refresh fails, redirect to login
+      
+      // If refresh fails due to authentication issues
       if (response.status === 401 || response.status === 403) {
+        // Clear invalid tokens
         localStorage.removeItem('access_token');
         document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        window.location.href = '/login?reason=session_expired';
+        
+        // Dispatch custom event instead of direct redirect
+        // This allows other parts of the app to handle the logout gracefully
+        const event = new CustomEvent('auth:session-expired', {
+          detail: { reason: 'token_refresh_failed' }
+        });
+        window.dispatchEvent(event);
       }
 
       refreshInProgress = false;
@@ -173,7 +181,8 @@ export function setupAutoRefresh() {
         const tokenAge = getTokenAge(token);
         // If token is older than threshold, refresh immediately
         // This catches cases where the tab was asleep/throttled
-        if (tokenAge > TOKEN_REFRESH_CHECK_MS) {
+        // BUT: Don't refresh if token is very fresh (< 1 minute) to avoid refresh loops after login
+        if (tokenAge > TOKEN_REFRESH_CHECK_MS && tokenAge > 60000) {
           console.debug('Token age:', Math.floor(tokenAge / 60000), 'minutes - refreshing on visibility change');
           refreshAccessToken();
         }
@@ -188,7 +197,8 @@ export function setupAutoRefresh() {
     if (token) {
       const tokenAge = getTokenAge(token);
       // If token is older than threshold, refresh immediately
-      if (tokenAge > TOKEN_REFRESH_CHECK_MS) {
+      // BUT: Don't refresh if token is very fresh (< 1 minute) to avoid refresh loops after login
+      if (tokenAge > TOKEN_REFRESH_CHECK_MS && tokenAge > 60000) {
         console.debug('Token age:', Math.floor(tokenAge / 60000), 'minutes - refreshing on window focus');
         refreshAccessToken();
       }

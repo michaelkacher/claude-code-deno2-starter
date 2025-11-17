@@ -23,6 +23,8 @@ import {
     addNotification,
     clearAuth,
     isAuthenticated,
+    isLoggingIn,
+    isLoggingOut,
     isPendingUpdate,
     markNotificationAsRead,
     notifications,
@@ -169,6 +171,13 @@ async function refreshToken(): Promise<boolean> {
  */
 export async function connectWebSocket() {
   if (!IS_BROWSER) return;
+
+  // CRITICAL: Don't connect if logout is in progress
+  if (isLoggingOut.value) {
+    console.log('[WebSocket] Logout in progress, skipping connection');
+    connectionState = ConnectionState.DISCONNECTED;
+    return;
+  }
 
   // Connection state guard: prevent concurrent connection attempts
   if (connectionState === ConnectionState.CONNECTING || connectionState === ConnectionState.RECONNECTING) {
@@ -371,8 +380,17 @@ function handleWebSocketMessage(event: MessageEvent, ws: WebSocket, token: strin
         setWsConnected(false);
         connectionState = ConnectionState.DISCONNECTED;
         cleanupWebSocket();
-        // Token may be expired, clear auth
-        clearAuth();
+        
+        // IMPORTANT: Don't clear auth during login/logout flows
+        // During login: WebSocket might connect with a brand new token that hasn't fully propagated
+        // During logout: We're already cleaning up auth state
+        // Only clear auth if we're in a stable authenticated state and auth genuinely failed
+        if (!isLoggingOut.value && !isLoggingIn.value) {
+          console.log('[WebSocket] Auth failed in stable state, clearing auth');
+          clearAuth();
+        } else {
+          console.log('[WebSocket] Auth failed during login/logout flow, skipping clearAuth');
+        }
         break;
 
       case 'unread_count':

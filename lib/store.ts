@@ -93,6 +93,16 @@ export const accessToken = signal<string | null>(
 export const isAuthenticated = computed(() => user.value !== null && accessToken.value !== null);
 
 /**
+ * Flag to indicate logout in progress (prevents WebSocket reconnection)
+ */
+export const isLoggingOut = signal<boolean>(false);
+
+/**
+ * Flag to indicate login in progress (prevents premature redirects)
+ */
+export const isLoggingIn = signal<boolean>(false);
+
+/**
  * Update user state and persist to localStorage
  */
 export function setUser(newUser: User | null) {
@@ -126,19 +136,34 @@ export function setAccessToken(token: string | null) {
 
 /**
  * Clear all authentication state
+ * This is called during logout to fully reset the user session
  */
 export function clearAuth() {
+  // Set logout flag to prevent WebSocket reconnection
+  isLoggingOut.value = true;
+  
+  // Clear signals
   user.value = null;
   accessToken.value = null;
 
   if (IS_BROWSER) {
+    // Clear all auth-related storage synchronously
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_role');
     sessionStorage.removeItem('wsInitialized');
     sessionStorage.removeItem('unreadCount');
     sessionStorage.removeItem('isConnected');
+    
+    // Clear cookies
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+    document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Strict';
   }
+  
+  // Reset logout flag after a brief delay (allows navigation to complete)
+  setTimeout(() => {
+    isLoggingOut.value = false;
+  }, 1000);
 }
 
 // ============================================================================
@@ -417,5 +442,44 @@ export function setTheme(newTheme: 'light' | 'dark') {
       document.documentElement.classList.remove('dark');
     }
   }
+}
+
+// ============================================================================
+// Global Auth Event Handlers (Event-Driven Architecture)
+// ============================================================================
+
+/**
+ * Setup global auth event listeners
+ * This handles session expiration events in a centralized, clean way
+ */
+if (IS_BROWSER) {
+  // Listen for session expiration events from token refresh or other sources
+  window.addEventListener('auth:session-expired', (event: Event) => {
+    const customEvent = event as CustomEvent;
+    const { reason } = customEvent.detail || {};
+    
+    console.log('🔒 [Auth Event] Session expired:', reason);
+    
+    // Only redirect if not already on an auth page
+    const currentPath = window.location.pathname;
+    const isAuthPage = currentPath === '/login' || currentPath === '/signup';
+    
+    if (!isAuthPage) {
+      // Clear all auth state
+      clearAuth();
+      
+      // Redirect to login with reason
+      const redirectUrl = `/login?reason=${reason || 'session_expired'}`;
+      console.log('[Auth Event] Redirecting to:', redirectUrl);
+      window.location.href = redirectUrl;
+    }
+  });
+  
+  // Listen for successful login events (for cleanup, analytics, etc.)
+  window.addEventListener('auth:login-success', (event: Event) => {
+    const customEvent = event as CustomEvent;
+    console.log('✅ [Auth Event] Login successful:', customEvent.detail);
+    // Future: Could trigger analytics, reset error states, etc.
+  });
 }
 
