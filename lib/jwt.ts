@@ -78,3 +78,28 @@ export async function verifyToken(token: string) {
     throw new Error('Invalid token');
   }
 }
+
+/**
+ * Check if a JWT token is expired (client-side utility)
+ * @param token - The JWT token to check
+ * @returns true if expired or invalid, false if valid
+ */
+export function isTokenExpired(token: string | null): boolean {
+  if (!token) return true;
+  
+  try {
+    // Decode JWT without verification (just to check expiry)
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    const exp = payload.exp;
+    
+    if (!exp) return true;
+    
+    // Check if token is expired (exp is in seconds, Date.now() is in milliseconds)
+    return Date.now() >= exp * 1000;
+  } catch {
+    return true;
+  }
+}
