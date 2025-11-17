@@ -4,7 +4,9 @@
  */
 
 import { Handlers } from "fresh";
+import { getCookie, deleteCookie } from "@std/http/cookie";
 import { AuthService } from '@/services/auth.service.ts';
+import { withErrorHandler, requireUser, type AppState } from '@/lib/fresh-helpers.ts';
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {
