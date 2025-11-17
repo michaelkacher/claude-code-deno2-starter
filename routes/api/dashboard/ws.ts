@@ -6,7 +6,7 @@
  */
 
 import { FreshContext } from "fresh";
-import { AITaskDashboardService } from '@/services/ai-task-dashboard.service.ts";
+import { AITaskDashboardService } from '';
 
 const dashboardService = new AITaskDashboardService();
 

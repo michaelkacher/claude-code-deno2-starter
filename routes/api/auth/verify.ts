@@ -4,14 +4,8 @@
  */
 
 import { Handlers } from "fresh";
-import { ErrorCode } from '@/lib/error-codes.ts";
-import { verifyToken } from '@/lib/jwt.ts";
-import { AuthenticationError } from "../../../lib/errors.ts";
-import {
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../lib/fresh-helpers.ts";
+import { ErrorCode } from '';
+import { verifyToken } from '';
 
 export const handler: Handlers<unknown, AppState> = {
   GET: withErrorHandler(async (ctx) => {

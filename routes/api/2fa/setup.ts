@@ -6,13 +6,7 @@
  */
 
 import { Handlers } from "fresh";
-import { TwoFactorService } from '@/services/index.ts";
-import {
-    requireUser,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../lib/fresh-helpers.ts";
+import { TwoFactorService } from '';
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {

@@ -4,13 +4,7 @@
  */
 
 import { Handlers } from 'fresh';
-import { NotificationRepository } from '@/repositories/index.ts";
-import {
-    requireUser,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../lib/fresh-helpers.ts";
+import { NotificationRepository } from '';
 
 export const handler: Handlers<unknown, AppState> = {
   GET: withErrorHandler(async (ctx) => {

@@ -7,14 +7,7 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { TwoFactorService } from '@/services/index.ts";
-import {
-    parseJsonBody,
-    requireUser,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../lib/fresh-helpers.ts";
+import { TwoFactorService } from '';
 
 const Disable2FASchema = z.object({
   password: z.string().min(1),

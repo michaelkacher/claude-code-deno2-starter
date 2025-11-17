@@ -5,12 +5,7 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { AuthService } from '@/services/index.ts";
-import {
-    parseJsonBody,
-    withErrorHandler,
-    type AppState,
-} from "../../../lib/fresh-helpers.ts";
+import { AuthService } from '';
 
 const ResendVerificationSchema = z.object({
   email: z.string().email(),

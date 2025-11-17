@@ -3,7 +3,7 @@
  * Creates an admin user for login testing
  */
 
-import { hashPassword } from '@/lib/password.ts";
+import { hashPassword } from '@/lib/password.ts';
 
 const kv = await Deno.openKv('./data/local.db');
 

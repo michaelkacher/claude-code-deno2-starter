@@ -7,15 +7,7 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { TwoFactorService } from '@/services/index.ts";
-import { ValidationError } from "../../../lib/errors.ts";
-import {
-    parseJsonBody,
-    requireUser,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../lib/fresh-helpers.ts";
+import { TwoFactorService } from '';
 
 const Verify2FASchema = z.object({
   code: z.string().min(6).max(8),

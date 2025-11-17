@@ -4,14 +4,7 @@
  */
 
 import { Handlers } from "fresh";
-import { UserRepository } from '@/repositories/index.ts";
-import { NotFoundError } from "../../../lib/errors.ts";
-import {
-    requireUser,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../lib/fresh-helpers.ts";
+import { UserRepository } from '';
 
 export const handler: Handlers<unknown, AppState> = {
   GET: withErrorHandler(async (ctx) => {

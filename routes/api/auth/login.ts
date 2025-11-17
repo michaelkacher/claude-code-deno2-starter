@@ -5,13 +5,7 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { AuthService } from '@/services/index.ts";
-import {
-    parseJsonBody,
-    setCookie,
-    withErrorHandler,
-    type AppState
-} from "../../../lib/fresh-helpers.ts";
+import { AuthService } from '';
 
 const LoginSchema = z.object({
   email: z.string().email(),
