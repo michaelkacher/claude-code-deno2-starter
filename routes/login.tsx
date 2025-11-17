@@ -3,41 +3,13 @@
  * Provides email/password login form
  */
 
-import type { Handlers, PageProps } from "fresh";
+import type { PageProps } from "fresh";
 import { Head } from "fresh/runtime";
 import LoginForm from "../islands/LoginForm.tsx";
 
-interface LoginData {
-  redirectTo: string;
-}
-
-interface AppState {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
-
-export const handler: Handlers<LoginData, AppState> = {
-  GET(ctx) {
-    // If user is already authenticated, redirect to home
-    if (ctx.state.user) {
-      const url = new URL(ctx.req.url);
-      const redirectTo = url.searchParams.get('redirect') || '/';
-      return Response.redirect(redirectTo, 302);
-    }
-
-    // Get redirect URL from query params
-    const url = new URL(ctx.req.url);
-    const redirectTo = url.searchParams.get('redirect') || '/';
-    
-    return ctx.render({ redirectTo });
-  },
-};
-
-export default function Login({ data }: PageProps<LoginData>) {
-  const { redirectTo } = data;
+export default function Login(props: PageProps) {
+  const url = new URL(props.url);
+  const redirectTo = url.searchParams.get('redirect') || '/';
   
   return (
     <>
