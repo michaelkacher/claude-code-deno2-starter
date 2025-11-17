@@ -50,8 +50,11 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
     }
 
     try {
+      console.log('[LoginForm] Starting login API call...');
       // Use API client for login
       const data = await authApi.login(email.value, password.value);
+      
+      console.log('[LoginForm] Login API succeeded, response:', { hasData: !!data, hasAccessToken: !!data?.accessToken, hasUser: !!data?.user });
 
       // Store user session using storage abstraction
       if (IS_BROWSER) {
@@ -88,6 +91,13 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         }, 500);
       }
     } catch (err) {
+      console.error('[LoginForm] Login error:', err);
+      console.error('[LoginForm] Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        type: typeof err,
+        value: err
+      });
       error.value = err instanceof Error ? err.message : 'Login failed';
       isLoading.value = false;
     }
