@@ -5,6 +5,8 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
+import { parseJsonBody, requireUser, successResponse, errorResponse, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
+import { setCookie } from 'jsr:@std/http/cookie';
 import { AuthService } from '@/services/auth.service.ts';
 
 const VerifyEmailSchema = z.object({
