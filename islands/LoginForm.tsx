@@ -70,18 +70,22 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         });
         setAccessToken(data.accessToken);
 
-        // Set auth_token cookie client-side (server Set-Cookie doesn't work with fetch)
+        // Set auth_token cookie client-side
         // The cookie expires in 15 minutes to match the access token lifetime
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + 15);
         document.cookie = `auth_token=${data.accessToken}; path=/; expires=${expiresAt.toUTCString()}; SameSite=Lax`;
         
+        console.log('[LoginForm] Cookie set, all cookies:', document.cookie);
+        console.log('[LoginForm] Access token stored in localStorage');
+        
         // Redirect to intended page or home
-        // Use setTimeout to ensure cookie is set before navigation
+        // Wait longer to ensure cookie is fully set
         console.log('[LoginForm] Redirecting to:', redirectTo);
         setTimeout(() => {
+          console.log('[LoginForm] Executing redirect, cookies:', document.cookie);
           window.location.href = redirectTo;
-        }, 100);
+        }, 500);
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Login failed';
