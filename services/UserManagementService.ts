@@ -9,7 +9,7 @@ import {
     AppError,
     AuthorizationError,
     NotFoundError,
-} from '';
+} from '@/lib/errors.ts';
 
 export interface UserListOptions {
   limit?: number;

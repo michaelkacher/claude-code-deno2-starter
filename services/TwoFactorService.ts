@@ -9,7 +9,7 @@ import {
   AppError,
   AuthenticationError,
   NotFoundError,
-} from '';
+} from '@/lib/errors.ts';
 
 export interface TwoFactorSetupResult {
   secret: string;

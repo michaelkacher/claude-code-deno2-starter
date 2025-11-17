@@ -17,7 +17,7 @@ import {
   AuthenticationError,
   ConflictError,
   NotFoundError,
-} from '';
+} from '@/lib/errors.ts';
 
 // ============================================================================
 // Types
