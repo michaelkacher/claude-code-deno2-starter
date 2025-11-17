@@ -4,8 +4,8 @@
  */
 
 import { Handlers } from "fresh";
-import { ErrorCode } from '';
-import { AuthService } from '';
+import { ErrorCode } from '@/constants/errors.ts';
+import { AuthService } from '@/services/auth.service.ts';
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {

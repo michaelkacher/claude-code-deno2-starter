@@ -6,8 +6,8 @@
 import { Handlers } from "fresh";
 import { z } from "zod";
 import { createLogger } from '@/lib/logger.ts';
-import { queue } from '';
-import { scheduler } from '';
+import { queue } from '@/lib/queue.ts';
+import { scheduler } from '@/lib/scheduler.ts';
 
 const CreateScheduleSchema = z.object({
   name: z.string().min(1).max(100),

@@ -6,8 +6,8 @@
  */
 
 import { Handlers } from "fresh";
-import { createLogger } from '';
-import { UserManagementService } from '';
+import { createLogger } from '@/lib/logger.ts';
+import { UserManagementService } from '@/services/UserManagementService.ts';
 
 const logger = createLogger('AdminListUsersAPI');
 

@@ -4,7 +4,7 @@
  */
 
 import { Handlers } from "fresh";
-import { NotificationRepository } from '';
+import { NotificationRepository } from '@/repositories/index.ts';
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {

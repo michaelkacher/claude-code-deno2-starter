@@ -4,7 +4,7 @@
  */
 
 import { Handlers } from "fresh";
-import { JobRepository } from '';
+import { JobRepository } from '@/repositories/index.ts';
 
 export const handler: Handlers<unknown, AppState> = {
   GET: withErrorHandler(async (ctx) => {

@@ -5,8 +5,8 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { JobStatus } from '';
-import { JobRepository } from '';
+import { JobStatus } from '@/types/jobs.types.ts';
+import { JobRepository } from '@/repositories/index.ts';
 
 const CreateJobSchema = z.object({
   name: z.string().min(1).max(100),

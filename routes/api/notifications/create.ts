@@ -5,8 +5,8 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { notifyUser } from '';
-import { NotificationRepository } from '';
+import { notifyUser } from '@/lib/notification-websocket.ts';
+import { NotificationRepository } from '@/repositories/index.ts';
 
 const CreateNotificationSchema = z.object({
   userId: z.string().min(1),

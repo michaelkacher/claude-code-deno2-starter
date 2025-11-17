@@ -5,7 +5,7 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { AuthService } from '';
+import { AuthService } from '@/services/auth.service.ts';
 
 const ResetPasswordSchema = z.object({
   token: z.string().uuid(),

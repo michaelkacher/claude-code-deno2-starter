@@ -6,7 +6,7 @@
  */
 
 import { Handlers } from "fresh";
-import { getKv } from '';
+import { getKv } from '@/lib/kv.ts';
 
 // Known model prefixes in the database
 const MODEL_PREFIXES = [

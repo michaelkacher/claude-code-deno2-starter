@@ -6,7 +6,7 @@
  */
 
 import { Handlers } from "fresh";
-import { TwoFactorService } from '';
+import { TwoFactorService } from '@/services/TwoFactorService.ts';
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {

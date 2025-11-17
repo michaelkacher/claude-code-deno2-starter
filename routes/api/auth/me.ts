@@ -4,7 +4,7 @@
  */
 
 import { Handlers } from "fresh";
-import { UserRepository } from '';
+import { UserRepository } from '@/repositories/index.ts';
 
 export const handler: Handlers<unknown, AppState> = {
   GET: withErrorHandler(async (ctx) => {

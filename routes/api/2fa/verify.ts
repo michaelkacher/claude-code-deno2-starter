@@ -7,7 +7,7 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { TwoFactorService } from '';
+import { TwoFactorService } from '@/services/TwoFactorService.ts';
 
 const Verify2FASchema = z.object({
   code: z.string().min(6).max(8),

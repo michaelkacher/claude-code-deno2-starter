@@ -5,7 +5,7 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { AuthService } from '';
+import { AuthService } from '@/services/auth.service.ts';
 
 const ResendVerificationSchema = z.object({
   email: z.string().email(),

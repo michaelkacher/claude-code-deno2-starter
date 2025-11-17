@@ -7,7 +7,7 @@
 
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { TwoFactorService } from '';
+import { TwoFactorService } from '@/services/TwoFactorService.ts';
 
 const RegenerateCodesSchema = z.object({
   password: z.string().min(1),
