@@ -51,5 +51,4 @@ export default defineRoute((req, ctx) => {
       </div>
     </div>
   );
-}
-
+});
