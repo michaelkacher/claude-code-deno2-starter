@@ -3,9 +3,9 @@
  * Refresh access token using refresh token from cookie
  */
 
-import { Handlers } from "fresh";
-import { ErrorCode } from '@/constants/errors.ts';
+import { ErrorCode } from '@/lib/error-codes.ts';
 import { AuthService } from '@/services/auth.service.ts';
+import { Handlers } from "fresh";
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {

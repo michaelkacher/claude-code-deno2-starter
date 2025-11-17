@@ -55,8 +55,8 @@ export class UserRepository extends BaseRepository<User> {
       const userId = crypto.randomUUID();
       const now = new Date().toISOString();
       
-      // Hash password if not already hashed
-      const hashedPassword = userData.password.startsWith('$2a$') || userData.password.startsWith('$2b$')
+      // Hash password if not already hashed (PBKDF2 format: iterations$salt$hash)
+      const hashedPassword = this.isPasswordHashed(userData.password)
         ? userData.password
         : await hashPassword(userData.password);
       
@@ -291,5 +291,26 @@ export class UserRepository extends BaseRepository<User> {
       this.logger.error('Error getting user stats', { error });
       throw error;
     }
+  }
+
+  /**
+   * Check if a password is already hashed
+   * PBKDF2 format: iterations$salt$hash (e.g., "100000$abcd1234$efgh5678")
+   * Legacy bcrypt format: $2a$ or $2b$ (deprecated, for backwards compatibility only)
+   */
+  private isPasswordHashed(password: string): boolean {
+    // PBKDF2 format check (current standard)
+    const pbkdf2Pattern = /^\d+\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$/;
+    if (pbkdf2Pattern.test(password)) {
+      return true;
+    }
+    
+    // Legacy bcrypt format check (backwards compatibility)
+    if (password.startsWith('$2a$') || password.startsWith('$2b$')) {
+      this.logger.warn('Legacy bcrypt hash detected - consider migrating to PBKDF2');
+      return true;
+    }
+    
+    return false;
   }
 }

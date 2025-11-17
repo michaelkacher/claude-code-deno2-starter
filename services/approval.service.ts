@@ -5,17 +5,17 @@
  * Handles validation, authorization, and approval workflow.
  */
 
-import { buildError } from "../constants/errors.ts";
 import { ApprovalRepository } from "../repositories/approval.repository.ts";
 import type {
-    ApprovalFilters,
-    ApprovalHistoryEntry,
-    ApprovalRequest,
-    CreateApprovalData,
-    LegacyCreateApprovalPayload,
-    SubmitDecisionData,
+  ApprovalFilters,
+  ApprovalHistoryEntry,
+  ApprovalRequest,
+  CreateApprovalData,
+  LegacyCreateApprovalPayload,
+  SubmitDecisionData,
 } from "../types/approval.types.ts";
 import { normalizeCreateApproval, upgradeLegacyCreateApproval } from "../types/approval.types.ts";
+import { buildError } from "./approval/errors.ts";
 
 export class ApprovalService {
   private repository: ApprovalRepository;

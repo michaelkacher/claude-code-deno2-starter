@@ -8,17 +8,17 @@
 import { useComputed, useSignal } from '@preact/signals';
 import { IS_BROWSER } from 'fresh/runtime';
 import { useCallback, useEffect } from 'preact/hooks';
-import { NotificationItemComponent } from '../components/NotificationItemComponent.tsx';
 import {
-  accessToken,
-  addPendingUpdate,
-  isWsConnected,
-  markAllNotificationsAsRead as markAllAsReadGlobal,
-  markNotificationAsRead as markAsReadGlobal,
-  notifications,
-  removeNotification as removeNotificationGlobal,
-  unreadCount,
+    accessToken,
+    addPendingUpdate,
+    isWsConnected,
+    markAllNotificationsAsRead as markAllAsReadGlobal,
+    markNotificationAsRead as markAsReadGlobal,
+    notifications,
+    removeNotification as removeNotificationGlobal,
+    unreadCount,
 } from '../lib/store.ts';
+import NotificationItem from './NotificationItem.tsx';
 
 export default function NotificationList() {
   const isLoading = useSignal(true);
@@ -274,7 +274,7 @@ export default function NotificationList() {
           </div>
         ) : (
           filteredNotifications.value.map((notification) => (
-            <NotificationItemComponent
+            <NotificationItem
               key={notification.id}
               notification={notification}
               onMarkAsRead={markAsRead}

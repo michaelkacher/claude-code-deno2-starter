@@ -69,6 +69,14 @@ deno task dev
 # API: http://localhost:3000/api/*
 ```
 
+**Auto-Install:** On first run, dependencies are automatically installed if `node_modules/` is missing. This happens transparently before Vite starts.
+
+**Manual Install (Optional):** If you prefer to install dependencies upfront:
+```bash
+deno task install
+# Or: deno install --allow-scripts
+```
+
 **First Run Auto-Setup:**
 On first run in development mode, a test admin account is automatically created:
 - 📧 Email: `admin@dev.local`
@@ -84,13 +92,13 @@ DEV_ADMIN_PASSWORD=yourpassword
 DEV_ADMIN_NAME="Your Name"
 ```
 
-### 3. Gather Requirements (Not required, but recommended for larger projects)
+### 4. Gather Requirements (Not required, but recommended for larger projects)
 ```bash
 # Gathers information on the scope of the project, personas, goals,
 # Non-functional requirements, and more
 /requirements
 ```
-4. Customize your template (Not required, but recommended for real projects)
+5. Customize your template (Not required, but recommended for real projects)
 
 ```bash
 # Guided customization workflow to brand your application
@@ -338,6 +346,25 @@ deno task kv:inspect -- --limit=10      # Limit to 10 entries
 ```
 
 ## Troubleshooting
+
+### "Cannot find module 'preact/debug'" Error
+
+**Problem:** Error occurs when `node_modules/` folder doesn't exist.
+
+**Automatic Fix:** Since v2.0, `deno task dev` automatically detects missing dependencies and installs them. You should see:
+```
+📦 node_modules not found. Installing dependencies...
+   Running: deno install --allow-scripts
+✅ Dependencies installed successfully!
+```
+
+**Manual Fix (if auto-install fails):**
+```bash
+deno task install
+# Or: deno install --allow-scripts
+```
+
+**Why this happens:** The project uses `"nodeModulesDir": "manual"` in `deno.json`, which requires explicit installation of npm packages. The `node_modules/` folder is gitignored and won't exist in fresh clones, but `vite.config.ts` now handles this automatically.
 
 ### API Mismatch Between Frontend/Backend
 

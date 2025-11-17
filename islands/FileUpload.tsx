@@ -1,5 +1,5 @@
 /**
- * File Upload Component
+ * File Upload Island
  *
  * A reusable file upload component with drag & drop support
  *
@@ -19,12 +19,6 @@
  *   onUpload={(url) => console.log('Uploaded:', url)}
  * />
  * ```
- */
-
-/**
- * File Upload Component
- *
- * MIGRATED TO PREACT SIGNALS
  */
 
 import { useSignal } from '@preact/signals';
@@ -48,7 +42,7 @@ export interface FileUploadProps {
   label?: string;
 }
 
-export function FileUpload({
+export default function FileUpload({
   accept,
   maxSize = 10 * 1024 * 1024, // 10MB default
   endpoint = '/api/uploads/upload',
@@ -152,14 +146,14 @@ export function FileUpload({
       <label class="file-upload__label">{label}</label>
 
       <div
-        class={`file-upload__dropzone ${dragging ? 'file-upload__dropzone--dragging' : ''} ${uploading ? 'file-upload__dropzone--uploading' : ''}`}
+        class={`file-upload__dropzone ${dragging.value ? 'file-upload__dropzone--dragging' : ''} ${uploading.value ? 'file-upload__dropzone--uploading' : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
-        {preview ? (
+        {preview.value ? (
           <div class="file-upload__preview">
-            <img src={preview} alt="Preview" class="file-upload__preview-image" />
+            <img src={preview.value} alt="Preview" class="file-upload__preview-image" />
           </div>
         ) : (
           <div class="file-upload__placeholder">
@@ -167,7 +161,7 @@ export function FileUpload({
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
             <p class="file-upload__text">
-              {dragging ? 'Drop file here' : 'Drag & drop or click to upload'}
+              {dragging.value ? 'Drop file here' : 'Drag & drop or click to upload'}
             </p>
             {accept && (
               <p class="file-upload__hint">Accepted: {accept}</p>
@@ -181,22 +175,22 @@ export function FileUpload({
           accept={accept}
           onChange={handleInputChange}
           class="file-upload__input"
-          disabled={uploading}
+          disabled={uploading.value}
         />
       </div>
 
-      {uploading && (
+      {uploading.value && (
         <div class="file-upload__progress">
           <div
             class="file-upload__progress-bar"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${progress.value}%` }}
           />
         </div>
       )}
 
-      {error && (
+      {error.value && (
         <div class="file-upload__error">
-          {error}
+          {error.value}
         </div>
       )}
     </div>
@@ -213,4 +207,3 @@ function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
-

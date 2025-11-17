@@ -57,7 +57,7 @@ Success Criteria:
 
 3. **Security Layer**
    - Rate limiting: 5 attempts per 15 minutes
-   - Password hashing with bcrypt (12 rounds)
+   - Password hashing with PBKDF2 (100,000 iterations)
    - CSRF protection
    - Input sanitization and validation
 

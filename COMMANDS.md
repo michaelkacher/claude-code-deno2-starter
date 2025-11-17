@@ -1,5 +1,17 @@
 # Quick Command Reference
 
+## First Time Setup
+
+**Auto-Install (Recommended):** Just run `deno task dev` - dependencies install automatically if missing.
+
+**Manual Install (Optional):**
+```bash
+deno task install
+# Or: deno install --allow-scripts
+```
+
+This creates `node_modules/` with Preact, Vite, and other npm packages.
+
 ## Development Workflow
 
 ### Starting Development

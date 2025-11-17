@@ -37,7 +37,7 @@ export default function App({ Component, url, state }: PageProps<unknown, AppSta
         {/* Note: Must run synchronously before page renders to prevent flash */}
         <script src="/scripts/theme-init.js"></script>
       </head>
-      <body f-client-nav style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
+      <body style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }} class="transition-colors">
         {/* Navigation and banner are outside partials - they persist across navigations */}
         <Navigation key="nav" userEmail={userEmail} userRole={userRole} initialTheme={initialTheme} />
         {showEmailBanner && <EmailVerificationBanner />}

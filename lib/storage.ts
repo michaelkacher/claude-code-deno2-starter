@@ -11,6 +11,7 @@
  * - Delete files
  * - Generate signed URLs for temporary access
  * - List files by prefix
+ * - **Lazy loads AWS SDK** only when S3 storage is used
  *
  * @example
  * ```typescript
@@ -34,14 +35,47 @@
 
 import { ensureDir } from "@std/fs";
 import { join } from "@std/path";
-import {
-    DeleteObjectCommand,
-    GetObjectCommand,
-    ListObjectsV2Command,
-    PutObjectCommand,
-    S3Client,
-} from 'npm:@aws-sdk/client-s3@^3.0.0';
-import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@^3.0.0';
+
+// ============================================================================
+// AWS SDK - Lazy loaded only when needed
+// ============================================================================
+
+// Type imports don't load the actual SDK
+type S3Client = any;
+type DeleteObjectCommand = any;
+type GetObjectCommand = any;
+type ListObjectsV2Command = any;
+type PutObjectCommand = any;
+
+let awsSdkLoaded = false;
+let S3ClientClass: any;
+let DeleteObjectCommandClass: any;
+let GetObjectCommandClass: any;
+let ListObjectsV2CommandClass: any;
+let PutObjectCommandClass: any;
+let getSignedUrlFn: any;
+
+/**
+ * Lazy load AWS SDK only when S3 storage is actually used
+ * This avoids loading ~5MB of AWS SDK when using local storage
+ */
+async function loadAwsSdk() {
+  if (awsSdkLoaded) return;
+  
+  const [clientS3, presigner] = await Promise.all([
+    import('npm:@aws-sdk/client-s3@^3.0.0'),
+    import('npm:@aws-sdk/s3-request-presigner@^3.0.0'),
+  ]);
+
+  S3ClientClass = clientS3.S3Client;
+  DeleteObjectCommandClass = clientS3.DeleteObjectCommand;
+  GetObjectCommandClass = clientS3.GetObjectCommand;
+  ListObjectsV2CommandClass = clientS3.ListObjectsV2Command;
+  PutObjectCommandClass = clientS3.PutObjectCommand;
+  getSignedUrlFn = presigner.getSignedUrl;
+  
+  awsSdkLoaded = true;
+}
 
 // ============================================================================
 // Types
@@ -160,22 +194,43 @@ class S3Storage implements Storage {
   private client: S3Client;
   private bucket: string;
   private publicUrl?: string;
+  private initialized = false;
 
   constructor(config: NonNullable<StorageConfig['s3']>) {
     this.bucket = config.bucket;
     this.publicUrl = config.publicUrl;
 
-    this.client = new S3Client({
+    // Don't initialize the client here - do it lazily on first use
+    // This defers AWS SDK loading until actually needed
+    this.client = {
       endpoint: config.endpoint,
       region: config.region,
       credentials: {
         accessKeyId: config.accessKeyId,
         secretAccessKey: config.secretAccessKey,
       },
+    } as any;
+  }
+
+  private async ensureInitialized() {
+    if (this.initialized) return;
+    
+    // Lazy load AWS SDK on first use
+    await loadAwsSdk();
+    
+    // Now create the actual S3 client
+    const config = this.client as any;
+    this.client = new S3ClientClass({
+      endpoint: config.endpoint,
+      region: config.region,
+      credentials: config.credentials,
     });
+    
+    this.initialized = true;
   }
 
   async upload(options: UploadOptions): Promise<string> {
+    await this.ensureInitialized();
     const { file, filename, contentType, folder, metadata } = options;
 
     // Generate key (path in S3)
@@ -186,7 +241,7 @@ class S3Storage implements Storage {
 
     // Upload to S3
     await this.client.send(
-      new PutObjectCommand({
+      new PutObjectCommandClass({
         Bucket: this.bucket,
         Key: key,
         Body: buffer,
@@ -203,8 +258,9 @@ class S3Storage implements Storage {
   }
 
   async download(path: string): Promise<Uint8Array> {
+    await this.ensureInitialized();
     const response = await this.client.send(
-      new GetObjectCommand({
+      new GetObjectCommandClass({
         Bucket: this.bucket,
         Key: path,
       }),
@@ -234,8 +290,9 @@ class S3Storage implements Storage {
   }
 
   async delete(path: string): Promise<void> {
+    await this.ensureInitialized();
     await this.client.send(
-      new DeleteObjectCommand({
+      new DeleteObjectCommandClass({
         Bucket: this.bucket,
         Key: path,
       }),
@@ -243,17 +300,19 @@ class S3Storage implements Storage {
   }
 
   async getSignedUrl(path: string, expiresIn: number): Promise<string> {
-    const command = new GetObjectCommand({
+    await this.ensureInitialized();
+    const command = new GetObjectCommandClass({
       Bucket: this.bucket,
       Key: path,
     });
 
-    return await getSignedUrl(this.client, command, { expiresIn });
+    return await getSignedUrlFn(this.client, command, { expiresIn });
   }
 
   async list(prefix = ''): Promise<string[]> {
+    await this.ensureInitialized();
     const response = await this.client.send(
-      new ListObjectsV2Command({
+      new ListObjectsV2CommandClass({
         Bucket: this.bucket,
         Prefix: prefix,
       }),
@@ -263,9 +322,10 @@ class S3Storage implements Storage {
   }
 
   async exists(path: string): Promise<boolean> {
+    await this.ensureInitialized();
     try {
       await this.client.send(
-        new GetObjectCommand({
+        new GetObjectCommandClass({
           Bucket: this.bucket,
           Key: path,
         }),

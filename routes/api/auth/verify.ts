@@ -3,7 +3,7 @@
  * Verify JWT token is valid (used by middleware)
  */
 
-import { ErrorCode } from '@/constants/errors.ts';
+import { ErrorCode } from '@/lib/error-codes.ts';
 import { AuthenticationError } from '@/lib/errors.ts';
 import { successResponse, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
 import { verifyToken } from '@/lib/jwt.ts';

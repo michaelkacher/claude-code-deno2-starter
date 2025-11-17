@@ -1,10 +1,10 @@
 /**
  * Password Utility Tests
  * 
- * Tests password hashing and verification using bcrypt.
+ * Tests password hashing and verification using PBKDF2.
  * Focus: Business logic around password security and error handling.
  * 
- * Note: Does not test bcrypt library internals (framework code).
+ * Note: Does not test PBKDF2 library internals (framework code).
  */
 
 import { assertEquals, assertExists, assertNotEquals } from '@std/assert';
@@ -26,9 +26,10 @@ describe('Password Utilities', () => {
       // Assert
       assertExists(hash);
       assertEquals(typeof hash, 'string');
-      // Bcrypt hashes start with $2a$, $2b$, or $2y$ and are 60 chars
-      assertEquals(hash.length, 60);
-      assertEquals(hash.startsWith('$2'), true);
+      // PBKDF2 format: iterations$salt$hash
+      const parts = hash.split('$');
+      assertEquals(parts.length, 3);
+      assertEquals(!isNaN(parseInt(parts[0])), true); // iterations is a number
     });
 
     it('should produce different hashes for same password (salt randomization)', async () => {
@@ -58,7 +59,8 @@ describe('Password Utilities', () => {
 
       // Assert
       assertExists(hash);
-      assertEquals(hash.length, 60);
+      const parts = hash.split('$');
+      assertEquals(parts.length, 3);
       
       // Verify the special character password works
       assertEquals(await verifyPassword(password, hash), true);
@@ -66,7 +68,7 @@ describe('Password Utilities', () => {
 
     it('should handle long passwords', async () => {
       // Arrange
-      // Bcrypt truncates at 72 bytes, but we should still handle it gracefully
+      // PBKDF2 handles long passwords without truncation
       const password = 'A'.repeat(100);
 
       // Act
@@ -74,7 +76,8 @@ describe('Password Utilities', () => {
 
       // Assert
       assertExists(hash);
-      assertEquals(hash.length, 60);
+      const parts = hash.split('$');
+      assertEquals(parts.length, 3);
       assertEquals(await verifyPassword(password, hash), true);
     });
 
@@ -145,7 +148,7 @@ describe('Password Utilities', () => {
     it('should return false for invalid hash format', async () => {
       // Arrange
       const password = 'AnyPassword123';
-      const invalidHash = 'not-a-valid-bcrypt-hash';
+      const invalidHash = 'not-a-valid-hash';
 
       // Act
       const result = await verifyPassword(password, invalidHash);
@@ -157,7 +160,7 @@ describe('Password Utilities', () => {
     it('should return false for malformed hash', async () => {
       // Arrange
       const password = 'AnyPassword123';
-      const malformedHash = '$2a$10$invalid-hash-that-looks-like-bcrypt';
+      const malformedHash = '100000$invalid$hash';
 
       // Act
       const result = await verifyPassword(password, malformedHash);
@@ -294,13 +297,13 @@ describe('Password Utilities', () => {
 
       // Assert
       // Both should take similar time (within 50% variance)
-      // This is a basic check; bcrypt is designed to resist timing attacks
+      // This is a basic check; PBKDF2 is designed to resist timing attacks
       const timeDifference = Math.abs(correctTime - wrongTime);
       const averageTime = (correctTime + wrongTime) / 2;
       const percentageDifference = (timeDifference / averageTime) * 100;
 
       // If difference is more than 50%, it might indicate timing vulnerability
-      // (though bcrypt should inherently protect against this)
+      // (though PBKDF2 with constant-time comparison should inherently protect against this)
       assertEquals(
         percentageDifference < 50,
         true,
