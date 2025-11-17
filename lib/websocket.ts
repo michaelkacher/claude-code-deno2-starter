@@ -241,15 +241,8 @@ export async function connectWebSocket() {
     };
 
     ws.onerror = (error) => {
-      // Only log errors if we're authenticated (not during logout/cleanup)
-      if (isAuthenticated.value && accessToken.value) {
-        console.error('[WebSocket] Error:', error);
-        console.error('[WebSocket] readyState:', ws.readyState);
-      } else {
-        // During logout, this is expected - just debug log
-        console.log('[WebSocket] Connection closed (expected during logout)');
-      }
-      
+      console.error('[WebSocket] Error:', error);
+      console.error('[WebSocket] readyState:', ws.readyState);
       setWsConnected(false);
       connectionState = ConnectionState.DISCONNECTED;
 
@@ -276,18 +269,11 @@ export async function connectWebSocket() {
     };
 
     ws.onclose = (event) => {
-      // Only log detailed info if it's unexpected (not during logout)
-      if (isAuthenticated.value && accessToken.value) {
-        console.log('[WebSocket] Disconnected', {
-          code: event.code,
-          reason: event.reason,
-          wasClean: event.wasClean
-        });
-      } else {
-        // During logout, this is expected - just debug log
-        console.log('[WebSocket] Disconnected (expected during logout)');
-      }
-      
+      console.log('[WebSocket] Disconnected', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean
+      });
       setWsConnected(false);
       connectionState = ConnectionState.DISCONNECTED;
 
