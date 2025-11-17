@@ -3,9 +3,9 @@
  * List user notifications with pagination
  */
 
-import { Handlers } from "fresh";
+import { requireUser, successResponse, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
 import { NotificationRepository } from '@/repositories/index.ts';
-import { withErrorHandler, requireUser, successResponse, type AppState } from '@/lib/fresh-helpers.ts';
+import { Handlers } from "fresh";
 
 export const handler: Handlers<unknown, AppState> = {
   GET: withErrorHandler(async (ctx) => {

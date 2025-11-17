@@ -3,11 +3,11 @@
  * Verify JWT token is valid (used by middleware)
  */
 
-import { Handlers } from "fresh";
 import { ErrorCode } from '@/constants/errors.ts';
-import { verifyToken } from '@/lib/jwt.ts';
-import { withErrorHandler, successResponse, type AppState } from '@/lib/fresh-helpers.ts';
 import { AuthenticationError } from '@/lib/errors.ts';
+import { successResponse, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
+import { verifyToken } from '@/lib/jwt.ts';
+import { Handlers } from "fresh";
 
 export const handler: Handlers<unknown, AppState> = {
   GET: withErrorHandler(async (ctx) => {

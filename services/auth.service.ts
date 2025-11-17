@@ -12,17 +12,17 @@
  * This service eliminates duplicate authentication logic across 7+ API routes.
  */
 
-import {
-  AppError,
-  AuthenticationError,
-  ConflictError,
-  NotFoundError,
-} from '@/lib/errors.ts';
 import { ErrorCode } from '@/lib/error-codes.ts';
-import { UserRepository } from '@/repositories/user-repository.ts';
-import { TokenRepository } from '@/repositories/token-repository.ts';
-import { verifyPassword } from '@/lib/password.ts';
+import {
+    AppError,
+    AuthenticationError,
+    ConflictError,
+    NotFoundError,
+} from '@/lib/errors.ts';
 import { createAccessToken, createRefreshToken, verifyToken } from '@/lib/jwt.ts';
+import { verifyPassword } from '@/lib/password.ts';
+import { TokenRepository } from '@/repositories/token-repository.ts';
+import { UserRepository } from '@/repositories/user-repository.ts';
 
 // ============================================================================
 // Types

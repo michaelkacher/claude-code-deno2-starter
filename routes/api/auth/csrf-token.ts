@@ -3,8 +3,8 @@
  * Get CSRF token for forms (if CSRF protection is enabled)
  */
 
-import { Handlers } from "fresh";
 import { successResponse, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
+import { Handlers } from "fresh";
 
 export const handler: Handlers<unknown, AppState> = {
   GET: withErrorHandler(async (ctx) => {

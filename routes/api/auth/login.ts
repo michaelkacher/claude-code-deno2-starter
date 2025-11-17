@@ -3,11 +3,11 @@
  * User login endpoint
  */
 
-import { Handlers } from "fresh";
-import { z } from "zod";
-import { parseJsonBody, requireUser, successResponse, errorResponse, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
-import { setCookie } from 'jsr:@std/http/cookie';
+import { parseJsonBody, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
 import { AuthService } from '@/services/auth.service.ts';
+import { Handlers } from "fresh";
+import { setCookie } from 'jsr:@std/http/cookie';
+import { z } from "zod";
 
 const LoginSchema = z.object({
   email: z.string().email(),

@@ -3,10 +3,9 @@
  * User logout endpoint - revokes refresh token and blacklists access token
  */
 
-import { Handlers } from "fresh";
-import { getCookie, deleteCookie } from "@std/http/cookie";
+import { deleteCookie, getCookie, requireUser, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
 import { AuthService } from '@/services/auth.service.ts';
-import { withErrorHandler, requireUser, type AppState } from '@/lib/fresh-helpers.ts';
+import { Handlers } from "fresh";
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {

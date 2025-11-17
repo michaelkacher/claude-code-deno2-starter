@@ -5,15 +5,14 @@
  * Handles user lookup, password verification, TOTP validation, and backup code management.
  */
 
-import {
-  AppError,
-  AuthenticationError,
-  NotFoundError,
-} from '@/lib/errors.ts';
 import { ErrorCode } from '@/lib/error-codes.ts';
+import {
+    AppError,
+    AuthenticationError,
+    NotFoundError,
+} from '@/lib/errors.ts';
+import { generateQRCodeDataURL, generateQRCodeURL, generateSecret, verifyTOTP } from '@/lib/totp.ts';
 import { UserRepository } from '@/repositories/user-repository.ts';
-import { verifyPassword } from '@/lib/password.ts';
-import { generateSecret, verifyTOTP, generateQRCodeURL, generateQRCodeDataURL } from '@/lib/totp.ts';
 
 export interface TwoFactorSetupResult {
   secret: string;
