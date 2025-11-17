@@ -3,8 +3,8 @@
  * Automatically refreshes access tokens before they expire
  */
 
-import { Handlers } from "fresh";
 import { ACCESS_TOKEN_EXPIRY_MS, TOKEN_REFRESH_CHECK_MS, TOKEN_REFRESH_INTERVAL_MS } from '@/lib/config.ts';
+import { Handlers } from "fresh";
 
 // This is served as a JavaScript module
 export const handler: Handlers = {

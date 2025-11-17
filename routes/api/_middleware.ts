@@ -4,10 +4,10 @@
  * Verifies JWT tokens and attaches user to context state
  */
 
-import type { FreshContext } from "fresh";
+import type { AppState } from "@/lib/fresh-helpers.ts";
 import { verifyToken } from '@/lib/jwt.ts';
 import { createLogger } from '@/lib/logger.ts';
-import type { AppState } from "@/lib/fresh-helpers.ts";
+import type { FreshContext } from "fresh";
 
 const logger = createLogger('APIMiddleware');
 
