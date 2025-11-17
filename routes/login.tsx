@@ -3,23 +3,36 @@
  * Provides email/password login form
  */
 
-import { type PageProps } from "fresh";
-import { defineRoute } from "fresh";
+import type { Handlers, PageProps } from "fresh";
+import type { FreshContext } from "fresh";
 import LoginForm from "../islands/LoginForm.tsx";
 
-export default defineRoute((req, ctx) => {
-  // If user is already authenticated, redirect to home
-  if (ctx.state.user) {
-    const url = new URL(req.url);
-    const redirectTo = url.searchParams.get('redirect') || '/';
-    return new Response(null, {
-      status: 302,
-      headers: { Location: redirectTo },
-    });
-  }
+interface LoginData {
+  redirectTo: string;
+}
 
-  const url = new URL(req.url);
-  const redirectTo = url.searchParams.get('redirect') || '/';
+export const handler: Handlers<LoginData> = {
+  GET(ctx) {
+    // If user is already authenticated, redirect to home
+    if (ctx.state.user) {
+      const url = new URL(ctx.req.url);
+      const redirectTo = url.searchParams.get('redirect') || '/';
+      return new Response(null, {
+        status: 302,
+        headers: { Location: redirectTo },
+      });
+    }
+
+    // Get redirect URL from query params
+    const url = new URL(ctx.req.url);
+    const redirectTo = url.searchParams.get('redirect') || '/';
+    
+    return ctx.render({ redirectTo });
+  },
+};
+
+export default function Login({ data }: PageProps<LoginData>) {
+  const { redirectTo } = data;
   
   return (
     <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -51,4 +64,4 @@ export default defineRoute((req, ctx) => {
       </div>
     </div>
   );
-});
+}
