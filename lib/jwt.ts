@@ -103,3 +103,31 @@ export function isTokenExpired(token: string | null): boolean {
     return true;
   }
 }
+
+/**
+ * Decode JWT token without verification (for middleware use)
+ * @param token - The JWT token to decode
+ * @returns Decoded payload or null if invalid
+ */
+export function decodeJwt(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if a string has valid JWT structure
+ * @param token - The string to check
+ * @returns true if it has valid JWT structure (3 parts separated by dots)
+ */
+export function isValidJwtStructure(token: string): boolean {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  return parts.length === 3 && parts.every(part => part.length > 0);
+}
