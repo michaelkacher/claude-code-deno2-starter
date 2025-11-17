@@ -8,7 +8,7 @@
 import { useSignal } from '@preact/signals';
 import { IS_BROWSER } from 'fresh/runtime';
 import { useEffect, useRef } from 'preact/hooks';
-import { TokenStorage } from '../lib/storage.ts';
+import { TokenStorage } from '../lib/token-storage.ts';
 
 interface Model {
   name: string;

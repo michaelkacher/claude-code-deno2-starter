@@ -8,7 +8,7 @@
 import { useSignal } from '@preact/signals';
 import { IS_BROWSER } from 'fresh/runtime';
 import { useEffect } from 'preact/hooks';
-import { TokenStorage } from '../lib/storage.ts';
+import { TokenStorage } from '../lib/token-storage.ts';
 
 export default function EmailVerificationBanner() {
   const isVisible = useSignal(false);

@@ -12,7 +12,7 @@
  */
 
 import { IS_BROWSER } from 'fresh/runtime';
-import { TokenStorage } from './storage.ts';
+import { TokenStorage } from './token-storage.ts';
 
 // ============================================================================
 // Types

@@ -6,7 +6,7 @@
 
 import { useSignal } from '@preact/signals';
 import { IS_BROWSER } from 'fresh/runtime';
-import { TokenStorage } from '../../lib/storage.ts';
+import { TokenStorage } from '../../lib/token-storage.ts';
 
 interface CreateScheduleModalProps {
   onClose: () => void;

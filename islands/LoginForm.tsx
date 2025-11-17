@@ -9,7 +9,7 @@
 import { useSignal } from '@preact/signals';
 import { IS_BROWSER } from 'fresh/runtime';
 import { authApi } from '../lib/api-client.ts';
-import { TokenStorage } from '../lib/storage.ts';
+import { TokenStorage } from '../lib/token-storage.ts';
 import { setAccessToken, setUser } from '../lib/store.ts';
 import { validateLoginForm } from '../lib/validation.ts';
 

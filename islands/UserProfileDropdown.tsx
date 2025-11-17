@@ -9,7 +9,7 @@ import { useComputed, useSignal } from '@preact/signals';
 import { IS_BROWSER } from 'fresh/runtime';
 import { useEffect, useRef } from 'preact/hooks';
 import { isTokenExpired } from '../lib/jwt.ts';
-import { TokenStorage } from '../lib/storage.ts';
+import { TokenStorage } from '../lib/token-storage.ts';
 import {
   accessToken,
   clearAuth,
