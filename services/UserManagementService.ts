@@ -10,6 +10,8 @@ import {
     AuthorizationError,
     NotFoundError,
 } from '@/lib/errors.ts';
+import { UserRepository } from '@/repositories/user-repository.ts';
+import { ErrorCode } from '@/lib/error-codes.ts';
 
 export interface UserListOptions {
   limit?: number;

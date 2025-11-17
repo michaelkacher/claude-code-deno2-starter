@@ -10,6 +10,10 @@ import {
   AuthenticationError,
   NotFoundError,
 } from '@/lib/errors.ts';
+import { ErrorCode } from '@/lib/error-codes.ts';
+import { UserRepository } from '@/repositories/user-repository.ts';
+import { verifyPassword } from '@/lib/password.ts';
+import { generateSecret, verifyTOTP, generateQRCodeURL, generateQRCodeDataURL } from '@/lib/totp.ts';
 
 export interface TwoFactorSetupResult {
   secret: string;

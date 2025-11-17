@@ -18,6 +18,11 @@ import {
   ConflictError,
   NotFoundError,
 } from '@/lib/errors.ts';
+import { ErrorCode } from '@/lib/error-codes.ts';
+import { UserRepository } from '@/repositories/user-repository.ts';
+import { TokenRepository } from '@/repositories/token-repository.ts';
+import { verifyPassword } from '@/lib/password.ts';
+import { createAccessToken, createRefreshToken, verifyToken } from '@/lib/jwt.ts';
 
 // ============================================================================
 // Types
