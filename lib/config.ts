@@ -78,3 +78,99 @@ export const {
   WS_CONNECTION_TIMEOUT_MS,
 } = TokenConfig;
 
+/**
+ * Site Configuration
+ */
+export interface NavigationItem {
+  label: string;
+  href: string;
+  icon?: string;
+  external?: boolean;
+  adminOnly?: boolean;
+  requiresAuth?: boolean;
+}
+
+export interface SiteConfig {
+  site: {
+    name: string;
+    description: string;
+    url: string;
+    logo?: string;
+  };
+  navigation: {
+    primary: NavigationItem[];
+    mobile: NavigationItem[];
+    footer?: NavigationItem[];
+  };
+  theme: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    surface: string;
+  };
+  features: {
+    enableNotifications: boolean;
+    enableTwoFactor: boolean;
+    enableFileUpload: boolean;
+    enableAdminPanel: boolean;
+    enableDarkMode: boolean;
+  };
+  api: {
+    baseUrl: string;
+    timeout: number;
+    retries: number;
+  };
+  social?: {
+    github?: string;
+    twitter?: string;
+    linkedin?: string;
+    discord?: string;
+  };
+}
+
+export const siteConfig: SiteConfig = {
+  site: {
+    name: "Deno 2 Starter",
+    description: "A modern full-stack web application starter",
+    url: "http://localhost:5173",
+  },
+  navigation: {
+    primary: [
+      { label: "Home", href: "/", icon: "🏠" },
+      { label: "Admin", href: "/admin", icon: "⚙️", adminOnly: true, requiresAuth: true },
+    ],
+    mobile: [
+      { label: "Home", href: "/", icon: "🏠" },
+      { label: "Admin", href: "/admin", icon: "⚙️", adminOnly: true, requiresAuth: true },
+    ],
+  },
+  theme: {
+    primary: "#2563eb",
+    secondary: "#64748b",
+    accent: "#7c3aed",
+    background: "#ffffff",
+    surface: "#f8fafc",
+  },
+  features: {
+    enableNotifications: true,
+    enableTwoFactor: true,
+    enableFileUpload: true,
+    enableAdminPanel: true,
+    enableDarkMode: true,
+  },
+  api: {
+    baseUrl: "/api",
+    timeout: 10000,
+    retries: 3,
+  },
+};
+
+// Helper functions for accessing config
+export const getSiteName = () => siteConfig.site.name;
+export const getSiteUrl = () => siteConfig.site.url;
+export const getNavigationItems = () => siteConfig.navigation.primary;
+export const getMobileNavigationItems = () => siteConfig.navigation.mobile;
+export const getTheme = () => siteConfig.theme;
+export const getFeatures = () => siteConfig.features;
+export const getApiConfig = () => siteConfig.api;
