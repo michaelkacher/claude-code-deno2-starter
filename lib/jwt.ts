@@ -22,19 +22,27 @@ export function parseDurationToSeconds(input: string): number {
   }
 }
 
+// Cache the HMAC key to avoid re-creating it on every request
+let cachedHmacKey: CryptoKey | null = null;
+
 export async function getHmacKey(): Promise<CryptoKey> {
+  if (cachedHmacKey) {
+    return cachedHmacKey;
+  }
+  
   const jwtSecret = Deno.env.get('JWT_SECRET');
   if (!jwtSecret) {
     throw new Error('JWT_SECRET is not configured');
   }
   const enc = new TextEncoder();
-  return await crypto.subtle.importKey(
+  cachedHmacKey = await crypto.subtle.importKey(
     'raw',
     enc.encode(jwtSecret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify'],
   );
+  return cachedHmacKey;
 }
 
 export async function createToken(payload: Record<string, unknown>, customExpiry?: string) {

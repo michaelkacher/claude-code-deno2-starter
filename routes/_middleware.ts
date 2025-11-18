@@ -6,7 +6,7 @@
 
 import { FreshContext } from 'fresh';
 import { createLogger } from '@/lib/logger.ts';
-import { decodeJwt, isTokenExpired, isValidJwtStructure } from '../lib/jwt.ts';
+import { decodeJwt, isTokenExpired, isValidJwtStructure, verifyToken } from '../lib/jwt.ts';
 
 const logger = createLogger('PageMiddleware');
 
@@ -156,30 +156,15 @@ export const handler = async (ctx: FreshContext<State>) => {
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
 
-    // Verify JWT signature server-side by calling Fresh API
+    // Verify JWT signature directly (no HTTP fetch overhead)
     try {
-      const verifyUrl = new URL('/api/auth/verify', url.origin).href;
-      const verifyResponse = await fetch(verifyUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-        },
-      });
-
-      if (!verifyResponse.ok) {
-        console.log('[Middleware] Token verification failed');
-        // Token verification failed (invalid signature, blacklisted, or other error)
-        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=invalid`;
-        return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
-      }
-
+      await verifyToken(authToken);
       console.log('[Middleware] Token verified successfully');
       // Token verified successfully - user data is already set from JWT decode above
-      // No need to update ctx.state again since we already have it from the token
     } catch (error) {
       console.error('[Middleware] Token verification error:', error);
-      // Network error or backend unavailable - redirect to login
-      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=error`;
+      // Invalid signature or verification failed - redirect to login
+      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=invalid`;
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
 
