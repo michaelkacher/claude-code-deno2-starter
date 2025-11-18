@@ -4,14 +4,18 @@
  */
 
 import { ErrorCode } from '@/lib/error-codes.ts';
+import { AuthenticationError } from '@/lib/errors.ts';
+import { successResponse, withErrorHandler, type AppState } from '@/lib/fresh-helpers.ts';
 import { AuthService } from '@/services/auth.service.ts';
-import { Handlers } from "fresh";
+import type { FreshContext } from "fresh";
+import { getCookies } from 'jsr:@std/http/cookie';
 
-export const handler: Handlers<unknown, AppState> = {
-  POST: withErrorHandler(async (ctx) => {
+export const handler = {
+  POST: withErrorHandler(async (ctx: FreshContext<AppState>) => {
     const req = ctx.req;
     // Get refresh token from cookie
-    const refreshToken = getCookie(req.headers, "refresh_token");
+    const cookies = getCookies(req.headers);
+    const refreshToken = cookies.refresh_token;
 
     if (!refreshToken) {
       throw new AuthenticationError(ErrorCode.UNAUTHORIZED, "No refresh token provided", 'missing_token');

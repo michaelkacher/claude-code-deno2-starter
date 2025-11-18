@@ -1,6 +1,12 @@
-* ~~Make the Background services initialization non blocking~~
-* ~~Can the AWS SDK be lazy loaded to speed up when using local storage?~~
-* ~~There is a deprecated f-client-nav Attribute in _app.tsx~~
+* Recommendations to Speed Up Startup:
+Option 1: Lazy Route Loading (Best)
+Move rarely-used API routes to a separate directory that Fresh doesn't automatically scan.
+
+Option 2: Reduce Route Count
+Consolidate related routes (e.g., combine CRUD operations into single files with multiple handlers)
+
+Option 3: Split into Microservices
+Move admin/dashboard routes to a separate app
 * The .env file is no longer accurate
 
 * Does the port close still work?
