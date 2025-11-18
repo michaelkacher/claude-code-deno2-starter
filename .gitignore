@@ -21,6 +21,7 @@ uploads/
 dist/
 build/
 .fresh/
+.vite/
 
 # Testing
 coverage/

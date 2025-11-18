@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "exports": "./main.ts",
   "nodeModulesDir": "manual",
-  "lock": false,
+  "lock": true,
   "tasks": {
     "install": "deno install --allow-scripts",
     "dev": "deno run -A --unstable-kv npm:vite",

@@ -55,13 +55,22 @@ export default defineConfig({
     hmr: {
       clientPort: 5173,
     },
+    // Pre-transform frequently used dependencies
+    warmup: {
+      clientFiles: [],
+    },
+    // File system watcher optimization
+    watch: {
+      // Ignore large directories for better performance
+      ignored: ['**/node_modules/**', '**/.git/**', '**/data/**', '**/coverage/**'],
+    },
   },
   ssr: {
     // Let Deno handle these imports
     noExternal: false,
   },
   optimizeDeps: {
-    // Include Preact dependencies for faster dev server start
+    // Preact should be excluded to avoid double-bundling
     exclude: [
       "preact",
       "preact/debug",
@@ -71,6 +80,8 @@ export default defineConfig({
       "preact/signals",
       "preact/signals-core",
     ],
+    // Force dependency pre-bundling for faster subsequent loads
+    force: false, // Only rebuild when dependencies change
   },
   build: {
     // Enable module preload for faster navigation
@@ -86,6 +97,6 @@ export default defineConfig({
       },
     },
   },
-  // Reduce filesystem overhead
+  // Cache configuration - maximize persistence
   cacheDir: '.vite',
 });
