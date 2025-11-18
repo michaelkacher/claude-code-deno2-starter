@@ -5,6 +5,7 @@ import ThemeProvider from "../components/ThemeProvider.tsx";
 import EmailVerificationBanner from "../islands/EmailVerificationBanner.tsx";
 import Navigation from "../islands/Navigation.tsx";
 import { getSiteName } from "../lib/config.ts";
+import "../static/styles.css";
 
 interface AppState {
   userEmail?: string | null;

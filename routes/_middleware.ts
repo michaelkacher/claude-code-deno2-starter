@@ -10,6 +10,9 @@ import { decodeJwt, isTokenExpired, isValidJwtStructure, verifyToken } from '../
 
 const logger = createLogger('PageMiddleware');
 
+// Enable verbose logging only if DEBUG_MIDDLEWARE env var is set
+const DEBUG = Deno.env.get('DEBUG_MIDDLEWARE') === 'true';
+
 // Define state type for Fresh 2
 interface State {
   userEmail?: string | null;
@@ -58,7 +61,7 @@ export const handler = async (ctx: FreshContext<State>) => {
     const url = new URL(req.url);
     const pathname = url.pathname;
     
-    console.log('[Middleware] Processing:', pathname);
+    if (DEBUG) console.log('[Middleware] Processing:', pathname);
     
     // Extract user info and theme from cookies for all requests
     const cookies = req.headers.get('cookie') || '';
@@ -72,7 +75,7 @@ export const handler = async (ctx: FreshContext<State>) => {
       .find(c => c.startsWith('theme='))
       ?.split('=')[1];
     
-    console.log('[Middleware] Auth token present:', !!authToken);
+    if (DEBUG) console.log('[Middleware] Auth token present:', !!authToken);
     
     // Store user data in context state for _app.tsx to access
     ctx.state.userEmail = null;
@@ -83,7 +86,7 @@ export const handler = async (ctx: FreshContext<State>) => {
     
     if (authToken) {
       try {
-        console.log('[Middleware] Decoding JWT...');
+        if (DEBUG) console.log('[Middleware] Decoding JWT...');
         const payload = decodeJwt(authToken);
         ctx.state.userEmail = payload.email || null;
         ctx.state.userRole = payload.role || null;
@@ -96,9 +99,9 @@ export const handler = async (ctx: FreshContext<State>) => {
           iat: payload.iat,
           exp: payload.exp,
         };
-        console.log('[Middleware] JWT decoded successfully');
+        if (DEBUG) console.log('[Middleware] JWT decoded successfully');
       } catch (e) {
-        console.error('[Middleware] JWT decode error:', e);
+        if (DEBUG) console.error('[Middleware] JWT decode error:', e);
         // Invalid token
       }
     }
@@ -113,10 +116,10 @@ export const handler = async (ctx: FreshContext<State>) => {
       return pathname === route;
     });
 
-    console.log('[Middleware] Is public route:', isPublicRoute);
+    if (DEBUG) console.log('[Middleware] Is public route:', isPublicRoute);
 
     if (isPublicRoute) {
-      console.log('[Middleware] Allowing public route');
+      if (DEBUG) console.log('[Middleware] Allowing public route');
       return await ctx.next();
     }
 
@@ -131,27 +134,27 @@ export const handler = async (ctx: FreshContext<State>) => {
     });
     
     if (isAllowedPath) {
-      console.log('[Middleware] Allowing static path');
+      if (DEBUG) console.log('[Middleware] Allowing static path');
       return await ctx.next();
     }
 
     // If no token, redirect to login
     if (!authToken) {
-      console.log('[Middleware] No auth token, redirecting to login');
+      if (DEBUG) console.log('[Middleware] No auth token, redirecting to login');
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
 
     // Validate token structure
     if (!isValidJwtStructure(authToken)) {
-      console.log('[Middleware] Invalid JWT structure');
+      if (DEBUG) console.log('[Middleware] Invalid JWT structure');
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
 
     // Check if token is expired (client-side check)
     if (isTokenExpired(authToken)) {
-      console.log('[Middleware] Token expired');
+      if (DEBUG) console.log('[Middleware] Token expired');
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=expired`;
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
@@ -159,17 +162,17 @@ export const handler = async (ctx: FreshContext<State>) => {
     // Verify JWT signature directly (no HTTP fetch overhead)
     try {
       await verifyToken(authToken);
-      console.log('[Middleware] Token verified successfully');
+      if (DEBUG) console.log('[Middleware] Token verified successfully');
       // Token verified successfully - user data is already set from JWT decode above
     } catch (error) {
-      console.error('[Middleware] Token verification error:', error);
+      if (DEBUG) console.error('[Middleware] Token verification error:', error);
       // Invalid signature or verification failed - redirect to login
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=invalid`;
       return Response.redirect(new URL(redirectUrl, url.origin).href, 307);
     }
 
     // Token is valid and verified
-    console.log('[Middleware] Auth check complete, proceeding');
+    if (DEBUG) console.log('[Middleware] Auth check complete, proceeding');
     return await ctx.next();
   } catch (error) {
     console.error('[Middleware] FATAL ERROR:', error);

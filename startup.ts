@@ -27,22 +27,21 @@ export async function initializeBackgroundServices() {
   const errors: Array<{ service: string; error: unknown }> = [];
   
   try {
-    // Auto-create dev admin on first run (development only)
-    logger.info('Checking for first-run dev admin setup...');
-    try {
-      await setupDevAdmin();
-    } catch (error) {
-      errors.push({ service: 'dev-admin-setup', error });
-      logger.warn('Dev admin setup failed (non-critical)', error);
+    // Run admin setup tasks in parallel (both query KV)
+    logger.info('Running admin setup tasks...');
+    const [devAdminResult, initialAdminResult] = await Promise.allSettled([
+      setupDevAdmin(),
+      setupInitialAdmin(),
+    ]);
+    
+    if (devAdminResult.status === 'rejected') {
+      errors.push({ service: 'dev-admin-setup', error: devAdminResult.reason });
+      logger.warn('Dev admin setup failed (non-critical)', devAdminResult.reason);
     }
-
-    // Setup initial admin if specified (production)
-    logger.info('Setting up initial admin user...');
-    try {
-      await setupInitialAdmin();
-    } catch (error) {
-      errors.push({ service: 'initial-admin-setup', error });
-      logger.warn('Initial admin setup failed (non-critical)', error);
+    
+    if (initialAdminResult.status === 'rejected') {
+      errors.push({ service: 'initial-admin-setup', error: initialAdminResult.reason });
+      logger.warn('Initial admin setup failed (non-critical)', initialAdminResult.reason);
     }
 
     // Register all workers and scheduled tasks
@@ -56,28 +55,29 @@ export async function initializeBackgroundServices() {
       throw error; // Critical - can't continue without workers
     }
 
-    // Load persisted schedules from KV
-    logger.info('Loading persisted schedules...');
-    try {
-      await loadPersistedSchedules();
-      logger.info('Persisted schedules loaded');
-    } catch (error) {
-      errors.push({ service: 'schedule-loading', error });
-      logger.warn('Schedule loading failed (will retry)', error);
-    }
-
-    // Start the job queue processor
-    logger.info('Starting job queue...');
-    try {
-      await queue.start();
+    // Start queue and load schedules in parallel (both are I/O bound)
+    logger.info('Starting queue and loading schedules...');
+    const [queueResult, scheduleResult] = await Promise.allSettled([
+      queue.start(),
+      loadPersistedSchedules(),
+    ]);
+    
+    if (queueResult.status === 'rejected') {
+      errors.push({ service: 'job-queue', error: queueResult.reason });
+      logger.error('Job queue failed to start', queueResult.reason);
+      throw queueResult.reason; // Critical - jobs won't process
+    } else {
       logger.info('✓ Job queue started');
-    } catch (error) {
-      errors.push({ service: 'job-queue', error });
-      logger.error('Job queue failed to start', error);
-      throw error; // Critical - jobs won't process
+    }
+    
+    if (scheduleResult.status === 'rejected') {
+      errors.push({ service: 'schedule-loading', error: scheduleResult.reason });
+      logger.warn('Schedule loading failed (will retry)', scheduleResult.reason);
+    } else {
+      logger.info('✓ Persisted schedules loaded');
     }
 
-    // Start the scheduler
+    // Start the scheduler (fast, synchronous operation)
     logger.info('Starting job scheduler...');
     try {
       scheduler.start();

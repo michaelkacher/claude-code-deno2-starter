@@ -72,6 +72,20 @@ export default defineConfig({
       "preact/signals-core",
     ],
   },
+  build: {
+    // Enable module preload for faster navigation
+    modulePreload: {
+      polyfill: true,
+    },
+    // Optimize chunk splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'preact-vendor': ['preact', '@preact/signals'],
+        },
+      },
+    },
+  },
   // Reduce filesystem overhead
   cacheDir: '.vite',
 });
