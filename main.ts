@@ -1,10 +1,16 @@
 import { load } from "@std/dotenv";
 import { App } from "fresh";
+import { getKv } from "./lib/kv.ts";
 import { initializeBackgroundServices } from "./startup.ts";
 import "./static/styles.css";
 
 // Load environment variables from .env file
 await load({ export: true });
+
+// Pre-initialize KV connection to avoid 8-second delay on first request
+// This warms up the database connection before the server starts accepting requests
+await getKv();
+console.log("✓ KV connection pre-initialized");
 
 export const app = new App({ root: import.meta.url }).fsRoutes();
 
