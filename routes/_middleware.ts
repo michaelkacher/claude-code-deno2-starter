@@ -4,8 +4,8 @@
  * Redirects to login if not authenticated
  */
 
-import { FreshContext } from 'fresh';
 import { createLogger } from '@/lib/logger.ts';
+import { FreshContext } from 'fresh';
 import { decodeJwt, isTokenExpired, isValidJwtStructure, verifyToken } from '../lib/jwt.ts';
 
 const logger = createLogger('PageMiddleware');

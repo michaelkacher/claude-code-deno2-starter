@@ -1,7 +1,7 @@
 import { load } from "@std/dotenv";
 import { App } from "fresh";
-import { getKv } from "./lib/kv.ts";
 import { getHmacKey } from "./lib/jwt.ts";
+import { getKv } from "./lib/kv.ts";
 import { initializeBackgroundServices } from "./startup.ts";
 import "./static/styles.css";
 
