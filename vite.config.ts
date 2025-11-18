@@ -2,10 +2,10 @@ import { fresh } from "@fresh/plugin-vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
-/**
- * Auto-install npm dependencies if node_modules is missing
- * This helps prevent "Cannot find module 'preact/debug'" errors on fresh clones
- */
+// /**
+//  * Auto-install npm dependencies if node_modules is missing
+//  * This helps prevent "Cannot find module 'preact/debug'" errors on fresh clones
+//  */
 async function ensureDependenciesInstalled() {
   try {
     // Check if node_modules exists
@@ -56,4 +56,22 @@ export default defineConfig({
       clientPort: 5173,
     },
   },
+  ssr: {
+    // Let Deno handle these imports
+    noExternal: false,
+  },
+  optimizeDeps: {
+    // Include Preact dependencies for faster dev server start
+    exclude: [
+      "preact",
+      "preact/debug",
+      "preact/jsx-runtime",
+      "preact/jsx-dev-runtime",
+      "preact/hooks",
+      "preact/signals",
+      "preact/signals-core",
+    ],
+  },
+  // Reduce filesystem overhead
+  cacheDir: '.vite',
 });
