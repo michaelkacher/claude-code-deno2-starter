@@ -98,7 +98,7 @@ export function isTokenExpired(token: string | null): boolean {
   try {
     // Decode JWT without verification (just to check expiry)
     const parts = token.split('.');
-    if (parts.length !== 3) return true;
+    if (parts.length !== 3 || !parts[1]) return true;
     
     const payload = JSON.parse(atob(parts[1]));
     const exp = payload.exp;
@@ -120,7 +120,7 @@ export function isTokenExpired(token: string | null): boolean {
 export function decodeJwt(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split('.');
-    if (parts.length !== 3) return null;
+    if (parts.length !== 3 || !parts[1]) return null;
     
     const payload = JSON.parse(atob(parts[1]));
     return payload;

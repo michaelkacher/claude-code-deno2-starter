@@ -3,15 +3,15 @@
  * Mark a notification as read
  */
 
-import { Handlers } from "fresh";
-import { NotificationRepository } from "../../../../../shared/repositories/index.ts";
-import { BadRequestError, NotFoundError } from "../../../../lib/errors.ts";
+import { BadRequestError, NotFoundError } from "@/lib/errors.ts";
 import {
-    requireUser,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../../lib/fresh-helpers.ts";
+  requireUser,
+  successResponse,
+  withErrorHandler,
+  type AppState,
+} from "@/lib/fresh-helpers.ts";
+import { NotificationRepository } from "@/repositories/index.ts";
+import { Handlers } from "fresh";
 
 export const handler: Handlers<unknown, AppState> = {
   PATCH: withErrorHandler(async (ctx) => {

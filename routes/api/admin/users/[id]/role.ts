@@ -5,17 +5,17 @@
  * REFACTORED: Uses UserManagementService and withErrorHandler pattern
  */
 
+import { BadRequestError } from "@/lib/errors.ts";
+import {
+  parseJsonBody,
+  requireAdmin,
+  successResponse,
+  withErrorHandler,
+  type AppState,
+} from "@/lib/fresh-helpers.ts";
+import { UserManagementService } from "@/services/index.ts";
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { UserManagementService } from "../../../../../../shared/services/index.ts";
-import { BadRequestError } from "../../../../../lib/errors.ts";
-import {
-    parseJsonBody,
-    requireAdmin,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../../../lib/fresh-helpers.ts";
 
 const UpdateRoleSchema = z.object({
   role: z.enum(["user", "admin"]),

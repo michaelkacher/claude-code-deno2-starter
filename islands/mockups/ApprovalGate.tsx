@@ -1,9 +1,9 @@
+import { Avatar } from "@/components/design-system/Avatar.tsx";
+import { Badge } from "@/components/design-system/Badge.tsx";
+import { Button } from "@/components/design-system/Button.tsx";
+import { Card } from "@/components/design-system/Card.tsx";
+import { Panel } from "@/components/design-system/Panel.tsx";
 import { useState } from "preact/hooks";
-import { Avatar } from "../../components/design-system/Avatar.tsx";
-import { Badge } from "../../components/design-system/Badge.tsx";
-import { Button } from "../../components/design-system/Button.tsx";
-import { Card } from "../../components/design-system/Card.tsx";
-import { Panel } from "../../components/design-system/Panel.tsx";
 
 interface MockTask {
   id: string;

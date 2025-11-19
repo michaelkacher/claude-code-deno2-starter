@@ -5,15 +5,15 @@
  * REFACTORED: Uses withErrorHandler pattern
  */
 
-import { Handlers } from "fresh";
-import { getKv } from "../../../../../shared/lib/kv.ts";
-import { BadRequestError } from "../../../../lib/errors.ts";
+import { BadRequestError } from "@/lib/errors.ts";
 import {
-    requireAdmin,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../../lib/fresh-helpers.ts";
+  requireAdmin,
+  successResponse,
+  withErrorHandler,
+  type AppState,
+} from "@/lib/fresh-helpers.ts";
+import { getKv } from "@/lib/kv.ts";
+import { Handlers } from "fresh";
 
 // Known model prefixes
 const MODEL_PREFIXES = [

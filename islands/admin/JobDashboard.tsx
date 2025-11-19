@@ -5,10 +5,6 @@
  * Uses centralized WebSocket service for real-time updates
  */
 
-import { useSignal } from '@preact/signals';
-import { IS_BROWSER } from 'fresh/runtime';
-import { useEffect } from 'preact/hooks';
-import { TokenStorage } from '../../lib/token-storage.ts';
 import {
   jobs,
   jobStats,
@@ -18,8 +14,12 @@ import {
   updateJob,
   updateJobStats,
   type Job
-} from '../../lib/store.ts';
-import { subscribeToChannel } from '../../lib/websocket.ts';
+} from '@/lib/store.ts';
+import { TokenStorage } from '@/lib/token-storage.ts';
+import { subscribeToChannel } from '@/lib/websocket.ts';
+import { useSignal } from '@preact/signals';
+import { IS_BROWSER } from 'fresh/runtime';
+import { useEffect } from 'preact/hooks';
 import CreateJobModal from './CreateJobModal.tsx';
 import CreateScheduleModal from './CreateScheduleModal.tsx';
 

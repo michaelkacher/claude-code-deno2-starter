@@ -3,15 +3,15 @@
  * Disable a scheduled job
  */
 
-import { Handlers } from "fresh";
-import { scheduler } from "../../../../../../shared/lib/scheduler.ts";
-import { BadRequestError, NotFoundError } from "../../../../../lib/errors.ts";
+import { BadRequestError, NotFoundError } from "@/lib/errors.ts";
 import {
-    requireAdmin,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../../../lib/fresh-helpers.ts";
+  requireAdmin,
+  successResponse,
+  withErrorHandler,
+  type AppState,
+} from "@/lib/fresh-helpers.ts";
+import { scheduler } from "@/lib/scheduler.ts";
+import { Handlers } from "fresh";
 
 export const handler: Handlers<unknown, AppState> = {
   POST: withErrorHandler(async (ctx) => {

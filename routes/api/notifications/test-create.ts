@@ -6,15 +6,15 @@
  * This runs in the dev server process so WebSocket broadcasts work properly
  */
 
-import { Handlers } from 'fresh';
+import {
+  requireUser,
+  successResponse,
+  withErrorHandler,
+  type AppState,
+} from '@/lib/fresh-helpers.ts';
 import { createLogger } from '@/lib/logger.ts';
 import { NotificationService } from '@/services/notifications.ts';
-import {
-    requireUser,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from '../../../lib/fresh-helpers.ts';
+import { Handlers } from 'fresh';
 
 const logger = createLogger('NotificationsTestAPI');
 

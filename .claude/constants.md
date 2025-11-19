@@ -216,8 +216,8 @@ Import path mistakes cause immediate runtime errors that waste 10+ minutes debug
 
 ```typescript
 // ✅ CORRECT - Relative paths
-import { Service } from "../../../../shared/services/feature.service.ts";
-import { Button } from "../../components/design-system/Button.tsx";
+import { Service } from "@/services/feature.service.ts";
+import { Button } from "@/components/design-system/Button.tsx";
 
 // ❌ WRONG - Absolute paths don't work in Deno
 import { Service } from "/shared/services/feature.service.ts";

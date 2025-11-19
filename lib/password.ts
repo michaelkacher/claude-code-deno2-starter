@@ -68,7 +68,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   try {
     // Parse the stored hash
     const parts = hash.split('$');
-    if (parts.length !== 3) {
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
       logger.error('Invalid hash format', { hash });
       return false;
     }

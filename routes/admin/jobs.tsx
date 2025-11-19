@@ -3,14 +3,14 @@
  * Protected route for managing background jobs and schedules
  */
 
-import { PageProps } from 'fresh';
 import {
-    ContentContainer,
-    PageContainer,
-    PageHeader
-} from '../../components/common/index.ts';
-import JobDashboard from '../../islands/admin/JobDashboard.tsx';
-import AdminHeaderActions from '../../islands/AdminHeaderActions.tsx';
+  ContentContainer,
+  PageContainer,
+  PageHeader
+} from '@/components/common/index.ts';
+import JobDashboard from '@/islands/admin/JobDashboard.tsx';
+import AdminHeaderActions from '@/islands/AdminHeaderActions.tsx';
+import { PageProps } from 'fresh';
 
 export default function AdminJobsPage(props: PageProps) {
   return (

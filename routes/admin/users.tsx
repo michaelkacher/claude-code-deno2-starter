@@ -3,18 +3,18 @@
  * Displays all registered users with management capabilities
  */
 
-import { page } from "fresh";
 import {
   ContentContainer,
   PageContainer,
   PageHeader,
   StatCard,
-} from "../../components/common/index.ts";
-import AdminHeaderActions from "../../islands/AdminHeaderActions.tsx";
-import AdminUserTable from "../../islands/AdminUserTable.tsx";
-import { handleApiFetch, hasRole, logError } from "../../lib/error-handler.ts";
-import { AuthorizationError, getUserMessage } from "../../lib/errors.ts";
-import { define } from "../../utils.ts";
+} from "@/components/common/index.ts";
+import AdminHeaderActions from "@/islands/AdminHeaderActions.tsx";
+import AdminUserTable from "@/islands/AdminUserTable.tsx";
+import { handleApiFetch, hasRole, logError } from "@/lib/error-handler.ts";
+import { AuthorizationError, getUserMessage } from "@/lib/errors.ts";
+import { define } from "@/utils.ts";
+import { page } from "fresh";
 
 interface User {
   id: string;

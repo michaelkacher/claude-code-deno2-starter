@@ -3,17 +3,17 @@
  * PATCH /api/jobs/schedules/:id - Update a scheduled job (enable/disable)
  */
 
+import { NotFoundError } from "@/lib/errors.ts";
+import {
+  parseJsonBody,
+  requireAdmin,
+  successResponse,
+  withErrorHandler,
+  type AppState,
+} from "@/lib/fresh-helpers.ts";
+import { scheduler } from "@/lib/scheduler.ts";
 import { Handlers } from "fresh";
 import { z } from "zod";
-import { scheduler } from "../../../../../shared/lib/scheduler.ts";
-import { NotFoundError } from "../../../../lib/errors.ts";
-import {
-    parseJsonBody,
-    requireAdmin,
-    successResponse,
-    withErrorHandler,
-    type AppState,
-} from "../../../../lib/fresh-helpers.ts";
 
 const UpdateScheduleSchema = z.object({
   enabled: z.boolean(),

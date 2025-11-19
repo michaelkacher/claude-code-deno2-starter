@@ -198,7 +198,9 @@ class S3Storage implements Storage {
 
   constructor(config: NonNullable<StorageConfig['s3']>) {
     this.bucket = config.bucket;
-    this.publicUrl = config.publicUrl;
+    if (config.publicUrl) {
+      this.publicUrl = config.publicUrl;
+    }
 
     // Don't initialize the client here - do it lazily on first use
     // This defers AWS SDK loading until actually needed
@@ -318,7 +320,7 @@ class S3Storage implements Storage {
       }),
     );
 
-    return response.Contents?.map((obj) => obj.Key || '') || [];
+    return response.Contents?.map((obj: { Key?: string }) => obj.Key || '') || [];
   }
 
   async exists(path: string): Promise<boolean> {
@@ -364,15 +366,18 @@ function getDefaultConfig(): StorageConfig {
   const storageType = Deno.env.get('STORAGE_TYPE') as 'local' | 's3' || 'local';
 
   if (storageType === 's3') {
+    const endpoint = Deno.env.get('S3_ENDPOINT');
+    const publicUrl = Deno.env.get('S3_PUBLIC_URL');
+    
     return {
       type: 's3',
       s3: {
-        endpoint: Deno.env.get('S3_ENDPOINT'),
+        ...(endpoint && { endpoint }),
         region: Deno.env.get('S3_REGION') || 'auto',
         bucket: Deno.env.get('S3_BUCKET') || '',
         accessKeyId: Deno.env.get('S3_ACCESS_KEY_ID') || '',
         secretAccessKey: Deno.env.get('S3_SECRET_ACCESS_KEY') || '',
-        publicUrl: Deno.env.get('S3_PUBLIC_URL'),
+        ...(publicUrl && { publicUrl }),
       },
     };
   }

@@ -9,16 +9,16 @@ import {
     PageContainer,
     PageHeader,
     StatCard
-} from '../../components/common/index.ts';
-import AdminHeaderActions from '../../islands/AdminHeaderActions.tsx';
-import AdminUserTable from '../../islands/AdminUserTable.tsx';
+} from '@/components/common/index.ts';
+import AdminHeaderActions from '@/islands/AdminHeaderActions.tsx';
+import AdminUserTable from '@/islands/AdminUserTable.tsx';
 import {
     handleApiFetch,
     hasRole,
     logError,
     withErrorHandler,
-} from '../../lib/error-handler.ts';
-import { AuthorizationError, getUserMessage } from '../../lib/errors.ts';
+} from '@/lib/error-handler.ts';
+import { AuthorizationError, getUserMessage } from '@/lib/errors.ts';
 
 interface User {
   id: string;

@@ -3,9 +3,9 @@
  * Allows users to enable 2FA on their account
  */
 
+import TwoFactorSetup from "@/islands/TwoFactorSetup.tsx";
 import { getCookies } from "@std/http/cookie";
 import { Handlers, PageProps } from "fresh";
-import TwoFactorSetup from "../../islands/TwoFactorSetup.tsx";
 
 interface TwoFactorPageData {
   isAuthenticated: boolean;

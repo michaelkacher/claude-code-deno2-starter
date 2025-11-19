@@ -5,7 +5,7 @@
  */
 
 import { ErrorCode, ErrorMessages, ErrorStatusCodes } from '@/lib/error-codes.ts';
-import { AppError, ValidationError } from '@/lib/errors.ts';
+import { AppError, AuthenticationError, AuthorizationError, ValidationError } from '@/lib/errors.ts';
 import { createLogger } from '@/lib/logger.ts';
 import type { FreshContext } from "fresh";
 import { ZodError } from "zod";
